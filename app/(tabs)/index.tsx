@@ -1,31 +1,290 @@
-import { StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  Modal,
+  Button,
+  View,
+  Text,
+  ActivityIndicator,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ScrollView,
+} from 'react-native';
+import { BarCodeScanner } from 'expo-barcode-scanner';
+import { useAppContext } from '@/context/AppContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { colors, typography, responsive, modal, globalStyles } from '@/styles/styles';
+import { useTranslation } from 'react-i18next';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+const fetchBookInfoFromGoogleAPI = async (isbn: string) => {
+  const API_KEY = ''; // Wstaw swój klucz API
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.items && data.items.length > 0) {
+      const book = data.items[0].volumeInfo;
+      return {
+        title: book.title,
+        authors: book.authors ? book.authors.join(', ') : 'Unknown',
+        publisher: book.publisher || 'Unknown',
+        description: book.description || 'No description available',
+        price: null,
+        image: book.imageLinks?.thumbnail || null,
+      };
+    } else {
+      throw new Error('No book found');
+    }
+  } catch (error) {
+    console.error('Error fetching book info: ', error);
+    throw error;
+  }
+};
 
 export default function TabOneScreen() {
+  const { t, i18n } = useTranslation(); // Dodajemy i18n do destrukturyzacji
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [scanned, setScanned] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [bookInfo, setBookInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [manualPrice, setManualPrice] = useState<string>('');
+  const [useManualPrice, setUseManualPrice] = useState<boolean>(false);
+  const { isbn, setISBN } = useAppContext();
+  const router = useRouter();
+
+  // Dodajemy stan do śledzenia aktualnego języka
+  const [currentLang, setCurrentLang] = useState(i18n.language);
+
+  // Efekt do aktualizacji języka gdy się zmieni
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      setCurrentLang(i18n.language);
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, [i18n]);
+
+  const getBarCodeScannerPermissions = async () => {
+    const { status } = await BarCodeScanner.requestPermissionsAsync();
+    setHasPermission(status === 'granted');
+  };
+
+  useFocusEffect(
+      useCallback(() => {
+        getBarCodeScannerPermissions();
+
+        return () => {
+          setScanned(false);
+          setModalVisible(false);
+          setBookInfo(null);
+          setManualPrice('');
+          setUseManualPrice(false);
+        };
+      }, [])
+  );
+
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    console.log('Scanned data:', data);
+    setScanned(true);
+    setISBN(data);
+    setLoading(true);
+    setModalVisible(true);
+
+    if (!useManualPrice) {
+      try {
+        const book = await fetchBookInfoFromGoogleAPI(data);
+        console.log('Book info:', book);
+        setBookInfo(book);
+      } catch (error) {
+        console.error('Error fetching book info:', error);
+        Alert.alert(t('alerts.error'), t('alerts.fetchError'));
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
+  };
+
+  const handlePrice = () => {
+    let averagePrice: string;
+
+    if (useManualPrice && manualPrice) {
+      averagePrice = parseFloat(manualPrice).toFixed(2);
+    } else if (bookInfo && bookInfo.price) {
+      averagePrice = bookInfo.price ? bookInfo.price.toFixed(2) : 'N/A';
+    } else {
+      Alert.alert(t('alerts.error'), t('alerts.enterPrice'));
+      return;
+    }
+
+    setModalVisible(false);
+    router.push({
+      pathname: '/two',
+      params: {
+        isbn,
+        averagePrice,
+        title: bookInfo ? bookInfo.title : t('bookInfo.unknown'),
+        authors: bookInfo ? bookInfo.authors : t('bookInfo.unknown'),
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    setModalVisible(false);
+    setScanned(false);
+    setISBN(null);
+    setBookInfo(null);
+    setManualPrice('');
+    setUseManualPrice(false);
+  };
+
+  if (hasPermission === null) {
+    return <Text>{t('status.requestingPermission')}</Text>;
+  }
+
+  if (hasPermission === false) {
+    return (
+        <View style={globalStyles.container}>
+          <Text>{t('status.noCameraAccess')}</Text>
+          <Button title={t('buttons.requestPermission')} onPress={getBarCodeScannerPermissions} />
+        </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+      <View style={globalStyles.container}>
+        {!scanned && (
+            <BarCodeScanner
+                onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+                style={StyleSheet.absoluteFillObject}
+            />
+        )}
+
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={handleCancel}
+            key={currentLang} // Dodajemy klucz do wymuszenia rerenderu przy zmianie języka
+        >
+          <View style={modal.container}>
+            <ScrollView contentContainerStyle={modal.content}>
+              <Text style={typography.h1}>{t('bookInfo.scannedISBN')}: {isbn}</Text>
+
+              {loading ? (
+                  <ActivityIndicator size="large" color={colors.primary} />
+              ) : (
+                  <>
+                    {bookInfo && !useManualPrice && (
+                        <View>
+                          <Text style={typography.body}>{t('bookInfo.title')}: {bookInfo.title}</Text>
+                          <Text style={typography.body}>{t('bookInfo.authors')}: {bookInfo.authors}</Text>
+                          <Text style={typography.body}>{t('bookInfo.publisher')}: {bookInfo.publisher}</Text>
+                          <Text style={typography.body}>{t('bookInfo.description')}: {bookInfo.description}</Text>
+                          <Text style={typography.h2}>
+                            {t('bookInfo.averagePrice')}: {bookInfo.price ? `$${bookInfo.price.toFixed(2)}` : 'N/A'}
+                          </Text>
+                          {bookInfo.image && (
+                              <Image source={{ uri: bookInfo.image }} style={styles.bookImage} />
+                          )}
+                        </View>
+                    )}
+
+                    {useManualPrice && (
+                        <View style={styles.manualPriceContainer}>
+                          <TextInput
+                              style={styles.input}
+                              placeholder={t('placeholders.enterPrice')}
+                              keyboardType="numeric"
+                              value={manualPrice}
+                              onChangeText={setManualPrice}
+                          />
+                        </View>
+                    )}
+
+                    <View style={styles.optionsContainer}>
+                      <TouchableOpacity
+                          style={[styles.optionButton, !useManualPrice && styles.selectedOption]}
+                          onPress={() => setUseManualPrice(false)}
+                      >
+                        <Text style={typography.caption}>{t('buttons.useAPIPrices')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                          style={[styles.optionButton, useManualPrice && styles.selectedOption]}
+                          onPress={() => setUseManualPrice(true)}
+                      >
+                        <Text style={typography.caption}>{t('buttons.enterPriceManually')}</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.buttonContainer}>
+                      <Button title={t('buttons.price')} onPress={handlePrice} />
+                      <Button title={t('buttons.cancel')} onPress={handleCancel} />
+                    </View>
+                  </>
+              )}
+            </ScrollView>
+          </View>
+        </Modal>
+      </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  manualPriceContainer: {
+    width: '100%',
+    marginBottom: responsive.mediumMargin,
+  },
+  input: {
+    height: 50,
+    borderColor: colors.gray,
+    borderWidth: 1,
+    paddingLeft: 15,
+    width: '100%',
+    borderRadius: 10,
+    backgroundColor: colors.white,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: responsive.mediumMargin,
+  },
+  optionButton: {
+    padding: 15,
+    borderWidth: 1,
+    borderColor: colors.gray,
+    borderRadius: 10,
     flex: 1,
+    marginHorizontal: responsive.smallMargin,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: colors.white,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  selectedOption: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: responsive.mediumMargin,
+  },
+  bookImage: {
+    width: 100,
+    height: 150,
+    marginTop: responsive.smallMargin,
+    resizeMode: 'contain',
+    borderRadius: 10,
   },
 });

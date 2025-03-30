@@ -1,24 +1,18 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
+import { View, TouchableOpacity, Text } from 'react-native';
+import i18n from './i18n/config';
 
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -27,7 +21,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -46,14 +39,54 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const { t } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'pl' ? 'en' : 'pl';
+    i18n.changeLanguage(newLang);
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+      <>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+              name="modal"
+              options={{
+                presentation: 'modal',
+                title: t('titles.modal'),
+              }}
+          />
+        </Stack>
+        <View style={languageSwitchStyles.container}>
+          <TouchableOpacity onPress={toggleLanguage}>
+            <Text style={languageSwitchStyles.text}>
+              {i18n.language === 'pl' ? 'EN' : 'PL'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </>
   );
 }
+
+const languageSwitchStyles = {
+  container: {
+    position: 'absolute' as const,
+    top: 40,
+    right: 20,
+    zIndex: 100,
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  text: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    color: '#007AFF',
+  },
+};
