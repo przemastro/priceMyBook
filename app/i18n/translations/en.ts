@@ -25,7 +25,8 @@ export default {
         confirmDeleteTitle: "Delete Collection",
         confirmDeleteMessage: "Are you sure you want to delete the collection '{{collectionName}}'? This will remove {{bookCount}} books.",
         confirmEmptyDeleteMessage: "Are you sure you want to delete the empty collection '{{collectionName}}'?",
-        exchangeRateError: "Warning: Failed to fetch current exchange rates. Using default rate (1 USD = 3.80 PLN). Please consider this in your valuation."
+        exchangeRateError: "Warning: Failed to fetch current exchange rates. Using default rate (1 USD = 3.80 PLN). Please consider this in your valuation.",
+        bookUpdated: "Book updated successfully"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -42,7 +43,9 @@ export default {
         loadingTitle: 'Loading title...',
         loadingAuthors: 'Loading authors...',
         loadingPublisher: 'Loading publisher...',
-        loadingDescription: 'Loading description...'
+        loadingDescription: 'Loading description...',
+        unknownTitle: 'Unknown title',
+        originalPrice: "Original price",
     },
     labels: {
         selectCollection: 'Select Collection',
@@ -51,12 +54,16 @@ export default {
         total: 'Total',
         noCollections: 'No collections yet',
         noBooksInCollection: 'No books in this collection',
-        lastRateUpdate: "Rate updated at"
+        lastRateUpdate: "Rate updated at",
+        noScanHistory: 'No scan history yet',
+        defects: "Defects"
     },
     titles: {
         scan: 'Scan ISBN',
-        analyzeCondition: 'Analyze Book Condition',
-        manageCollections: 'Manage Collections'
+        analyzeCondition: 'Analysis',
+        manageCollections: 'Management',
+        history: 'History',
+        editBook: "Edit Book"
     },
     buttons: {
         addToCollection: 'Add to Collection',
@@ -71,15 +78,20 @@ export default {
         createFirstCollection: 'Create Your First Collection',
         deleteCollection: "Delete Collection",
         confirm: "Confirm",
+        clearHistory: 'Clear History',
+        saveChanges: "Save Changes"
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
-        enterPrice: 'Enter price manually'
+        enterPrice: 'Enter price manually',
+        searchHistory: 'Search by ISBN/title'
     },
     status: {
         requestingPermission: 'Requesting camera permission...',
         noCameraAccess: 'No access to camera',
         scanning: "Scanning...",
+        found: 'Found in database',
+        notFound: 'Not found in database'
     },
     currency: {
         symbol: '$',

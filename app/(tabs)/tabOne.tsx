@@ -16,11 +16,11 @@ import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useAppContext } from '@/context/AppContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { colors, typography, responsive, modal, globalStyles } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import { colors, typography, responsive, modal, globalStyles } from '@/styles/styles';
 
 const fetchBookInfoFromGoogleAPI = async (isbn: string) => {
-  const API_KEY = ''; // Wstaw swój klucz API
+  const API_KEY = ''; // Replace with your actual API key
   const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`;
 
   try {
@@ -37,42 +37,40 @@ const fetchBookInfoFromGoogleAPI = async (isbn: string) => {
         price: null,
         image: book.imageLinks?.thumbnail || null,
       };
-    } else {
-      throw new Error('No book found');
     }
+    throw new Error('No book found');
   } catch (error) {
-    console.error('Error fetching book info: ', error);
+    console.error('Error fetching book info:', error);
     throw error;
   }
 };
 
 export default function TabOneScreen() {
-  const { t, i18n } = useTranslation(); // Dodajemy i18n do destrukturyzacji
+  const { t, i18n } = useTranslation();
+  const {
+    isbn,
+    setISBN,
+    addToScanHistory
+  } = useAppContext();
+
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [manualPrice, setManualPrice] = useState<string>('');
-  const [useManualPrice, setUseManualPrice] = useState<boolean>(false);
-  const { isbn, setISBN } = useAppContext();
+  const [manualPrice, setManualPrice] = useState('');
+  const [useManualPrice, setUseManualPrice] = useState(false);
   const router = useRouter();
 
-  // Dodajemy stan do śledzenia aktualnego języka
+  // Language change handling
   const [currentLang, setCurrentLang] = useState(i18n.language);
-
-  // Efekt do aktualizacji języka gdy się zmieni
   useEffect(() => {
-    const handleLanguageChange = () => {
-      setCurrentLang(i18n.language);
-    };
-
+    const handleLanguageChange = () => setCurrentLang(i18n.language);
     i18n.on('languageChanged', handleLanguageChange);
-    return () => {
-      i18n.off('languageChanged', handleLanguageChange);
-    };
+    return () => i18n.off('languageChanged', handleLanguageChange);
   }, [i18n]);
 
+  // Camera permission
   const getBarCodeScannerPermissions = async () => {
     const { status } = await BarCodeScanner.requestPermissionsAsync();
     setHasPermission(status === 'granted');
@@ -81,7 +79,6 @@ export default function TabOneScreen() {
   useFocusEffect(
       useCallback(() => {
         getBarCodeScannerPermissions();
-
         return () => {
           setScanned(false);
           setModalVisible(false);
@@ -93,24 +90,49 @@ export default function TabOneScreen() {
   );
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    console.log('Scanned data:', data);
     setScanned(true);
     setISBN(data);
     setLoading(true);
     setModalVisible(true);
 
-    if (!useManualPrice) {
-      try {
-        const book = await fetchBookInfoFromGoogleAPI(data);
-        console.log('Book info:', book);
-        setBookInfo(book);
-      } catch (error) {
-        console.error('Error fetching book info:', error);
-        Alert.alert(t('alerts.error'), t('alerts.fetchError'));
-      } finally {
-        setLoading(false);
-      }
-    } else {
+    // Najpierw dodaj z foundInApi: false
+    addToScanHistory({
+      isbn: data,
+      title: 'Searching in database...',
+      authors: 'Please wait',
+      price: '0',
+      displayPrice: 'N/A',
+      foundInApi: false,
+      originalPrice: '0'
+    });
+
+    try {
+      const book = await fetchBookInfoFromGoogleAPI(data);
+      setBookInfo(book);
+
+      // Aktualizuj z foundInApi: true
+      addToScanHistory({
+        isbn: data,
+        title: book.title || 'Not Found',
+        authors: book.authors || 'Unknown',
+        price: book.price ? book.price : '0',
+        displayPrice: book.price ? `$${book.price}` : 'N/A',
+        foundInApi: !!book.title,
+        originalPrice: book.price ? book.price : '0' // Zachowujemy oryginalną cenę
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      // Aktualizuj status na nie znaleziony
+      addToScanHistory({
+        isbn: data,
+        title: 'Not Found in database',
+        authors: 'Unknown',
+        price: '0',
+        displayPrice: 'N/A',
+        foundInApi: false,
+        originalPrice: '0'
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -120,8 +142,8 @@ export default function TabOneScreen() {
 
     if (useManualPrice && manualPrice) {
       averagePrice = parseFloat(manualPrice).toFixed(2);
-    } else if (bookInfo && bookInfo.price) {
-      averagePrice = bookInfo.price ? bookInfo.price.toFixed(2) : 'N/A';
+    } else if (bookInfo?.price) {
+      averagePrice = bookInfo.price.toFixed(2);
     } else {
       Alert.alert(t('alerts.error'), t('alerts.enterPrice'));
       return;
@@ -129,13 +151,14 @@ export default function TabOneScreen() {
 
     setModalVisible(false);
     router.push({
-      pathname: '/two',
+      pathname: '/tabThree',
       params: {
         isbn,
         averagePrice,
-        title: bookInfo ? bookInfo.title : t('bookInfo.unknown'),
-        authors: bookInfo ? bookInfo.authors : t('bookInfo.unknown'),
-      },
+        title: bookInfo?.title || t('bookInfo.unknown'),
+        authors: bookInfo?.authors || t('bookInfo.unknown'),
+        fromHistory: 'false' // Jawnie oznaczamy źródło
+      }
     });
   };
 
@@ -156,7 +179,10 @@ export default function TabOneScreen() {
     return (
         <View style={globalStyles.container}>
           <Text>{t('status.noCameraAccess')}</Text>
-          <Button title={t('buttons.requestPermission')} onPress={getBarCodeScannerPermissions} />
+          <Button
+              title={t('buttons.requestPermission')}
+              onPress={getBarCodeScannerPermissions}
+          />
         </View>
     );
   }
@@ -172,14 +198,16 @@ export default function TabOneScreen() {
 
         <Modal
             animationType="slide"
-            transparent={true}
+            transparent
             visible={modalVisible}
             onRequestClose={handleCancel}
-            key={currentLang} // Dodajemy klucz do wymuszenia rerenderu przy zmianie języka
+            key={currentLang}
         >
           <View style={modal.container}>
             <ScrollView contentContainerStyle={modal.content}>
-              <Text style={typography.h1}>{t('bookInfo.scannedISBN')}: {isbn}</Text>
+              <Text style={typography.h1}>
+                {t('bookInfo.scannedISBN')}: {isbn}
+              </Text>
 
               {loading ? (
                   <ActivityIndicator size="large" color={colors.primary} />
@@ -187,15 +215,30 @@ export default function TabOneScreen() {
                   <>
                     {bookInfo && !useManualPrice && (
                         <View>
-                          <Text style={typography.body}>{t('bookInfo.title')}: {bookInfo.title}</Text>
-                          <Text style={typography.body}>{t('bookInfo.authors')}: {bookInfo.authors}</Text>
-                          <Text style={typography.body}>{t('bookInfo.publisher')}: {bookInfo.publisher}</Text>
-                          <Text style={typography.body}>{t('bookInfo.description')}: {bookInfo.description}</Text>
+                          <Text style={typography.body}>
+                            {t('bookInfo.title')}: {bookInfo.title}
+                          </Text>
+                          <Text style={typography.body}>
+                            {t('bookInfo.authors')}: {bookInfo.authors}
+                          </Text>
+                          {bookInfo.publisher && (
+                              <Text style={typography.body}>
+                                {t('bookInfo.publisher')}: {bookInfo.publisher}
+                              </Text>
+                          )}
+                          {bookInfo.description && (
+                              <Text style={typography.body}>
+                                {t('bookInfo.description')}: {bookInfo.description}
+                              </Text>
+                          )}
                           <Text style={typography.h2}>
                             {t('bookInfo.averagePrice')}: {bookInfo.price ? `$${bookInfo.price.toFixed(2)}` : 'N/A'}
                           </Text>
                           {bookInfo.image && (
-                              <Image source={{ uri: bookInfo.image }} style={styles.bookImage} />
+                              <Image
+                                  source={{ uri: bookInfo.image }}
+                                  style={styles.bookImage}
+                              />
                           )}
                         </View>
                     )}
@@ -214,22 +257,38 @@ export default function TabOneScreen() {
 
                     <View style={styles.optionsContainer}>
                       <TouchableOpacity
-                          style={[styles.optionButton, !useManualPrice && styles.selectedOption]}
+                          style={[
+                            styles.optionButton,
+                            !useManualPrice && styles.selectedOption
+                          ]}
                           onPress={() => setUseManualPrice(false)}
                       >
-                        <Text style={typography.caption}>{t('buttons.useAPIPrices')}</Text>
+                        <Text style={typography.caption}>
+                          {t('buttons.useAPIPrices')}
+                        </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                          style={[styles.optionButton, useManualPrice && styles.selectedOption]}
+                          style={[
+                            styles.optionButton,
+                            useManualPrice && styles.selectedOption
+                          ]}
                           onPress={() => setUseManualPrice(true)}
                       >
-                        <Text style={typography.caption}>{t('buttons.enterPriceManually')}</Text>
+                        <Text style={typography.caption}>
+                          {t('buttons.enterPriceManually')}
+                        </Text>
                       </TouchableOpacity>
                     </View>
 
                     <View style={styles.buttonContainer}>
-                      <Button title={t('buttons.price')} onPress={handlePrice} />
-                      <Button title={t('buttons.cancel')} onPress={handleCancel} />
+                      <Button
+                          title={t('buttons.price')}
+                          onPress={handlePrice}
+                      />
+                      <Button
+                          title={t('buttons.cancel')}
+                          onPress={handleCancel}
+                      />
                     </View>
                   </>
               )}

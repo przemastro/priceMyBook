@@ -23,7 +23,8 @@ export default {
         confirmDeleteTitle: "Usuń kolekcję",
         confirmDeleteMessage: "Czy na pewno chcesz usunąć kolekcję '{{collectionName}}'? Spowoduje to usunięcie {{bookCount}} książek.",
         confirmEmptyDeleteMessage: "Czy na pewno chcesz usunąć pustą kolekcję '{{collectionName}}'?",
-        exchangeRateError: "Uwaga: Nie udało się pobrać aktualnego kursu walut. Używamy kursu domyślnego (1 USD = 3.80 PLN). Proszę uwzględnić to w wycenie."
+        exchangeRateError: "Uwaga: Nie udało się pobrać aktualnego kursu walut. Używamy kursu domyślnego (1 USD = 3.80 PLN). Proszę uwzględnić to w wycenie.",
+        bookUpdated: "Książka zaktualizowana pomyślnie"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -40,7 +41,9 @@ export default {
         loadingTitle: 'Wczytywanie tytułu...',
         loadingAuthors: 'Wczytywanie autorów...',
         loadingPublisher: 'Wczytywanie wydawcy...',
-        loadingDescription: 'Wczytywanie opisu...'
+        loadingDescription: 'Wczytywanie opisu...',
+        unknownTitle: 'Nieznany tytuł',
+        originalPrice: "Cena pierwotna",
     },
     labels: {
         selectCollection: 'Wybierz kolekcję',
@@ -49,12 +52,16 @@ export default {
         total: 'Razem',
         noCollections: 'Brak kolekcji',
         noBooksInCollection: 'Brak książek w kolekcji',
-        lastRateUpdate: "Kurs zaktualizowany o"
+        lastRateUpdate: "Kurs zaktualizowany o",
+        noScanHistory: 'Brak historii skanowań',
+        defects: "Wady"
     },
     titles: {
         scan: 'Skanuj ISBN',
-        analyzeCondition: 'Analiza stanu książki',
-        manageCollections: 'Zarządzanie kolekcjami'
+        analyzeCondition: 'Analiza',
+        manageCollections: 'Zarządzanie',
+        history: 'Historia',
+        editBook: "Edytuj książkę"
     },
     buttons: {
         addToCollection: 'Dodaj do kolekcji',
@@ -68,15 +75,20 @@ export default {
         createCollection: "Utwórz kolekcję",
         createFirstCollection: "Utwórz swoją pierwszą kolekcję",
         deleteCollection: "Usuń kolekcję",
-        confirm: "Potwierdź"
+        confirm: "Potwierdź",
+        clearHistory: 'Wyczyść historię',
+        saveChanges: "Zapisz zmiany"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę kolekcji',
-        enterPrice: 'Wprowadź cenę ręcznie'
+        enterPrice: 'Wprowadź cenę ręcznie',
+        searchHistory: 'Szukaj po ISBN/tytule'
     },
     status: {
         requestingPermission: 'Proszę czekać...',
         noCameraAccess: 'Brak dostępu do kamery',
         scanning: "Skanowanie...",
+        found: 'Znalezione w bazie danych',
+        notFound: 'Nieznalezione w bazie danych'
     }
 };

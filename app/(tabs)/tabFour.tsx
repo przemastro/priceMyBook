@@ -4,8 +4,12 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useAppContext } from '@/context/AppContext';
 import { colors, typography, responsive } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { useRouter } from 'expo-router';
 
-export default function TabThreeScreen() {
+export default function TabFourScreen() {
+  const router = useRouter();
   const { t, i18n } = useTranslation();
   const [collectionName, setCollectionName] = useState('');
   const {
@@ -26,6 +30,23 @@ export default function TabThreeScreen() {
     }
     const usdPrice = priceNumber / exchangeRate;
     return `$${usdPrice.toFixed(2)}`;
+  };
+
+  const handleEditBook = (collectionName: string, bookIndex: number) => {
+    const book = books[collectionName][bookIndex];
+    router.push({
+      pathname: '/tabThree',
+      params: {
+        isbn: book.isbn,
+        title: book.title,
+        authors: book.authors,
+        averagePrice: book.price,
+        fromHistory: 'false',
+        editMode: 'true',
+        collectionName,
+        bookIndex: bookIndex.toString()
+      }
+    });
   };
 
   const calculateCollectionTotal = (collectionName: string) => {
@@ -68,6 +89,35 @@ export default function TabThreeScreen() {
         ],
         { cancelable: true }
     );
+  };
+
+  const handleExportCSV = async (collectionName: string) => {
+    const booksInCollection = books[collectionName] || [];
+
+    let csvContent = "Title,Authors,ISBN,Price (PLN),Found in API\n";
+
+    booksInCollection.forEach(book => {
+      csvContent += `"${book.title?.replace(/"/g, '""') || ''}","${book.authors?.replace(/"/g, '""') || ''}",${book.isbn},${book.price},${book.foundInApi ? 'Yes' : 'No'}\n`;
+    });
+
+    try {
+      const fileUri = FileSystem.cacheDirectory + `${collectionName}.csv`;
+      await FileSystem.writeAsStringAsync(fileUri, csvContent);
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(t('alerts.error'), t('alerts.sharingNotAvailable'));
+        return;
+      }
+
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'text/csv',
+        dialogTitle: t('alerts.exportTitle', { collectionName }),
+        UTI: 'public.comma-separated-values-text'
+      });
+    } catch (error) {
+      Alert.alert(t('alerts.error'), t('alerts.exportError'));
+      console.error('CSV Export failed:', error);
+    }
   };
 
   return (
@@ -119,6 +169,12 @@ export default function TabThreeScreen() {
                           {t('labels.total')}: {formatCurrency(total.toString())}
                         </Text>
                         <TouchableOpacity
+                            onPress={() => handleExportCSV(collection)}
+                            style={styles.exportButton}
+                        >
+                          <FontAwesome name="file-excel-o" size={18} color={colors.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
                             onPress={() => handleDeleteCollection(collection)}
                             style={styles.deleteCollectionButton}
                         >
@@ -131,27 +187,35 @@ export default function TabThreeScreen() {
                         <Text style={styles.noBooksText}>{t('labels.noBooksInCollection')}</Text>
                     ) : (
                         books[collection]?.map((book, index) => (
-                            <View key={`${collection}-${index}`} style={styles.bookContainer}>
+                            <TouchableOpacity
+                                key={`${collection}-${index}`}
+                                onPress={() => handleEditBook(collection, index)}
+                                style={styles.bookContainer}
+                            >
                               <View style={styles.bookInfo}>
-                                <Text style={styles.bookTitle}>
-                                  {book.title || t('bookInfo.unknown')}
-                                </Text>
-                                {book.authors && (
-                                    <Text style={styles.bookAuthors}>
-                                      {book.authors}
-                                    </Text>
-                                )}
+                                <Text style={styles.bookTitle}>{book.title}</Text>
+                                <Text style={styles.bookAuthors}>{book.authors}</Text>
+                                <Text style={styles.bookIsbn}>ISBN: {book.isbn}</Text>
                                 <Text style={styles.bookPrice}>
-                                  {t('bookInfo.finalPrice')}: {formatCurrency(book.price)}
+                                  {t('bookInfo.finalPrice')}: {book.displayPrice}
+                                </Text>
+                                <Text style={[
+                                  styles.bookStatus,
+                                  { color: book.foundInApi ? colors.success : colors.error }
+                                ]}>
+                                  {book.foundInApi ? t('status.found') : t('status.notFound')}
                                 </Text>
                               </View>
                               <TouchableOpacity
-                                  onPress={() => removeBookFromCollection(collection, index)}
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    removeBookFromCollection(collection, index);
+                                  }}
                                   style={styles.deleteButton}
                               >
                                 <FontAwesome name="trash" size={18} color={colors.error} />
                               </TouchableOpacity>
-                            </View>
+                            </TouchableOpacity>
                         ))
                     )}
                   </View>
@@ -171,6 +235,11 @@ const styles = StyleSheet.create({
   addCollectionContainer: {
     flexDirection: 'row',
     marginBottom: responsive.largeMargin,
+  },
+  bookIsbn: {
+    fontSize: 12,
+    color: colors.gray,
+    marginBottom: 4,
   },
   input: {
     flex: 1,
@@ -230,6 +299,10 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     padding: 8,
   },
+  exportButton: {
+    marginLeft: 10,
+    padding: 8,
+  },
   bookContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -270,4 +343,13 @@ const styles = StyleSheet.create({
     padding: 15,
     color: colors.gray,
   },
+  bookStatus: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginBottom: 4
+  },
+  price: {
+    color: colors.primary,
+    marginTop: 4
+  }
 });

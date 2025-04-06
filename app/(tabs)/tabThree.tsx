@@ -14,22 +14,29 @@ interface BookDefect {
   priceReduction: number;
 }
 
-export default function TabTwoScreen() {
+export default function TabThreeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  // Deklaracje zmiennych z params
+  const isbn = params.isbn?.toString() || '';
+  const averagePrice = params.averagePrice?.toString() || '0';
+  const originalPrice = params.originalPrice?.toString() || averagePrice;
+  const title = params.title?.toString() || t('bookInfo.unknown');
+  const authors = params.authors?.toString() || t('bookInfo.unknown');
+  const editMode = params.editMode === 'true';
+  const collectionName = params.collectionName?.toString();
+  const bookIndex = params.bookIndex ? parseInt(params.bookIndex.toString()) : null;
+
   const {
     collections,
     addBookToCollection,
+    removeBookFromCollection,
     exchangeRate,
     exchangeRateError,
     lastRateUpdate
   } = useAppContext();
-
-  const params = useLocalSearchParams();
-  const isbn = params.isbn?.toString() || '';
-  const averagePrice = params.averagePrice?.toString() || '0';
-  const title = params.title?.toString() || t('bookInfo.unknown');
-  const authors = params.authors?.toString() || t('bookInfo.unknown');
 
   const defectTypes = [
     'tornPages', 'brokenSpine', 'waterDamage', 'missingPages',
@@ -49,9 +56,9 @@ export default function TabTwoScreen() {
 
   useEffect(() => {
     if (collections.length > 0) {
-      setSelectedCollection(collections[0]);
+      setSelectedCollection(editMode && collectionName ? collectionName : collections[0]);
     }
-  }, [collections]);
+  }, [collections, editMode, collectionName]);
 
   function getDefaultReduction(id: string): number {
     const reductions: Record<string, number> = {
@@ -73,10 +80,11 @@ export default function TabTwoScreen() {
   };
 
   const calculateFinalPrice = (): number => {
-    const basePrice = parseFloat(averagePrice) || 0;
+    const basePrice = parseFloat(originalPrice) || 0;
     const totalReduction = defects
         .filter((defect) => defect.selected)
         .reduce((sum, defect) => sum + (defect.priceReduction || 0), 0);
+
     return basePrice * (1 - totalReduction / 100);
   };
 
@@ -89,7 +97,7 @@ export default function TabTwoScreen() {
           t('alerts.noCollectionsMessage'),
           [
             { text: t('buttons.cancel'), style: 'cancel' },
-            { text: t('buttons.createCollection'), onPress: () => router.push('/three') }
+            { text: t('buttons.createCollection'), onPress: () => router.push('/tabFour') }
           ]
       );
     }
@@ -101,68 +109,87 @@ export default function TabTwoScreen() {
       return;
     }
 
-    if (!selectedCollection && collections.length > 0) {
-      Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
-      return;
-    }
-
-    if (collections.length === 0) {
-      handleCollectionPress();
-      return;
-    }
-
     const priceValue = finalPrice.toFixed(2);
     const bookData = {
       isbn,
       title,
       authors,
       price: priceValue,
-      displayPrice: formatPrice(parseFloat(priceValue))
+      displayPrice: formatPrice(finalPrice),
+      foundInApi: params.fromHistory !== 'true',
+      originalPrice: originalPrice
     };
 
-    addBookToCollection(selectedCollection, bookData);
-    Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`);
+    if (editMode && collectionName && bookIndex !== null) {
+      // Usuń książkę ze starej kolekcji jeśli zmieniono kolekcję
+      if (selectedCollection !== collectionName) {
+        removeBookFromCollection(collectionName, bookIndex);
+      }
+      addBookToCollection(selectedCollection, bookData);
+      Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
+      // Nie wykonujemy router.back() - pozostajemy na tabThree
+    } else {
+      if (!selectedCollection && collections.length > 0) {
+        Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
+        return;
+      }
+      addBookToCollection(selectedCollection, bookData);
+      Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`);
+      // Tutaj też nie przekierowujemy - pozostajemy na tabThree
+    }
   };
 
   return (
-      <ScrollView contentContainerStyle={styles.container}>
-        {exchangeRateError && (
-            <Text style={[typography.caption, { color: colors.error }]}>
-              {t('alerts.exchangeRateError')} (1 USD = {exchangeRate.toFixed(2)} PLN)
-            </Text>
-        )}
-
-        {lastRateUpdate && (
-            <Text style={[typography.caption, { color: colors.gray }]}>
-              {t('labels.lastRateUpdate')}: {lastRateUpdate.toLocaleTimeString()}
-            </Text>
-        )}
-
-        <Text style={typography.h1}>{t('titles.analyzeCondition')}</Text>
-        <Text style={typography.body}>{t('bookInfo.isbn')}: {isbn || t('bookInfo.noISBN')}</Text>
-        <Text style={typography.body}>
-          {t('bookInfo.basePrice')}: {formatPrice(parseFloat(averagePrice))}
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 50 }]}>
+        <Text style={typography.h1}>
+          {editMode ? t('titles.editBook') : t('titles.analyzeCondition')}
         </Text>
-        <Text style={typography.h2}>
-          {t('bookInfo.finalPrice')}: {formatPrice(finalPrice)}
-        </Text>
+
+        <View style={styles.priceSection}>
+          <Text style={typography.body}>{t('bookInfo.isbn')}: {isbn || t('bookInfo.noISBN')}</Text>
+          <Text style={typography.body}>
+            {t('bookInfo.originalPrice')}: {formatPrice(parseFloat(originalPrice))}
+          </Text>
+          {averagePrice !== originalPrice && (
+              <Text style={typography.body}>
+                {t('bookInfo.discountedPrice')}: {formatPrice(parseFloat(averagePrice))}
+              </Text>
+          )}
+          <View style={styles.finalPriceContainer}>
+            <Text style={[typography.h2, { color: colors.primary }]}>
+              {t('bookInfo.finalPrice')}: {formatPrice(finalPrice)}
+            </Text>
+            {i18n.language === 'en' && (
+                <Text style={[typography.caption, { color: colors.gray, marginLeft: 10 }]}>
+                  (1 USD = {exchangeRate.toFixed(2)} PLN)
+                </Text>
+            )}
+          </View>
+          {exchangeRateError && (
+              <Text style={[typography.caption, { color: colors.error }]}>
+                {t('alerts.exchangeRateError')}
+              </Text>
+          )}
+        </View>
 
         <Text style={typography.h2}>{t('labels.selectCollection')}:</Text>
         {collections.length > 0 ? (
-            <Picker
-                selectedValue={selectedCollection}
-                style={styles.picker}
-                onValueChange={(itemValue) => setSelectedCollection(itemValue)}
-                dropdownIconColor={colors.primary}
-            >
-              {collections.map((collection) => (
-                  <Picker.Item
-                      key={collection}
-                      label={collection}
-                      value={collection}
-                  />
-              ))}
-            </Picker>
+            <View style={styles.pickerContainer}>
+              <Picker
+                  selectedValue={selectedCollection}
+                  style={styles.picker}
+                  onValueChange={(itemValue) => setSelectedCollection(itemValue)}
+                  dropdownIconColor={colors.primary}
+              >
+                {collections.map((collection) => (
+                    <Picker.Item
+                        key={collection}
+                        label={collection}
+                        value={collection}
+                    />
+                ))}
+              </Picker>
+            </View>
         ) : (
             <TouchableOpacity
                 style={styles.createCollectionButton}
@@ -218,7 +245,7 @@ export default function TabTwoScreen() {
         ))}
 
         <Button
-            title={t('buttons.addToCollection')}
+            title={editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
             onPress={handleAddToCollection}
             color={colors.primary}
         />
@@ -232,14 +259,28 @@ const styles = StyleSheet.create({
     padding: responsive.mediumMargin,
     backgroundColor: colors.background,
   },
+  priceSection: {
+    marginBottom: responsive.mediumMargin,
+    padding: responsive.smallMargin,
+    backgroundColor: colors.white,
+    borderRadius: 10,
+  },
+  finalPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: colors.gray,
+    borderRadius: 10,
+    marginBottom: responsive.mediumMargin,
+    overflow: 'hidden',
+  },
   picker: {
     height: 50,
     width: '100%',
-    marginBottom: responsive.mediumMargin,
     backgroundColor: colors.white,
-    borderRadius: 10,
-    borderColor: colors.gray,
-    borderWidth: 1,
   },
   defectContainer: {
     marginBottom: responsive.smallMargin,

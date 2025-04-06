@@ -5,12 +5,13 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { AppProvider } from '@/context/AppContext';
 import { useTranslation } from 'react-i18next';
+import { Platform, StyleSheet } from 'react-native';
 
 function TabBarIcon(props: {
     name: React.ComponentProps<typeof FontAwesome>['name'];
     color: string;
 }) {
-    return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+    return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -24,20 +25,23 @@ export default function TabLayout() {
     return (
         <AppProvider>
             <Tabs
+                initialRouteName="tabOne"
                 screenOptions={{
                     tabBarActiveTintColor: activeColor,
                     tabBarInactiveTintColor: inactiveColor,
                     headerShown: false,
                     tabBarStyle: {
+                        ...styles.tabBar,
                         backgroundColor: themeColors.background,
-                        //borderTopColor: themeColors.border,
                     },
+                    tabBarLabelStyle: styles.tabBarLabel,
+                    tabBarItemStyle: styles.tabBarItem,
                 }}
             >
                 <Tabs.Screen
-                    name="index"
+                    name="tabOne"
                     options={{
-                        title: t('titles.scan'), // Zmienione na titles.scan dla spójności
+                        title: t('titles.scan'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="camera"
@@ -47,9 +51,21 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="two"
+                    name="tabTwo"
                     options={{
-                        title: t('titles.analyzeCondition'), // Używamy istniejącego klucza
+                        title: t('titles.history'),
+                        tabBarIcon: ({ color, focused }) => (
+                            <TabBarIcon
+                                name="history"
+                                color={focused ? activeColor : color}
+                            />
+                        ),
+                    }}
+                />
+                <Tabs.Screen
+                    name="tabThree"
+                    options={{
+                        title: t('titles.analyzeCondition'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="cogs"
@@ -59,9 +75,9 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="three"
+                    name="tabFour"
                     options={{
-                        title: t('titles.manageCollections'), // Używamy istniejącego klucza
+                        title: t('titles.manageCollections'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="book"
@@ -74,3 +90,30 @@ export default function TabLayout() {
         </AppProvider>
     );
 }
+
+const styles = StyleSheet.create({
+    tabBar: {
+        height: Platform.select({
+            ios: 80,
+            android: 60,
+        }),
+        paddingBottom: Platform.select({
+            ios: 20,
+            android: 5,
+        }),
+        paddingTop: 5,
+        borderTopWidth: 0,
+        elevation: 0,
+    },
+    tabBarLabel: {
+        fontSize: 12,
+        marginBottom: Platform.select({
+            ios: 15,
+            android: 5,
+        }),
+    },
+    tabBarItem: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+});
