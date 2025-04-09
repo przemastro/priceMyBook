@@ -11,6 +11,7 @@ export const colors = {
     gray: '#cccccc', // Kolor obramowań i nieaktywnych elementów
     error: '#e74c3c', // Kolor błędów
     success: '#2ecc71', // Kolor sukcesu
+    black: '#040404'
 };
 
 // Typografia
@@ -49,22 +50,26 @@ export const responsive = {
 // Style przycisków
 export const buttons = StyleSheet.create({
     primary: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.background,
         paddingVertical: 12,
         paddingHorizontal: 24,
-        borderRadius: 5,
+        borderRadius: 1,
+        borderWidth: 2,
+        borderColor: colors.black,
         alignItems: 'center',
         minWidth: 120, // Minimalna szerokość przycisku
+        maxWidth: 200
     },
     secondary: {
-        backgroundColor: colors.white,
+        backgroundColor: colors.background,
         paddingVertical: 12,
         paddingHorizontal: 24,
-        borderRadius: 5,
-        borderWidth: 1,
-        borderColor: colors.gray,
+        borderRadius: 1,
+        borderWidth: 2,
+        borderColor: colors.black,
         alignItems: 'center',
         minWidth: 120, // Minimalna szerokość przycisku
+        maxWidth:200
     },
     text: {
         color: colors.white,
@@ -82,10 +87,10 @@ export const modal = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     content: {
-        backgroundColor: colors.white,
+        backgroundColor: colors.background,
         padding: 20,
-        borderRadius: 5,
-        width: width * 0.9,
+        borderRadius: 1,
+        width: width * 0.8,
         maxWidth: 400,
         maxHeight: height * 0.9,
         marginTop: responsive.mediumMargin, // Odstęp od góry

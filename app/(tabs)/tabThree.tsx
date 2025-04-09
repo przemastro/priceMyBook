@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, typography, responsive } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import i18n from "i18next";
+import {ActivityIndicator} from "react-native"
 
 interface BookDefect {
   id: string;
@@ -21,8 +22,8 @@ export default function TabThreeScreen() {
 
   // Deklaracje zmiennych z params
   const isbn = params.isbn?.toString() || '';
-  const averagePrice = params.averagePrice?.toString() || '0';
-  const originalPrice = params.originalPrice?.toString() || averagePrice;
+  const originalPrice = params.originalPrice?.toString() || '0';
+  const averagePrice = params.averagePrice?.toString() || originalPrice;
   const title = params.title?.toString() || t('bookInfo.unknown');
   const authors = params.authors?.toString() || t('bookInfo.unknown');
   const editMode = params.editMode === 'true';
@@ -51,6 +52,14 @@ export default function TabThreeScreen() {
         priceReduction: getDefaultReduction(id),
       }))
   );
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handlePress = async () => {
+    setIsLoading(true);
+    await handleAddToCollection();
+    setIsLoading(false);
+  };
 
   const [selectedCollection, setSelectedCollection] = useState('');
 
@@ -141,7 +150,7 @@ export default function TabThreeScreen() {
 
   return (
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 50 }]}>
-        <Text style={typography.h1}>
+        <Text style={[typography.h1, styles.header]}>
           {editMode ? t('titles.editBook') : t('titles.analyzeCondition')}
         </Text>
 
@@ -244,11 +253,19 @@ export default function TabThreeScreen() {
             </View>
         ))}
 
-        <Button
-            title={editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
-            onPress={handleAddToCollection}
-            color={colors.primary}
-        />
+        <TouchableOpacity
+            style={styles.createCollectionButton}
+            onPress={handlePress}
+            disabled={isLoading}
+        >
+          {isLoading ? (
+              <ActivityIndicator color="white" />
+          ) : (
+              <Text style={styles.createCollectionText}>
+                {editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
+              </Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
   );
 }
@@ -258,12 +275,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: responsive.mediumMargin,
     backgroundColor: colors.background,
+    marginTop: responsive.largeMargin,
+  },
+  header: {
+    marginBottom: responsive.mediumMargin,
+    textAlign: 'center',
   },
   priceSection: {
     marginBottom: responsive.mediumMargin,
     padding: responsive.smallMargin,
     backgroundColor: colors.white,
-    borderRadius: 10,
+    borderRadius: 1,
   },
   finalPriceContainer: {
     flexDirection: 'row',
@@ -273,7 +295,7 @@ const styles = StyleSheet.create({
   pickerContainer: {
     borderWidth: 1,
     borderColor: colors.gray,
-    borderRadius: 10,
+    borderRadius: 1,
     marginBottom: responsive.mediumMargin,
     overflow: 'hidden',
   },
@@ -287,7 +309,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderWidth: 1,
     borderColor: colors.gray,
-    borderRadius: 10,
+    borderRadius: 1,
     backgroundColor: colors.white,
   },
   defectInfo: {
@@ -307,12 +329,14 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: colors.black,
+    borderRadius: 1,
     marginBottom: responsive.mediumMargin,
   },
   createCollectionText: {
-    color: colors.white,
+    color: colors.black,
     fontWeight: 'bold',
   },
 });

@@ -26,7 +26,9 @@ export default {
         confirmDeleteMessage: "Are you sure you want to delete the collection '{{collectionName}}'? This will remove {{bookCount}} books.",
         confirmEmptyDeleteMessage: "Are you sure you want to delete the empty collection '{{collectionName}}'?",
         exchangeRateError: "Warning: Failed to fetch current exchange rates. Using default rate (1 USD = 3.80 PLN). Please consider this in your valuation.",
-        bookUpdated: "Book updated successfully"
+        bookUpdated: "Book updated successfully",
+        lowBattery: 'Low battery',
+        lowBatteryCamera: 'Camera performance may be affected'
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -45,7 +47,10 @@ export default {
         loadingPublisher: 'Loading publisher...',
         loadingDescription: 'Loading description...',
         unknownTitle: 'Unknown title',
-        originalPrice: "Original price",
+        originalPrice: "Base price",
+        priceNotAvailable: 'Price not available',
+        suggestedPrice: 'Suggested price', // lub 'Recommended price'
+        noPrice: 'No price available',    // lub 'Price not available'
     },
     labels: {
         selectCollection: 'Select Collection',
@@ -63,7 +68,7 @@ export default {
         analyzeCondition: 'Analysis',
         manageCollections: 'Management',
         history: 'History',
-        editBook: "Edit Book"
+        editBook: "Analysis"
     },
     buttons: {
         addToCollection: 'Add to Collection',
@@ -79,12 +84,12 @@ export default {
         deleteCollection: "Delete Collection",
         confirm: "Confirm",
         clearHistory: 'Clear History',
-        saveChanges: "Save Changes"
+        saveChanges: "Save Changes",
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
         enterPrice: 'Enter price manually',
-        searchHistory: 'Search by ISBN/title'
+        searchHistory: 'Search by ISBN/title',
     },
     status: {
         requestingPermission: 'Requesting camera permission...',

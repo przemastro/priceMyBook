@@ -147,20 +147,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingHorizontal: responsive.largeMargin,
-        marginBottom: responsive.largeMargin,
+        marginBottom: responsive.smallMargin,
     },
     skipButton: {
         ...typography.body,
-        color: colors.gray,
+        color: colors.black,
     },
     nextButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: responsive.largeMargin,
-        paddingVertical: responsive.smallMargin,
-        borderRadius: 20,
+        ...typography.body,
+        color: colors.black,
     },
     nextButtonText: {
         ...typography.body,
-        color: colors.white,
+        color: colors.black,
     },
 });

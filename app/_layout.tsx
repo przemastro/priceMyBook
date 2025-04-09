@@ -6,6 +6,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { View, TouchableOpacity, Text } from 'react-native';
 import i18n from './i18n/config';
+import {colors} from "@/styles/styles";
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -75,9 +76,10 @@ const languageSwitchStyles = {
     top: 40,
     right: 20,
     zIndex: 100,
-    backgroundColor: 'white',
+    color: colors.background,
+    backgroundColor: colors.background,
     padding: 10,
-    borderRadius: 20,
+    borderRadius: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,

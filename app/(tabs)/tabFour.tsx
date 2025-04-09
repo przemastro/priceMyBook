@@ -123,18 +123,16 @@ export default function TabFourScreen() {
   return (
       <ScrollView contentContainerStyle={styles.container}>
         {exchangeRateError && (
-            <Text style={[typography.caption, { color: colors.error }]}>
+            <Text style={[typography.caption, { color: colors.error, textAlign: 'center' }]}>
               {t('alerts.exchangeRateError')} (1 USD = {exchangeRate.toFixed(2)} PLN)
             </Text>
         )}
 
-        {lastRateUpdate && (
-            <Text style={[typography.caption, { color: colors.gray }]}>
-              {t('labels.lastRateUpdate')}: {lastRateUpdate.toLocaleTimeString()}
-            </Text>
-        )}
-
-        <Text style={typography.h1}>{t('titles.manageCollections')}</Text>
+        <View style={styles.headerContainer}>
+          <Text style={[typography.h1, styles.headerText]}>
+            {t('titles.manageCollections')}
+          </Text>
+        </View>
 
         <View style={styles.addCollectionContainer}>
           <TextInput
@@ -231,6 +229,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: responsive.mediumMargin,
     backgroundColor: colors.background,
+    marginTop: responsive.largeMargin
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: responsive.mediumMargin,
+  },
+  headerText: {
+    textAlign: 'center',
+    width: '100%',
   },
   addCollectionContainer: {
     flexDirection: 'row',
@@ -247,30 +254,32 @@ const styles = StyleSheet.create({
     borderColor: colors.gray,
     borderWidth: 1,
     paddingLeft: 15,
-    borderRadius: 10,
+    borderRadius: 1,
     backgroundColor: colors.white,
     marginRight: responsive.smallMargin,
   },
   addButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: colors.black,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 1,
     minWidth: 100,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.3,
   },
   addButtonText: {
-    color: colors.white,
+    color: colors.black,
     fontWeight: 'bold',
   },
   collectionContainer: {
     marginBottom: responsive.largeMargin,
     borderWidth: 1,
     borderColor: colors.gray,
-    borderRadius: 10,
+    borderRadius: 1,
     backgroundColor: colors.white,
     overflow: 'hidden',
   },

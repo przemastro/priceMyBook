@@ -161,14 +161,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setScanHistory(prev => {
             const newItem = {
                 ...bookData,
-                foundInApi: bookData.foundInApi || false, // Domyślna wartość
-                createdAt: new Date().toISOString()
+                displayPrice: bookData.displayPrice || `$${parseFloat(bookData.price || '0').toFixed(2)}`,
+                originalPrice: bookData.originalPrice || bookData.price || '0',
+                createdAt: new Date().toISOString(),
+                foundInApi: bookData.foundInApi || false
             };
 
-            return [
-                newItem,
-                ...prev.filter(item => item.isbn !== bookData.isbn)
-            ].slice(0, 50);
+            console.log('Adding to history:', newItem); // Debug
+
+            return [newItem, ...prev.filter(item => item.isbn !== bookData.isbn)];
         });
     };
 

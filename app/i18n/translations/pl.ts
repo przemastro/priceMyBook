@@ -24,7 +24,9 @@ export default {
         confirmDeleteMessage: "Czy na pewno chcesz usunąć kolekcję '{{collectionName}}'? Spowoduje to usunięcie {{bookCount}} książek.",
         confirmEmptyDeleteMessage: "Czy na pewno chcesz usunąć pustą kolekcję '{{collectionName}}'?",
         exchangeRateError: "Uwaga: Nie udało się pobrać aktualnego kursu walut. Używamy kursu domyślnego (1 USD = 3.80 PLN). Proszę uwzględnić to w wycenie.",
-        bookUpdated: "Książka zaktualizowana pomyślnie"
+        bookUpdated: "Książka zaktualizowana pomyślnie",
+        lowBattery: 'Niski poziom baterii',
+        lowBatteryCamera: 'Wydajność kamery może być ograniczona'
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -33,7 +35,7 @@ export default {
         unknown: 'Nieznany',
         finalPrice: 'Cena końcowa',
         noISBN: 'Brak zeskanowanego ISBN',
-        basePrice: 'Cena bazowa',
+        basePrice: 'Cena pierwotna',
         scannedISBN: 'Zeskanowany ISBN',
         publisher: 'Wydawca',
         description: 'Opis',
@@ -44,6 +46,9 @@ export default {
         loadingDescription: 'Wczytywanie opisu...',
         unknownTitle: 'Nieznany tytuł',
         originalPrice: "Cena pierwotna",
+        priceNotAvailable: 'Cena niedostępna',
+        suggestedPrice: 'Sugerowana cena', // lub 'Cena rekomendowana'
+        noPrice: 'Brak dostępnej ceny',   // lub 'Cena niedostępna'
     },
     labels: {
         selectCollection: 'Wybierz kolekcję',
@@ -61,7 +66,7 @@ export default {
         analyzeCondition: 'Analiza',
         manageCollections: 'Zarządzanie',
         history: 'Historia',
-        editBook: "Edytuj książkę"
+        editBook: "Analiza"
     },
     buttons: {
         addToCollection: 'Dodaj do kolekcji',
