@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   Modal,
@@ -10,6 +10,9 @@ import {
   Alert,
   Image,
   ScrollView,
+  Animated,
+  Easing,
+  Dimensions
 } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useAppContext } from '@/context/AppContext';
@@ -17,6 +20,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, responsive, modal, globalStyles } from '@/styles/styles';
+import { Ionicons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
 
 const fetchBookInfoFromGoogleAPI = async (isbn: string) => {
   const API_KEY = ''; // Replace with your actual API key
@@ -57,6 +63,29 @@ export default function TabOneScreen() {
   const [manualPrice, setManualPrice] = useState('');
   const [cameraKey, setCameraKey] = useState(0);
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Animation effect
+  useEffect(() => {
+    const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.9,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true
+          })
+        ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
 
   // Language change handling
   useEffect(() => {
@@ -165,7 +194,6 @@ export default function TabOneScreen() {
   };
 
   const handlePrice = () => {
-    // Use manual price if entered, otherwise use API price
     const priceValue = manualPrice ? manualPrice :
         (bookInfo?.price ? bookInfo.price.toString() : '');
 
@@ -229,13 +257,22 @@ export default function TabOneScreen() {
   }
 
   return (
-      <View style={globalStyles.container} key={`camera-container-${cameraKey}`}>
+      <View style={styles.fullScreenContainer}>
         {!scanned && (
             <BarCodeScanner
                 key={`barcode-scanner-${cameraKey}`}
                 onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-                style={StyleSheet.absoluteFillObject}
-            />
+                style={[StyleSheet.absoluteFill, styles.barcodeScanner]}
+            >
+              <View style={styles.cameraOverlay}>
+                <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
+                  <View style={styles.scanFrameTopLeft} />
+                  <View style={styles.scanFrameTopRight} />
+                  <View style={styles.scanFrameBottomLeft} />
+                  <View style={styles.scanFrameBottomRight} />
+                </Animated.View>
+              </View>
+            </BarCodeScanner>
         )}
 
         <Modal
@@ -319,6 +356,66 @@ export default function TabOneScreen() {
 }
 
 const styles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  barcodeScanner: {
+    width: '100%',
+    height: '100%',
+  },
+  cameraOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  scanFrame: {
+    width: width * 0.7,
+    height: width * 0.7,
+    position: 'relative',
+    backgroundColor: 'transparent',
+  },
+  scanFrameTopLeft: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 50,
+    height: 50,
+    borderLeftWidth: 4,
+    borderTopWidth: 4,
+    borderColor: 'white',
+  },
+  scanFrameTopRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 50,
+    height: 50,
+    borderRightWidth: 4,
+    borderTopWidth: 4,
+    borderColor: 'white',
+  },
+  scanFrameBottomLeft: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: 50,
+    height: 50,
+    borderLeftWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: 'white',
+  },
+  scanFrameBottomRight: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 50,
+    height: 50,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: 'white',
+  },
   bookInfoContainer: {
     marginBottom: responsive.mediumMargin,
   },

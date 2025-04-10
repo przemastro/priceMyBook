@@ -28,7 +28,11 @@ export default {
         exchangeRateError: "Warning: Failed to fetch current exchange rates. Using default rate (1 USD = 3.80 PLN). Please consider this in your valuation.",
         bookUpdated: "Book updated successfully",
         lowBattery: 'Low battery',
-        lowBatteryCamera: 'Camera performance may be affected'
+        lowBatteryCamera: 'Camera performance may be affected',
+        modelLoadError: 'Failed to load the AI model',
+        imagePickError: 'Failed to select image',
+        analysisError: 'Failed to analyze image',
+        cameraError: 'Camera error',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -61,7 +65,13 @@ export default {
         noBooksInCollection: 'No books in this collection',
         lastRateUpdate: "Rate updated at",
         noScanHistory: 'No scan history yet',
-        defects: "Defects"
+        defects: "Defects",
+        analyzeImage: 'Analyze Book Image',
+        noImageSelected: 'No image selected',
+        confidence: 'confidence',
+        scanningDefects: 'Scan for defects',
+        defectDetected: 'Defect detected',
+        priceReduction: 'Price reduction',
     },
     titles: {
         scan: 'Scan ISBN',
@@ -85,6 +95,13 @@ export default {
         confirm: "Confirm",
         clearHistory: 'Clear History',
         saveChanges: "Save Changes",
+        selectImage: 'Select Image',
+        analyzeImage: 'Analyze',
+        startScanning: 'Start Scanning',
+        stopScanning: 'Stop Scanning',
+        simulateDefect: 'Simulate Defect',
+        confirmDefect: 'Confirm',
+        reject: 'Reject',
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
@@ -96,7 +113,8 @@ export default {
         noCameraAccess: 'No access to camera',
         scanning: "Scanning...",
         found: 'Found in database',
-        notFound: 'Not found in database'
+        notFound: 'Not found in database',
+        initializing: 'Initializing...',
     },
     currency: {
         symbol: '$',

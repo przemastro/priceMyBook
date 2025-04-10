@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getExchangeRate, ExchangeRateResult } from '@/services/currencyService';
+import i18n from '@/app/i18n/config';
 
 interface BookDefect {
     selected: boolean;
     reduction?: number;
 }
+
 interface BookData {
     isbn: string;
     title: string;
@@ -34,6 +36,8 @@ interface AppContextType {
     scanHistory: BookData[];
     addToScanHistory: (bookData: Omit<BookData, 'createdAt'>) => void;
     clearScanHistory: () => void;
+    formatCurrency: (price: string) => string;
+    updateBookInCollection: (collectionName: string, bookIndex: number, updatedData: Partial<BookData>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -58,15 +62,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useEffect(() => {
         const loadPersistedData = async () => {
             try {
-                const [history, collections, books] = await Promise.all([
+                const [history, collections, books, rate] = await Promise.all([
                     AsyncStorage.getItem(STORAGE_KEYS.SCAN_HISTORY),
                     AsyncStorage.getItem(STORAGE_KEYS.COLLECTIONS),
-                    AsyncStorage.getItem(STORAGE_KEYS.BOOKS)
+                    AsyncStorage.getItem(STORAGE_KEYS.BOOKS),
+                    AsyncStorage.getItem(STORAGE_KEYS.EXCHANGE_RATE)
                 ]);
 
                 if (history) setScanHistory(JSON.parse(history));
                 if (collections) setCollections(JSON.parse(collections));
                 if (books) setBooks(JSON.parse(books));
+                if (rate) {
+                    const { rate: savedRate, error, timestamp } = JSON.parse(rate);
+                    setExchangeRate(savedRate);
+                    setExchangeRateError(error);
+                    setLastRateUpdate(new Date(timestamp));
+                }
 
                 await refreshExchangeRate();
             } catch (error) {
@@ -109,10 +120,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
     };
 
+    const formatCurrency = (price: string) => {
+        const priceNumber = parseFloat(price) || 0;
+        if (i18n.language === 'pl') {
+            return `${priceNumber.toFixed(2)} PLN`;
+        }
+        const usdPrice = priceNumber / exchangeRate;
+        return `$${usdPrice.toFixed(2)}`;
+    };
+
     // Collections management
     const addCollection = (name: string) => {
-        if (!name || collections.includes(name)) return;
-        setCollections([...collections, name]);
+        if (!name.trim() || collections.includes(name)) return;
+        const newCollections = [...collections, name];
+        setCollections(newCollections);
         setBooks(prev => ({ ...prev, [name]: [] }));
     };
 
@@ -136,15 +157,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 newBooks[collectionName] = [];
             }
 
-            // Dodajemy ISBN do danych książki
             const bookWithISBN = {
                 ...bookData,
                 isbn: bookData.isbn,
                 createdAt: new Date().toISOString(),
-                defects: bookData.defects || {}
+                defects: bookData.defects || {},
+                displayPrice: bookData.displayPrice || formatCurrency(bookData.price)
             };
 
             newBooks[collectionName].push(bookWithISBN);
+            return newBooks;
+        });
+    };
+
+    const updateBookInCollection = (
+        collectionName: string,
+        bookIndex: number,
+        updatedData: Partial<BookData>
+    ) => {
+        setBooks(prev => {
+            const newBooks = { ...prev };
+            if (newBooks[collectionName] && newBooks[collectionName][bookIndex]) {
+                newBooks[collectionName][bookIndex] = {
+                    ...newBooks[collectionName][bookIndex],
+                    ...updatedData,
+                    displayPrice: updatedData.price ? formatCurrency(updatedData.price) :
+                        newBooks[collectionName][bookIndex].displayPrice
+                };
+            }
             return newBooks;
         });
     };
@@ -161,13 +201,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setScanHistory(prev => {
             const newItem = {
                 ...bookData,
-                displayPrice: bookData.displayPrice || `$${parseFloat(bookData.price || '0').toFixed(2)}`,
+                displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
                 originalPrice: bookData.originalPrice || bookData.price || '0',
                 createdAt: new Date().toISOString(),
                 foundInApi: bookData.foundInApi || false
             };
-
-            console.log('Adding to history:', newItem); // Debug
 
             return [newItem, ...prev.filter(item => item.isbn !== bookData.isbn)];
         });
@@ -187,6 +225,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 removeCollection,
                 books,
                 addBookToCollection,
+                updateBookInCollection,
                 removeBookFromCollection,
                 exchangeRate,
                 exchangeRateError,
@@ -194,7 +233,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 refreshExchangeRate,
                 scanHistory,
                 addToScanHistory,
-                clearScanHistory
+                clearScanHistory,
+                formatCurrency
             }}
         >
             {children}

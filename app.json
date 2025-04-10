@@ -12,9 +12,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": ["assets/model/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.priceMyBook"
+      "bundleIdentifier": "com.priceMyBook",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Aplikacja potrzebuje dostępu do kamery do skanowania książek",
+        "NSPhotoLibraryUsageDescription": "Aplikacja potrzebuje dostępu do galerii do analizy zdjęć książek",
+        "NSMicrophoneUsageDescription": "Aplikacja może potrzebować dostępu do mikrofonu dla niektórych funkcji"
+      }
     },
     "android": {
       "package": "com.jagodzip.priceMyBook",
@@ -23,15 +29,32 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.CAMERA"
-      ]
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "softwareKeyboardLayoutMode": "pan"
     },
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Aplikacja potrzebuje dostępu do zdjęć do analizy stanu książek.",
+          "cameraPermission": "Aplikacja potrzebuje dostępu do kamery do robienia zdjęć książek."
+        }
+      ],
+      [
         "expo-barcode-scanner",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera."
+          "cameraPermission": "Aplikacja potrzebuje dostępu do kamery do skanowania kodów kreskowych."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Aplikacja potrzebuje dostępu do kamery do analizy stanu książek."
         }
       ],
       "expo-localization",
@@ -42,23 +65,53 @@
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
             "buildToolsVersion": "34.0.0",
-            "javaVersion": "17"
+            "javaVersion": "17",
+            "enableProguardInReleaseBuilds": true,
+            "extraMavenRepos": [
+              "$rootDir/../node_modules/@tensorflow/tfjs-react-native/dist/tfjs-react-native.aar"
+            ]
           },
           "ios": {
-            "deploymentTarget": "15.0"
+            "deploymentTarget": "15.0",
+            "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
     },
     "extra": {
       "router": {
-        "origin": false
+        "origin": false,
+        "root": "./app",
+        "asyncRoutes": {
+          "(tabs)/index": "./app/(tabs)/index",
+          "(tabs)/two": "./app/(tabs)/two",
+          "(tabs)/three": "./app/(tabs)/three",
+          "(tabs)/four": "./app/(tabs)/four"
+        }
       },
       "eas": {
         "projectId": "475267f1-a846-4802-a6e9-a58d2db082af"
+      }
+    },
+    "packagerOpts": {
+      "config": "metro.config.js",
+      "sourceExts": [
+        "js",
+        "jsx",
+        "json",
+        "ts",
+        "tsx",
+        "bin",
+        "cjs"
+      ],
+      "transformer": {
+        "experimentalImportSupport": false,
+        "inlineRequires": true
       }
     },
     "owner": "jagodzip"

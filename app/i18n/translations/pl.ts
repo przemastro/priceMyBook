@@ -26,7 +26,11 @@ export default {
         exchangeRateError: "Uwaga: Nie udało się pobrać aktualnego kursu walut. Używamy kursu domyślnego (1 USD = 3.80 PLN). Proszę uwzględnić to w wycenie.",
         bookUpdated: "Książka zaktualizowana pomyślnie",
         lowBattery: 'Niski poziom baterii',
-        lowBatteryCamera: 'Wydajność kamery może być ograniczona'
+        lowBatteryCamera: 'Wydajność kamery może być ograniczona',
+        modelLoadError: 'Nie udało się załadować modelu AI',
+        imagePickError: 'Nie udało się wybrać zdjęcia',
+        analysisError: 'Nie udało się przeanalizować zdjęcia',
+        cameraError: 'Błąd kamery',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -59,7 +63,13 @@ export default {
         noBooksInCollection: 'Brak książek w kolekcji',
         lastRateUpdate: "Kurs zaktualizowany o",
         noScanHistory: 'Brak historii skanowań',
-        defects: "Wady"
+        defects: "Wady",
+        analyzeImage: 'Analizuj zdjęcie książki',
+        noImageSelected: 'Brak wybranego zdjęcia',
+        confidence: 'pewność',
+        scanningDefects: 'Skanuj w poszukiwaniu wad',
+        defectDetected: 'Wykryto wadę',
+        priceReduction: 'Obniżka ceny',
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -82,7 +92,14 @@ export default {
         deleteCollection: "Usuń kolekcję",
         confirm: "Potwierdź",
         clearHistory: 'Wyczyść historię',
-        saveChanges: "Zapisz zmiany"
+        saveChanges: "Zapisz zmiany",
+        selectImage: 'Wybierz zdjęcie',
+        analyzeImage: 'Analizuj',
+        startScanning: 'Rozpocznij skanowanie',
+        stopScanning: 'Zatrzymaj skanowanie',
+        simulateDefect: 'Symuluj wadę',
+        confirmDefect: 'Potwierdź',
+        reject: 'Odrzuć',
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę kolekcji',
@@ -94,6 +111,7 @@ export default {
         noCameraAccess: 'Brak dostępu do kamery',
         scanning: "Skanowanie...",
         found: 'Znalezione w bazie danych',
-        notFound: 'Nieznalezione w bazie danych'
+        notFound: 'Nieznalezione w bazie danych',
+        initializing: 'Inicjalizacja...',
     }
 };
