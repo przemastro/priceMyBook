@@ -19,10 +19,10 @@ import { useAppContext } from '@/context/AppContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, responsive, modal, globalStyles } from '@/styles/styles';
+import { colors, typography } from '@/styles/styles';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const fetchBookInfoFromGoogleAPI = async (isbn: string) => {
   const API_KEY = ''; // Replace with your actual API key
@@ -61,8 +61,10 @@ export default function TabOneScreen() {
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [manualPrice, setManualPrice] = useState('');
+  const [manualISBN, setManualISBN] = useState('');
   const [cameraKey, setCameraKey] = useState(0);
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [isManualMode, setIsManualMode] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Animation effect
@@ -70,13 +72,13 @@ export default function TabOneScreen() {
     const animation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.2,
+            toValue: 1.1,
             duration: 1000,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true
           }),
           Animated.timing(pulseAnim, {
-            toValue: 0.9,
+            toValue: 1,
             duration: 1000,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true
@@ -115,9 +117,11 @@ export default function TabOneScreen() {
     setModalVisible(false);
     setBookInfo(null);
     setManualPrice('');
+    setIsManualMode(false);
+    setManualISBN('');
   }, []);
 
-  // Handle focus effect
+  // Handle focus effect - always start in scan mode
   useFocusEffect(
       useCallback(() => {
         let isActive = true;
@@ -193,6 +197,57 @@ export default function TabOneScreen() {
     }
   };
 
+  const handleManualSubmit = () => {
+    if (!manualISBN.trim()) {
+      Alert.alert(t('alerts.error'), t('alerts.enterISBN'));
+      return;
+    }
+
+    setISBN(manualISBN);
+    setModalVisible(true);
+    setLoading(true);
+
+    // Temporary entry
+    addToScanHistory({
+      isbn: manualISBN,
+      title: 'Searching...',
+      authors: '...',
+      price: '0',
+      displayPrice: 'N/A',
+      originalPrice: '0',
+      foundInApi: false
+    });
+
+    fetchBookInfoFromGoogleAPI(manualISBN)
+        .then(book => {
+          setBookInfo(book);
+          addToScanHistory({
+            isbn: manualISBN,
+            title: book.title || 'Not Found',
+            authors: book.authors || 'Unknown',
+            price: book.price ? book.price.toString() : '0',
+            displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
+            originalPrice: book.price ? book.price.toString() : '0',
+            foundInApi: !!book.title
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          addToScanHistory({
+            isbn: manualISBN,
+            title: 'Not Found',
+            authors: 'Unknown',
+            price: '0',
+            displayPrice: 'N/A',
+            originalPrice: '0',
+            foundInApi: false
+          });
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+  };
+
   const handlePrice = () => {
     const priceValue = manualPrice ? manualPrice :
         (bookInfo?.price ? bookInfo.price.toString() : '');
@@ -231,9 +286,14 @@ export default function TabOneScreen() {
     resetScanner();
   };
 
+  const toggleManualMode = () => {
+    setIsManualMode(true);
+    setScanned(true); // Prevent scanning while in manual mode
+  };
+
   if (hasPermission === null) {
     return (
-        <View style={globalStyles.container}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text>{t('status.requestingPermission')}</Text>
         </View>
@@ -242,8 +302,8 @@ export default function TabOneScreen() {
 
   if (hasPermission === false) {
     return (
-        <View style={globalStyles.container}>
-          <Text style={{ marginBottom: 20 }}>{t('status.noCameraAccess')}</Text>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>{t('status.noCameraAccess')}</Text>
           <TouchableOpacity
               style={styles.permissionButton}
               onPress={getBarCodeScannerPermissions}
@@ -258,21 +318,65 @@ export default function TabOneScreen() {
 
   return (
       <View style={styles.fullScreenContainer}>
-        {!scanned && (
+        {!isManualMode && !scanned && (
             <BarCodeScanner
                 key={`barcode-scanner-${cameraKey}`}
                 onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
                 style={[StyleSheet.absoluteFill, styles.barcodeScanner]}
             >
               <View style={styles.cameraOverlay}>
+                <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={toggleManualMode}
+                >
+                  <Ionicons name="close" size={32} color="white" />
+                </TouchableOpacity>
+
                 <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
                   <View style={styles.scanFrameTopLeft} />
                   <View style={styles.scanFrameTopRight} />
                   <View style={styles.scanFrameBottomLeft} />
                   <View style={styles.scanFrameBottomRight} />
                 </Animated.View>
+
+                <Text style={styles.scanHintText}>{t('labels.scanBarcode')}</Text>
               </View>
             </BarCodeScanner>
+        )}
+
+        {isManualMode && (
+            <View style={styles.manualInputContainer}>
+              <Text style={[typography.h1, styles.manualInputTitle]}>{t('labels.enterISBNManually')}</Text>
+
+              <TextInput
+                  style={styles.input}
+                  placeholder={t('placeholders.enterISBN')}
+                  placeholderTextColor="#888"
+                  keyboardType="numeric"
+                  value={manualISBN}
+                  onChangeText={setManualISBN}
+                  autoFocus
+              />
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={resetScanner}
+                >
+                  <Text style={styles.cancelButtonText}>
+                    {t('buttons.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.button, styles.submitButton]}
+                    onPress={handleManualSubmit}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {t('buttons.submit')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
         )}
 
         <Modal
@@ -282,9 +386,9 @@ export default function TabOneScreen() {
             onRequestClose={handleCancel}
             key={currentLang}
         >
-          <View style={modal.container}>
-            <ScrollView contentContainerStyle={modal.content}>
-              <Text style={typography.h1}>
+          <View style={styles.modalContainer}>
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <Text style={[typography.h1, styles.modalTitle]}>
                 {t('bookInfo.scannedISBN')}: {isbn}
               </Text>
 
@@ -294,33 +398,34 @@ export default function TabOneScreen() {
                   <>
                     {bookInfo && (
                         <View style={styles.bookInfoContainer}>
-                          <Text style={typography.body}>
-                            {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
-                          </Text>
-                          <Text style={typography.body}>
-                            {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
-                          </Text>
-                          {bookInfo.publisher && (
-                              <Text style={typography.body}>
-                                {t('bookInfo.publisher')}: {bookInfo.publisher}
-                              </Text>
-                          )}
                           {bookInfo.image && (
                               <Image
                                   source={{ uri: bookInfo.image }}
                                   style={styles.bookImage}
                               />
                           )}
+                          <Text style={styles.bookInfoText}>
+                            {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
+                          </Text>
+                          <Text style={styles.bookInfoText}>
+                            {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
+                          </Text>
+                          {bookInfo.publisher && (
+                              <Text style={styles.bookInfoText}>
+                                {t('bookInfo.publisher')}: {bookInfo.publisher}
+                              </Text>
+                          )}
                         </View>
                     )}
 
                     <View style={styles.priceInputContainer}>
-                      <Text style={typography.caption}>
+                      <Text style={styles.suggestedPriceText}>
                         {t('bookInfo.suggestedPrice')}: {bookInfo?.price ? `$${bookInfo.price.toFixed(2)}` : t('bookInfo.noPrice')}
                       </Text>
                       <TextInput
                           style={styles.input}
                           placeholder={t('placeholders.enterPrice')}
+                          placeholderTextColor="#888"
                           keyboardType="numeric"
                           value={manualPrice}
                           onChangeText={setManualPrice}
@@ -330,15 +435,15 @@ export default function TabOneScreen() {
 
                     <View style={styles.buttonContainer}>
                       <TouchableOpacity
-                          style={styles.actionButton}
+                          style={[styles.button, styles.primaryButton]}
                           onPress={handlePrice}
                       >
-                        <Text style={styles.actionButtonText}>
+                        <Text style={styles.continueButtonText}>
                           {t('buttons.continue')}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                          style={[styles.cancelButton]}
+                          style={[styles.button, styles.cancelButton]}
                           onPress={handleCancel}
                       >
                         <Text style={styles.cancelButtonText}>
@@ -370,9 +475,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
+    borderRadius: 50,
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
   scanFrame: {
     width: width * 0.7,
-    height: width * 0.7,
+    height: width * 0.8,
     position: 'relative',
     backgroundColor: 'transparent',
   },
@@ -416,61 +530,132 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: 'white',
   },
+  scanHintText: {
+    color: 'white',
+    marginTop: 20,
+    fontSize: 16,
+  },
+  manualInputContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  manualInputTitle: {
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#f8f9fa',
+  },
+  permissionText: {
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#2c3e50',
+  },
+  permissionButton: {
+    backgroundColor: colors.primary,
+    padding: 16,
+    borderRadius: 5,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontWeight: '500',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    margin: 20,
+    borderRadius: 5,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    marginBottom: 16,
+    textAlign: 'center',
+  },
   bookInfoContainer: {
-    marginBottom: responsive.mediumMargin,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  bookInfoText: {
+    ...typography.body,
+    marginBottom: 8,
+  },
+  bookImage: {
+    width: 120,
+    height: 180,
+    marginBottom: 16,
+    borderRadius: 5,
   },
   priceInputContainer: {
     width: '100%',
-    marginBottom: responsive.mediumMargin,
+    marginBottom: 16,
+  },
+  suggestedPriceText: {
+    ...typography.caption,
+    marginBottom: 8,
+    color: colors.primary,
   },
   input: {
     height: 50,
-    borderColor: colors.gray,
+    borderColor: 'rgba(0,0,0,0.1)',
     borderWidth: 1,
-    paddingLeft: 15,
-    width: '100%',
-    borderRadius: 1,
-    backgroundColor: colors.background,
-    marginTop: responsive.smallMargin,
+    borderRadius: 5,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    color: colors.black,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: responsive.mediumMargin,
+    marginTop: 16,
   },
-  bookImage: {
-    width: 100,
-    height: 150,
-    marginTop: responsive.smallMargin,
-    resizeMode: 'contain',
-    borderRadius: 10,
-    alignSelf: 'center',
-  },
-  permissionButton: {
-    backgroundColor: colors.primary,
-    padding: 15,
-    borderRadius: 1,
+  button: {
+    flex: 1,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 5,
+    marginHorizontal: 8,
   },
-  permissionButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
+  primaryButton: {
+    backgroundColor: colors.primary,
   },
-  actionButton: {
-    ...typography.body,
-    color: colors.black,
+  submitButton: {
+    backgroundColor: colors.primary,
   },
   cancelButton: {
-    ...typography.body,
-    color: colors.black,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
-  actionButtonText: {
-    ...typography.body,
-    color: colors.black,
+  continueButtonText: {
+    fontWeight: '600',
+    color: colors.white
+  },
+  submitButtonText: {
+    fontWeight: '600',
+    color: colors.white
   },
   cancelButtonText: {
-    ...typography.body,
-    color: colors.black,
+    fontWeight: '600',
+    color: colors.black
   },
 });

@@ -33,6 +33,7 @@ export default {
         imagePickError: 'Failed to select image',
         analysisError: 'Failed to analyze image',
         cameraError: 'Camera error',
+        enterISBN: 'Please enter a valid ISBN number',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -72,8 +73,18 @@ export default {
         scanningDefects: 'Scan for defects',
         defectDetected: 'Defect detected',
         priceReduction: 'Price reduction',
+        scanBarcode: 'Scan barcode',
+        enterISBNManually: 'Enter ISBN manually',
+        books: 'Books'
     },
     titles: {
+        scan: 'Scan ISBN',
+        analyzeCondition: 'Analyze book condition',
+        manageCollections: 'Manage collections',
+        history: 'Scan history',
+        editBook: 'Analyze book condition'
+    },
+    titlesShort: {
         scan: 'Scan ISBN',
         analyzeCondition: 'Analysis',
         manageCollections: 'Management',
@@ -102,11 +113,14 @@ export default {
         simulateDefect: 'Simulate Defect',
         confirmDefect: 'Confirm',
         reject: 'Reject',
+        submit: 'Submit',
+        backToScanner: 'Back to scanner',
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
         enterPrice: 'Enter price manually',
         searchHistory: 'Search by ISBN/title',
+        enterISBN: 'Enter ISBN number',
     },
     status: {
         requestingPermission: 'Requesting camera permission...',
@@ -115,6 +129,7 @@ export default {
         found: 'Found in database',
         notFound: 'Not found in database',
         initializing: 'Initializing...',
+        manualEntry: 'Manual ISBN entry',
     },
     currency: {
         symbol: '$',

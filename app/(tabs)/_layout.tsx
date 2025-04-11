@@ -6,6 +6,7 @@ import Colors from '@/constants/Colors';
 import { AppProvider } from '@/context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet } from 'react-native';
+import { colors } from "@/styles/styles";
 
 function TabBarIcon(props: {
     name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -18,21 +19,26 @@ export default function TabLayout() {
     const colorScheme = useColorScheme();
     const { t } = useTranslation();
 
-    const themeColors = colorScheme === 'dark' ? Colors.dark : Colors.light;
-    const activeColor = themeColors.tint || 'blue';
-    const inactiveColor = themeColors.tabIconDefault || 'gray';
-
     return (
         <AppProvider>
             <Tabs
                 initialRouteName="tabOne"
                 screenOptions={{
-                    tabBarActiveTintColor: activeColor,
-                    tabBarInactiveTintColor: inactiveColor,
+                    tabBarActiveTintColor: colors.primary, // Wymuszamy kolor primary
+                    tabBarInactiveTintColor: '#8e8e93', // Szary dla nieaktywnych
                     headerShown: false,
                     tabBarStyle: {
                         ...styles.tabBar,
-                        backgroundColor: themeColors.background,
+                        backgroundColor: '#ffffff', // Stałe białe tło niezależne od motywu
+                        borderTopWidth: 0,
+                        shadowColor: '#000',
+                        shadowOffset: {
+                            width: 0,
+                            height: -2, // Cień od góry
+                        },
+                        shadowOpacity: 0.08,
+                        shadowRadius: 4,
+                        elevation: 8, // Dla Androida
                     },
                     tabBarLabelStyle: styles.tabBarLabel,
                     tabBarItemStyle: styles.tabBarItem,
@@ -41,11 +47,11 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="tabOne"
                     options={{
-                        title: t('titles.scan'),
+                        title: t('titlesShort.scan'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="camera"
-                                color={focused ? activeColor : color}
+                                color={focused ? colors.primary : color}
                             />
                         ),
                     }}
@@ -53,11 +59,11 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="tabTwo"
                     options={{
-                        title: t('titles.history'),
+                        title: t('titlesShort.history'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="history"
-                                color={focused ? activeColor : color}
+                                color={focused ? colors.primary : color}
                             />
                         ),
                     }}
@@ -65,11 +71,11 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="tabThree"
                     options={{
-                        title: t('titles.analyzeCondition'),
+                        title: t('titlesShort.analyzeCondition'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="cogs"
-                                color={focused ? activeColor : color}
+                                color={focused ? colors.primary : color}
                             />
                         ),
                     }}
@@ -77,11 +83,11 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="tabFour"
                     options={{
-                        title: t('titles.manageCollections'),
+                        title: t('titlesShort.manageCollections'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="book"
-                                color={focused ? activeColor : color}
+                                color={focused ? colors.primary : color}
                             />
                         ),
                     }}
@@ -102,11 +108,10 @@ const styles = StyleSheet.create({
             android: 5,
         }),
         paddingTop: 5,
-        borderTopWidth: 0,
-        elevation: 0,
     },
     tabBarLabel: {
         fontSize: 12,
+        fontWeight: '500',
         marginBottom: Platform.select({
             ios: 15,
             android: 5,

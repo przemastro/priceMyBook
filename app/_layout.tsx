@@ -1,12 +1,13 @@
 import { Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { View, TouchableOpacity, Text } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
 import i18n from './i18n/config';
-import {colors} from "@/styles/styles";
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from "@/styles/styles";
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -41,11 +42,26 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { t } = useTranslation();
+  const spinValue = useRef(new Animated.Value(0)).current;
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'pl' ? 'en' : 'pl';
     i18n.changeLanguage(newLang);
+
+    // Animacja obrotu ikony
+    spinValue.setValue(0);
+    Animated.spring(spinValue, {
+      toValue: 1,
+      friction: 5,
+      tension: 30,
+      useNativeDriver: true,
+    }).start();
   };
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
 
   return (
       <>
@@ -59,29 +75,46 @@ function RootLayoutNav() {
               }}
           />
         </Stack>
-        <View style={languageSwitchStyles.container}>
-          <TouchableOpacity onPress={toggleLanguage}>
-            <Text style={languageSwitchStyles.text}>
-              {i18n.language === 'pl' ? 'EN' : 'PL'}
-            </Text>
+
+        <View style={styles.headerButtonsContainer}>
+          {/* Przycisk zmiany języka z animacją */}
+          <TouchableOpacity
+              style={styles.iconButton}
+              onPress={toggleLanguage}
+              activeOpacity={0.7}
+          >
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <Text style={styles.languageText}>
+                {i18n.language === 'pl' ? 'EN' : 'PL'}
+              </Text>
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </>
   );
 }
 
-const languageSwitchStyles = {
-  container: {
-    position: 'absolute' as const,
+const styles = StyleSheet.create({
+  headerButtonsContainer: {
+    position: 'absolute',
     top: 40,
     right: 20,
     zIndex: 100,
-    padding: 10,
-    elevation: 5,
+    backgroundColor: 'transparent',
   },
-  text: {
+  iconButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+  },
+  languageText: {
+    marginLeft: 8,
     fontSize: 16,
-    fontWeight: 'bold' as const,
-    color: '#007AFF',
+    fontWeight: '600',
+    color: colors.primary,
+    backgroundColor: 'transparent',
   },
-};
+});

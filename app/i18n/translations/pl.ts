@@ -31,6 +31,7 @@ export default {
         imagePickError: 'Nie udało się wybrać zdjęcia',
         analysisError: 'Nie udało się przeanalizować zdjęcia',
         cameraError: 'Błąd kamery',
+        enterISBN: 'Proszę wprowadzić poprawny numer ISBN',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -70,8 +71,18 @@ export default {
         scanningDefects: 'Skanuj w poszukiwaniu wad',
         defectDetected: 'Wykryto wadę',
         priceReduction: 'Obniżka ceny',
+        scanBarcode: 'Skanuj kod kreskowy',
+        enterISBNManually: 'Wprowadź ISBN ręcznie',
+        books: 'Książek'
     },
     titles: {
+        scan: 'Skanuj ISBN',
+        analyzeCondition: 'Analiza stanu książki',
+        manageCollections: 'Zarządzanie kolekcjami',
+        history: 'Historia skanowań',
+        editBook: "Analiza stanu książki"
+    },
+    titlesShort: {
         scan: 'Skanuj ISBN',
         analyzeCondition: 'Analiza',
         manageCollections: 'Zarządzanie',
@@ -100,11 +111,14 @@ export default {
         simulateDefect: 'Symuluj wadę',
         confirmDefect: 'Potwierdź',
         reject: 'Odrzuć',
+        submit: 'Zatwierdź',
+        backToScanner: 'Powrót do skanera',
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę kolekcji',
         enterPrice: 'Wprowadź cenę ręcznie',
-        searchHistory: 'Szukaj po ISBN/tytule'
+        searchHistory: 'Szukaj po ISBN/tytule',
+        enterISBN: 'Wprowadź numer ISBN',
     },
     status: {
         requestingPermission: 'Proszę czekać...',
@@ -113,5 +127,6 @@ export default {
         found: 'Znalezione w bazie danych',
         notFound: 'Nieznalezione w bazie danych',
         initializing: 'Inicjalizacja...',
+        manualEntry: 'Ręczne wprowadzanie ISBN',
     }
 };

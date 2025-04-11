@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Redirect, router } from 'expo-router';
-import { colors, typography, responsive } from '@/styles/styles';
+import { colors, typography } from '@/styles/styles';
 
 const { width } = Dimensions.get('window');
 
@@ -26,9 +26,10 @@ const slides = [
     },
 ];
 
-export default function Index() {
+export default function WelcomeScreen() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showApp, setShowApp] = useState(false);
+    const scrollViewRef = useRef<ScrollView>(null);
 
     const handleScroll = (event: any) => {
         const x = event.nativeEvent.contentOffset.x;
@@ -47,8 +48,6 @@ export default function Index() {
             setShowApp(true);
         }
     };
-
-    const scrollViewRef = React.useRef<ScrollView>(null);
 
     if (showApp) {
         return <Redirect href="/(tabs)/tabOne" />;
@@ -86,8 +85,8 @@ export default function Index() {
             </View>
 
             <View style={styles.buttonsContainer}>
-                <TouchableOpacity onPress={handleSkip}>
-                    <Text style={styles.skipButton}>Pomiń</Text>
+                <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                    <Text style={styles.skipButtonText}>Pomiń</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
@@ -103,41 +102,44 @@ export default function Index() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#f8f9fa',
+        justifyContent: 'center',
     },
     slide: {
         width,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: responsive.largeMargin,
+        padding: 40,
     },
     image: {
         width: width * 0.8,
         height: width * 0.8,
         resizeMode: 'contain',
-        marginBottom: responsive.largeMargin,
+        marginBottom: 40,
     },
     title: {
         ...typography.h1,
         textAlign: 'center',
-        marginBottom: responsive.smallMargin,
+        marginBottom: 16,
+        color: colors.black,
     },
     description: {
         ...typography.body,
         textAlign: 'center',
-        color: colors.gray,
-        paddingHorizontal: responsive.mediumMargin,
+        color: '#5c6b7e',
+        paddingHorizontal: 24,
+        lineHeight: 24,
     },
     pagination: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: responsive.largeMargin,
+        marginBottom: 40,
     },
     dot: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: colors.gray,
+        backgroundColor: '#e0e3e7',
         marginHorizontal: 5,
     },
     activeDot: {
@@ -146,19 +148,31 @@ const styles = StyleSheet.create({
     buttonsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: responsive.largeMargin,
-        marginBottom: responsive.smallMargin,
+        alignItems: 'center',
+        paddingHorizontal: 40,
+        marginBottom: 24,
     },
     skipButton: {
+        padding: 12,
+    },
+    skipButtonText: {
         ...typography.body,
-        color: colors.black,
+        color: '#5c6b7e',
     },
     nextButton: {
-        ...typography.body,
-        color: colors.black,
+        backgroundColor: colors.primary,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 5,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 3,
     },
     nextButtonText: {
         ...typography.body,
-        color: colors.black,
+        color: 'white',
+        fontWeight: '600',
     },
 });

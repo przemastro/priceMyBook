@@ -6,7 +6,6 @@ import { typography, colors, responsive } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import i18n from "i18next";
 
-
 export default function TabTwoScreen() {
     const { scanHistory, clearScanHistory, exchangeRate, exchangeRateError } = useAppContext();
     const router = useRouter();
@@ -72,7 +71,6 @@ export default function TabTwoScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Dodany nagłówek strony */}
             <Text style={[typography.h1, styles.header]}>
                 {t('titles.history')}
             </Text>
@@ -82,6 +80,7 @@ export default function TabTwoScreen() {
                 placeholder={t('placeholders.searchHistory')}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                placeholderTextColor="#888"
             />
 
             <FlatList
@@ -89,8 +88,11 @@ export default function TabTwoScreen() {
                 keyExtractor={(item) => item.isbn + (item.createdAt || '')}
                 renderItem={renderItem}
                 ListEmptyComponent={
-                    <Text style={styles.emptyText}>{t('labels.noScanHistory')}</Text>
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>{t('labels.noScanHistory')}</Text>
+                    </View>
                 }
+                contentContainerStyle={styles.listContent}
             />
 
             {scanHistory.length > 0 && (
@@ -107,51 +109,61 @@ export default function TabTwoScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        padding: responsive.mediumMargin,
-        backgroundColor: colors.background,
-        marginTop: responsive.largeMargin,
+        flexGrow: 1,
+        padding: 16,
+        backgroundColor: '#f8f9fa',
     },
     header: {
-        marginBottom: responsive.mediumMargin,
+        marginBottom: 24,
+        marginTop: responsive.largeMargin,
         textAlign: 'center',
+        color: colors.black,
     },
     searchInput: {
         height: 50,
-        borderColor: colors.gray,
+        borderColor: 'rgba(0,0,0,0.1)',
         borderWidth: 1,
-        borderRadius: 1,
-        padding: 15,
-        marginBottom: responsive.mediumMargin,
+        borderRadius: 5,
+        paddingHorizontal: 16,
+        marginBottom: 16,
         backgroundColor: colors.white,
+        color: colors.black,
     },
     item: {
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray,
+        padding: 16,
+        marginBottom: 12,
         backgroundColor: colors.white,
-        marginBottom: responsive.smallMargin,
-        borderRadius: 1,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    listContent: {
+        paddingBottom: 20,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
     },
     emptyText: {
         ...typography.body,
         textAlign: 'center',
-        marginTop: 20,
         color: colors.gray,
     },
     clearButton: {
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
-        borderWidth: 2,
-        borderColor: colors.black,
-        borderRadius: 1,
-        marginBottom: responsive.mediumMargin,
+        backgroundColor: colors.white,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        marginVertical: 16,
     },
     clearText: {
-        color: colors.black,
-        fontWeight: 'bold',
+        color: colors.primary,
+        fontWeight: '600',
     },
     price: {
         ...typography.caption,

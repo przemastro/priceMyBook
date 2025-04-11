@@ -39,7 +39,6 @@
     "expo-linking": "~6.3.1",
     "expo-localization": "~15.0.3",
     "expo-modules-core": "~1.12.26",
-    "expo-permissions": "^14.4.0",
     "expo-router": "~3.5.24",
     "expo-sharing": "~12.0.1",
     "expo-splash-screen": "~0.27.5",

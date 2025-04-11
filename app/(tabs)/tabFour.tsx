@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useAppContext } from '@/context/AppContext';
-import { colors, typography, responsive } from '@/styles/styles';
+import {colors, responsive, typography} from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -123,21 +123,20 @@ export default function TabFourScreen() {
   return (
       <ScrollView contentContainerStyle={styles.container}>
         {exchangeRateError && (
-            <Text style={[typography.caption, { color: colors.error, textAlign: 'center' }]}>
+            <Text style={[typography.caption, styles.rateError]}>
               {t('alerts.exchangeRateError')} (1 USD = {exchangeRate.toFixed(2)} PLN)
             </Text>
         )}
 
-        <View style={styles.headerContainer}>
-          <Text style={[typography.h1, styles.headerText]}>
-            {t('titles.manageCollections')}
-          </Text>
-        </View>
+        <Text style={[typography.h1, styles.header]}>
+          {t('titles.manageCollections')}
+        </Text>
 
         <View style={styles.addCollectionContainer}>
           <TextInput
               style={styles.input}
               placeholder={t('placeholders.enterCollectionName')}
+              placeholderTextColor="#888"
               value={collectionName}
               onChangeText={setCollectionName}
               maxLength={50}
@@ -151,10 +150,12 @@ export default function TabFourScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={typography.h2}>{t('labels.collections')}:</Text>
+        <Text style={styles.sectionHeader}>{t('labels.collections')}:</Text>
 
         {collections.length === 0 ? (
-            <Text style={styles.noCollectionsText}>{t('labels.noCollections')}</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
+            </View>
         ) : (
             collections.map((collection) => {
               const total = calculateCollectionTotal(collection);
@@ -182,7 +183,9 @@ export default function TabFourScreen() {
                     </View>
 
                     {books[collection]?.length === 0 ? (
-                        <Text style={styles.noBooksText}>{t('labels.noBooksInCollection')}</Text>
+                        <View style={styles.emptyBookContainer}>
+                          <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
+                        </View>
                     ) : (
                         books[collection]?.map((book, index) => (
                             <TouchableOpacity
@@ -227,69 +230,68 @@ export default function TabFourScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: responsive.mediumMargin,
-    backgroundColor: colors.background,
-    marginTop: responsive.largeMargin
+    padding: 16,
+    backgroundColor: '#f8f9fa',
   },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: responsive.mediumMargin,
-  },
-  headerText: {
+  header: {
+    marginBottom: 24,
     textAlign: 'center',
-    width: '100%',
+    color: colors.black,
+    marginTop: responsive.largeMargin,
+  },
+  sectionHeader: {
+    color: colors.black,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginTop: 8,
+    paddingLeft: 4,
   },
   addCollectionContainer: {
     flexDirection: 'row',
-    marginBottom: responsive.largeMargin,
-  },
-  bookIsbn: {
-    fontSize: 12,
-    color: colors.gray,
-    marginBottom: 4,
+    marginBottom: 24,
   },
   input: {
     flex: 1,
     height: 50,
-    borderColor: colors.gray,
+    borderColor: 'rgba(0,0,0,0.1)',
     borderWidth: 1,
-    paddingLeft: 15,
-    borderRadius: 1,
+    borderRadius: 5,
+    paddingHorizontal: 16,
     backgroundColor: colors.white,
-    marginRight: responsive.smallMargin,
+    marginRight: 12,
+    color: colors.black,
   },
   addButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 2,
-    borderColor: colors.black,
+    backgroundColor: colors.primary,
+    borderRadius: 5,
     paddingHorizontal: 20,
-    borderRadius: 1,
     minWidth: 100,
+    height: 50,
   },
   disabledButton: {
-    opacity: 0.3,
+    opacity: 0.5,
   },
   addButtonText: {
-    color: colors.black,
-    fontWeight: 'bold',
+    color: colors.white,
+    fontWeight: '600',
   },
   collectionContainer: {
-    marginBottom: responsive.largeMargin,
-    borderWidth: 1,
-    borderColor: colors.gray,
-    borderRadius: 1,
+    marginBottom: 24,
     backgroundColor: colors.white,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     overflow: 'hidden',
   },
   collectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderColor: colors.gray,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   collectionActions: {
     flexDirection: 'row',
@@ -300,65 +302,79 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   totalText: {
-    ...typography.h2,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    ...typography.body,
+    color: colors.primary,
+    marginRight: 12,
   },
   deleteCollectionButton: {
-    marginLeft: 15,
+    marginLeft: 12,
     padding: 8,
   },
   exportButton: {
-    marginLeft: 10,
     padding: 8,
   },
   bookContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderColor: colors.gray,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   bookInfo: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 12,
   },
   bookTitle: {
     ...typography.body,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 4,
   },
   bookAuthors: {
     ...typography.caption,
     marginBottom: 4,
+    color: colors.gray,
+  },
+  bookIsbn: {
+    ...typography.caption,
+    color: colors.gray,
+    marginBottom: 4,
   },
   bookPrice: {
     ...typography.caption,
+    color: colors.primary,
     fontWeight: '500',
   },
   deleteButton: {
     padding: 8,
   },
-  noCollectionsText: {
-    ...typography.body,
-    textAlign: 'center',
-    marginTop: 20,
-    color: colors.gray,
+  emptyContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: colors.white,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
-  noBooksText: {
+  emptyBookContainer: {
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
     ...typography.body,
     textAlign: 'center',
-    padding: 15,
     color: colors.gray,
   },
   bookStatus: {
     fontSize: 12,
     fontStyle: 'italic',
-    marginBottom: 4
+    marginTop: 4,
   },
-  price: {
-    color: colors.primary,
-    marginTop: 4
+  rateError: {
+    color: colors.error,
+    textAlign: 'center',
+    marginBottom: 16,
   }
 });

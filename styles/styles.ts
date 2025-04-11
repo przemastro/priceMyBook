@@ -4,14 +4,14 @@ export const { width, height } = Dimensions.get('window');
 
 // Kolory
 export const colors = {
-    primary: '#1fb28a', // Główny kolor (np. przyciski, akcenty)
+    primary: '#0167ae', // Główny kolor (np. przyciski, akcenty)
     secondary: '#2c3e50', // Kolor tekstu i nagłówków
     background: '#f5f5f5', // Kolor tła
     white: '#ffffff', // Kolor tła elementów
-    gray: '#cccccc', // Kolor obramowań i nieaktywnych elementów
+    gray: '#eeeded', // Kolor obramowań i nieaktywnych elementów
     error: '#e74c3c', // Kolor błędów
     success: '#2ecc71', // Kolor sukcesu
-    black: '#040404'
+    black: '#696767'
 };
 
 // Typografia
@@ -19,19 +19,23 @@ export const typography = StyleSheet.create({
     h1: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: colors.secondary,
+        color: colors.black,
         marginBottom: 10,
     },
     h2: {
         fontSize: 15,
         fontWeight: 'bold',
-        color: colors.secondary,
+        color: colors.black,
     },
     h3: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: colors.secondary,
+        color: colors.black,
         marginBottom: 10,
+    },
+    h4: {
+        fontSize: 15,
+        color: colors.secondary,
     },
     body: {
         fontSize: 16,
