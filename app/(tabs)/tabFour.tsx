@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { useAppContext } from '@/context/AppContext';
 import { colors, responsive, typography } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
@@ -10,85 +18,146 @@ import { useRouter } from 'expo-router';
 import Collapsible from 'react-native-collapsible';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
-import { DocumentPickerResult, DocumentPickerSuccessResult } from 'expo-document-picker';
+import { useAppContext } from '@/context/AppContext';
+
+type BookData = {
+  title: string;
+  authors: string;
+  isbn: string;
+  price: string;
+  displayPrice: string;
+  foundInApi: boolean;
+  originalPrice: string;
+  defects: Record<string, any>;
+  averagePrice: string;
+};
 
 export default function TabFourScreen() {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [collectionName, setCollectionName] = useState('');
   const [collapsedCollections, setCollapsedCollections] = useState<Record<string, boolean>>({});
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Używamy kontekstu dla głównego stanu
   const {
     collections,
-    addCollection,
     books,
-    removeBookFromCollection,
+    addCollection,
     removeCollection,
-    exchangeRate,
-    exchangeRateError,
-    lastRateUpdate
+    addBooksToCollection,
+    removeBookFromCollection,
+    formatCurrency,
   } = useAppContext();
 
-  const formatCurrency = (price: string) => {
-    const priceNumber = parseFloat(price) || 0;
-    if (i18n.language === 'pl') {
-      return `${priceNumber.toFixed(2)} PLN`;
-    }
-    const usdPrice = priceNumber / exchangeRate;
-    return `$${usdPrice.toFixed(2)}`;
-  };
+  // Stan tymczasowy dla importu
+  const [importPreview, setImportPreview] = useState<{
+    collectionName: string;
+    books: BookData[];
+    showPreview: boolean;
+  } | null>(null);
 
-  const toggleCollapse = (collectionName: string) => {
-    setCollapsedCollections(prev => ({
-      ...prev,
-      [collectionName]: !prev[collectionName]
-    }));
-  };
-
-  const handleEditBook = (collectionName: string, bookIndex: number) => {
-    const book = books[collectionName][bookIndex];
-    router.push({
-      pathname: '/tabThree',
-      params: {
-        isbn: book.isbn,
-        title: book.title,
-        authors: book.authors,
-        averagePrice: book.price,
-        fromHistory: 'false',
-        editMode: 'true',
-        collectionName,
-        bookIndex: bookIndex.toString()
-      }
-    });
-  };
-
-  const calculateCollectionTotal = (collectionName: string) => {
-    const booksInCollection = books[collectionName] || [];
-    return booksInCollection.reduce((total, book) => {
-      return total + parseFloat(book.price || '0');
-    }, 0);
-  };
-
-  const calculateTotalBooks = () => {
-    return collections.reduce((total, collection) => {
-      return total + (books[collection]?.length || 0);
-    }, 0);
-  };
-
-  const calculateTotalValue = () => {
-    return collections.reduce((total, collection) => {
-      return total + calculateCollectionTotal(collection);
-    }, 0);
-  };
-
+  // Dodawanie kolekcji - od razu do kontekstu
   const handleAddCollection = () => {
-    if (!collectionName.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterCollectionName'));
-      return;
-    }
+    if (!collectionName.trim()) return;
     addCollection(collectionName);
     setCollectionName('');
   };
 
+  // Import kolekcji - najpierw do stanu lokalnego (podgląd)
+  const handleImportCollection = async () => {
+    try {
+      setIsImporting(true);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'text/csv',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) {
+        setIsImporting(false);
+        return;
+      }
+
+      const file = result.assets[0];
+      const csvContent = await FileSystem.readAsStringAsync(file.uri);
+
+      const parseResult = await new Promise<any[]>((resolve) => {
+        Papa.parse(csvContent, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => resolve(results.data)
+        });
+      });
+
+      const validBooks = parseResult
+          .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
+          .map(book => ({
+            title: book.Title.trim(),
+            authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
+            isbn: book.ISBN.trim(),
+            price: book['Price (PLN)'].trim(),
+            displayPrice: `${book['Price (PLN)']} PLN`,
+            foundInApi: book['Found in API'] === 'Yes',
+            originalPrice: book['Price (PLN)'].trim(),
+            defects: {},
+            averagePrice: book['Price (PLN)'].trim()
+          }));
+
+      if (validBooks.length === 0) {
+        Alert.alert(t('alerts.error'), t('alerts.noValidBooks'));
+        setIsImporting(false);
+        return;
+      }
+
+      const newCollectionName = file.name.replace('.csv', '').slice(0, 30);
+
+      // Pokazujemy podgląd zamiast od razu dodawać
+      setImportPreview({
+        collectionName: newCollectionName,
+        books: validBooks,
+        showPreview: true
+      });
+
+    } catch (error) {
+      Alert.alert(t('alerts.error'), t('alerts.importError'));
+      console.error('Import failed:', error);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Potwierdzenie importu - migracja do kontekstu
+  const confirmImport = async () => {
+    if (!importPreview) return;
+
+    try {
+      // Dodajemy kolekcję do kontekstu
+      addCollection(importPreview.collectionName);
+
+      // Dodajemy książki do kontekstu
+      await addBooksToCollection(importPreview.collectionName, importPreview.books);
+
+      Alert.alert(
+          t('alerts.success'),
+          t('status.importSuccess', {
+            count: importPreview.books.length,
+            name: importPreview.collectionName
+          })
+      );
+
+      setImportPreview(null);
+    } catch (error) {
+      Alert.alert(t('alerts.error'), t('alerts.importSaveError'));
+      console.error('Failed to save import:', error);
+    }
+  };
+
+  // Anulowanie importu
+  const cancelImport = () => {
+    setImportPreview(null);
+  };
+
+  // Usuwanie kolekcji
   const handleDeleteCollection = (collectionName: string) => {
     const bookCount = books[collectionName]?.length || 0;
 
@@ -115,13 +184,13 @@ export default function TabFourScreen() {
     );
   };
 
+  // Eksport do CSV
   const handleExportCSV = async (collectionName: string) => {
-    const booksInCollection = books[collectionName] || [];
+    const booksToExport = books[collectionName] || [];
 
     let csvContent = "Title,Authors,ISBN,Price (PLN),Found in API\n";
-
-    booksInCollection.forEach(book => {
-      csvContent += `"${book.title?.replace(/"/g, '""') || ''}","${book.authors?.replace(/"/g, '""') || ''}",${book.isbn},${book.price},${book.foundInApi ? 'Yes' : 'No'}\n`;
+    booksToExport.forEach(book => {
+      csvContent += `"${book.title.replace(/"/g, '""')}","${book.authors.replace(/"/g, '""')}",${book.isbn},${book.price},${book.foundInApi ? 'Yes' : 'No'}\n`;
     });
 
     try {
@@ -136,113 +205,107 @@ export default function TabFourScreen() {
       await Sharing.shareAsync(fileUri, {
         mimeType: 'text/csv',
         dialogTitle: t('alerts.exportTitle', { collectionName }),
-        UTI: 'public.comma-separated-values-text'
       });
     } catch (error) {
       Alert.alert(t('alerts.error'), t('alerts.exportError'));
-      console.error('CSV Export failed:', error);
     }
   };
 
-  const handleImportCollection = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'text/csv',
-        copyToCacheDirectory: true,
-      });
+  // Funkcje pomocnicze
+  const toggleCollapse = (collection: string) => {
+    setCollapsedCollections(prev => ({
+      ...prev,
+      [collection]: !prev[collection]
+    }));
+  };
 
-      if (result.canceled) {
-        return;
+  const handleEditBook = (collectionName: string, bookIndex: number) => {
+    const book = books[collectionName][bookIndex];
+    router.push({
+      pathname: '/tabThree',
+      params: {
+        isbn: book.isbn,
+        title: book.title,
+        authors: book.authors,
+        averagePrice: book.price,
+        fromHistory: 'false',
+        editMode: 'true',
+        collectionName,
+        bookIndex: bookIndex.toString()
       }
+    });
+  };
 
-      const file = result.assets?.[0];
-      if (!file) {
-        Alert.alert(t('alerts.error'), t('alerts.importError'));
-        return;
-      }
+  const calculateCollectionTotal = (collection: string) => {
+    return (books[collection] || []).reduce(
+        (sum, book) => sum + parseFloat(book.price || '0'),
+        0
+    );
+  };
 
-      const csvContent = await FileSystem.readAsStringAsync(file.uri);
+  const calculateTotalBooks = () => {
+    return collections.reduce(
+        (total, collection) => total + (books[collection]?.length || 0),
+        0
+    );
+  };
 
-      Papa.parse(csvContent, {
-        header: true,
-        complete: async (results) => {
-          const data = results.data as Array<{
-            Title: string;
-            Authors: string;
-            ISBN: string;
-            'Price (PLN)': string;
-            'Found in API': string;
-          }>;
+  const calculateTotalValue = () => {
+    return collections.reduce(
+        (total, collection) => total + calculateCollectionTotal(collection),
+        0
+    );
+  };
 
-          if (data.length === 0) {
-            Alert.alert(t('alerts.error'), t('alerts.importError'));
-            return;
-          }
+  // Modal podglądu importu
+  const ImportPreviewModal = () => {
+    if (!importPreview) return null;
 
-          Alert.prompt(
-              t('alerts.createCollection'),
-              t('alerts.enterCollectionName'),
-              [
-                {
-                  text: t('buttons.cancel'),
-                  style: 'cancel',
-                },
-                {
-                  text: t('buttons.confirm'),
-                  onPress: (collectionName) => {
-                    if (!collectionName?.trim()) {
-                      Alert.alert(t('alerts.error'), t('alerts.enterCollectionName'));
-                      return;
-                    }
+    return (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>
+              {t('labels.importPreview')} ({importPreview.books.length} {t('labels.books')})
+            </Text>
+            <Text style={styles.modalText}>
+              {t('labels.collectionName')}: {importPreview.collectionName}
+            </Text>
 
-                    const booksToAdd = data.map(book => ({
-                      title: book.Title || t('bookInfo.unknownTitle'),
-                      authors: book.Authors || t('bookInfo.unknown'),
-                      isbn: book.ISBN || '',
-                      price: book['Price (PLN)'] || '0',
-                      displayPrice: `${book['Price (PLN)'] || '0'} PLN`,
-                      foundInApi: book['Found in API'] === 'Yes',
-                      originalPrice: book['Price (PLN)'] || '0', // Dodane wymagane pole
-                      defects: {}, // Dodane wymagane pole
-                      averagePrice: book['Price (PLN)'] || '0' // Dodane wymagane pole
-                    }));
+            <ScrollView style={styles.previewScroll}>
+              {importPreview.books.slice(0, 5).map((book, index) => (
+                  <View key={index} style={styles.previewBook}>
+                    <Text style={styles.previewBookTitle}>{book.title}</Text>
+                    <Text style={styles.previewBookIsbn}>ISBN: {book.isbn}</Text>
+                  </View>
+              ))}
+              {importPreview.books.length > 5 && (
+                  <Text style={styles.previewMore}>
+                    + {importPreview.books.length - 5} {t('labels.moreBooks')}...
+                  </Text>
+              )}
+            </ScrollView>
 
-                    // Dodaj nową kolekcję
-                    addCollection(collectionName);
-
-                    // Dodaj książki do kontekstu
-                    booksToAdd.forEach(book => {
-                      if (!books[collectionName]) {
-                        books[collectionName] = [];
-                      }
-                      books[collectionName].push(book);
-                    });
-
-                    Alert.alert(t('alerts.success'), t('status.importSuccess'));
-                  },
-                },
-              ],
-              'plain-text'
-          );
-        },
-        error: () => {
-          Alert.alert(t('alerts.error'), t('alerts.importError'));
-        },
-      });
-    } catch (error) {
-      console.error('Import error:', error);
-      Alert.alert(t('alerts.error'), t('alerts.importError'));
-    }
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={cancelImport}
+              >
+                <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={confirmImport}
+              >
+                <Text style={styles.confirmButtonText}>{t('buttons.confirmImport')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+    );
   };
 
   return (
       <ScrollView contentContainerStyle={styles.container}>
-        {exchangeRateError && (
-            <Text style={[typography.caption, styles.rateError]}>
-              {t('alerts.exchangeRateError')} (1 USD = {exchangeRate.toFixed(2)} PLN)
-            </Text>
-        )}
-
         <Text style={[typography.h1, styles.header]}>
           {t('titles.manageCollections')}
         </Text>
@@ -269,7 +332,7 @@ export default function TabFourScreen() {
           </View>
         </View>
 
-        {/* Add/Import Collection Section */}
+        {/* Add/Import Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeader}>{t('labels.manageCollections')}</Text>
           <View style={styles.addCollectionContainer}>
@@ -292,24 +355,29 @@ export default function TabFourScreen() {
           <TouchableOpacity
               style={styles.importButton}
               onPress={handleImportCollection}
+              disabled={isImporting}
           >
-            <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
-            <Text style={styles.importButtonText}>{t('buttons.importCollection')}</Text>
+            {isImporting ? (
+                <ActivityIndicator color={colors.primary} />
+            ) : (
+                <>
+                  <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
+                  <Text style={styles.importButtonText}>{t('buttons.importCollection')}</Text>
+                </>
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Collections List */}
-        <Text style={styles.sectionHeader}>{t('labels.yourCollections')}:</Text>
+        <Text style={styles.sectionHeader}>{t('labels.yourCollections')}</Text>
 
         {collections.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
             </View>
         ) : (
-            collections.map((collection) => {
-              const total = calculateCollectionTotal(collection);
+            collections.map(collection => {
               const isCollapsed = collapsedCollections[collection];
-
               return (
                   <View key={collection} style={styles.collectionContainer}>
                     <TouchableOpacity
@@ -327,7 +395,7 @@ export default function TabFourScreen() {
                       </View>
                       <View style={styles.collectionActions}>
                         <Text style={styles.totalText}>
-                          {formatCurrency(total.toString())}
+                          {formatCurrency(calculateCollectionTotal(collection).toString())}
                         </Text>
                         <TouchableOpacity
                             onPress={(e) => {
@@ -359,8 +427,8 @@ export default function TabFourScreen() {
                           books[collection]?.map((book, index) => (
                               <TouchableOpacity
                                   key={`${collection}-${index}`}
-                                  onPress={() => handleEditBook(collection, index)}
                                   style={styles.bookContainer}
+                                  onPress={() => handleEditBook(collection, index)}
                               >
                                 <View style={styles.bookInfo}>
                                   <View style={styles.bookTitleRow}>
@@ -401,6 +469,9 @@ export default function TabFourScreen() {
               );
             })
         )}
+
+        {/* Modal podglądu importu */}
+        <ImportPreviewModal />
       </ScrollView>
   );
 }
@@ -577,6 +648,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '500',
   },
+  bookStatus: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
   deleteButton: {
     padding: 8,
   },
@@ -599,14 +675,78 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.gray,
   },
-  bookStatus: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 4,
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
-  rateError: {
-    color: colors.error,
+  modalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: colors.black,
+  },
+  modalText: {
+    marginBottom: 10,
+    color: colors.black,
+  },
+  previewScroll: {
+    maxHeight: 200,
+    marginVertical: 10,
+  },
+  previewBook: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray,
+  },
+  previewBookTitle: {
+    fontWeight: '500',
+    color: colors.black,
+  },
+  previewBookIsbn: {
+    fontSize: 12,
+    color: colors.gray,
+  },
+  previewMore: {
     textAlign: 'center',
-    marginBottom: 16,
-  }
+    marginTop: 5,
+    color: colors.gray,
+    fontStyle: 'italic',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  cancelButton: {
+    backgroundColor: colors.gray,
+  },
+  confirmButton: {
+    backgroundColor: colors.primary,
+  },
+  cancelButtonText: {
+    color: colors.black,
+  },
+  confirmButtonText: {
+    color: 'white',
+  },
 });
