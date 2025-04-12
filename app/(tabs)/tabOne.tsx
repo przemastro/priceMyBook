@@ -12,20 +12,21 @@ import {
   ScrollView,
   Animated,
   Easing,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useAppContext } from '@/context/AppContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, typography } from '@/styles/styles';
+import { colors, typography, responsive } from '@/styles/styles';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const fetchBookInfoFromGoogleAPI = async (isbn: string) => {
-  const API_KEY = ''; // Replace with your actual API key
+  const API_KEY = ''; // Tutaj należy dodać klucz API
   const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`;
 
   try {
@@ -67,7 +68,6 @@ export default function TabOneScreen() {
   const [isManualMode, setIsManualMode] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Animation effect
   useEffect(() => {
     const animation = Animated.loop(
         Animated.sequence([
@@ -89,14 +89,12 @@ export default function TabOneScreen() {
     return () => animation.stop();
   }, []);
 
-  // Language change handling
   useEffect(() => {
     const handleLanguageChange = () => setCurrentLang(i18n.language);
     i18n.on('languageChanged', handleLanguageChange);
     return () => i18n.off('languageChanged', handleLanguageChange);
   }, [i18n]);
 
-  // Camera permission
   const getBarCodeScannerPermissions = async () => {
     try {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -110,7 +108,6 @@ export default function TabOneScreen() {
     }
   };
 
-  // Reset scanner state
   const resetScanner = useCallback(() => {
     setScanned(false);
     setCameraKey(prev => prev + 1);
@@ -121,7 +118,6 @@ export default function TabOneScreen() {
     setManualISBN('');
   }, []);
 
-  // Handle focus effect - always start in scan mode
   useFocusEffect(
       useCallback(() => {
         let isActive = true;
@@ -153,10 +149,9 @@ export default function TabOneScreen() {
     setLoading(true);
     setModalVisible(true);
 
-    // Temporary entry
     addToScanHistory({
       isbn: data,
-      title: 'Searching...',
+      title: t('status.searching'),
       authors: '...',
       price: '0',
       displayPrice: 'N/A',
@@ -168,11 +163,10 @@ export default function TabOneScreen() {
       const book = await fetchBookInfoFromGoogleAPI(data);
       setBookInfo(book);
 
-      // Final entry
       addToScanHistory({
         isbn: data,
-        title: book.title || 'Not Found',
-        authors: book.authors || 'Unknown',
+        title: book.title || t('bookInfo.notFound'),
+        authors: book.authors || t('bookInfo.unknown'),
         price: book.price ? book.price.toString() : '0',
         displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
         originalPrice: book.price ? book.price.toString() : '0',
@@ -182,8 +176,8 @@ export default function TabOneScreen() {
       console.error('Error:', error);
       addToScanHistory({
         isbn: data,
-        title: 'Not Found',
-        authors: 'Unknown',
+        title: t('bookInfo.notFound'),
+        authors: t('bookInfo.unknown'),
         price: '0',
         displayPrice: 'N/A',
         originalPrice: '0',
@@ -207,10 +201,9 @@ export default function TabOneScreen() {
     setModalVisible(true);
     setLoading(true);
 
-    // Temporary entry
     addToScanHistory({
       isbn: manualISBN,
-      title: 'Searching...',
+      title: t('status.searching'),
       authors: '...',
       price: '0',
       displayPrice: 'N/A',
@@ -223,8 +216,8 @@ export default function TabOneScreen() {
           setBookInfo(book);
           addToScanHistory({
             isbn: manualISBN,
-            title: book.title || 'Not Found',
-            authors: book.authors || 'Unknown',
+            title: book.title || t('bookInfo.notFound'),
+            authors: book.authors || t('bookInfo.unknown'),
             price: book.price ? book.price.toString() : '0',
             displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
             originalPrice: book.price ? book.price.toString() : '0',
@@ -235,8 +228,8 @@ export default function TabOneScreen() {
           console.error('Error:', error);
           addToScanHistory({
             isbn: manualISBN,
-            title: 'Not Found',
-            authors: 'Unknown',
+            title: t('bookInfo.notFound'),
+            authors: t('bookInfo.unknown'),
             price: '0',
             displayPrice: 'N/A',
             originalPrice: '0',
@@ -261,8 +254,8 @@ export default function TabOneScreen() {
 
     addToScanHistory({
       isbn: isbn!,
-      title: bookInfo?.title || 'Manual Entry',
-      authors: bookInfo?.authors || 'Unknown',
+      title: bookInfo?.title || t('bookInfo.manualEntry'),
+      authors: bookInfo?.authors || t('bookInfo.unknown'),
       price: numericPrice,
       displayPrice: `$${numericPrice}`,
       originalPrice: numericPrice,
@@ -275,8 +268,8 @@ export default function TabOneScreen() {
         isbn,
         averagePrice: numericPrice,
         originalPrice: numericPrice,
-        title: bookInfo?.title || 'Manual Entry',
-        authors: bookInfo?.authors || 'Unknown',
+        title: bookInfo?.title || t('bookInfo.manualEntry'),
+        authors: bookInfo?.authors || t('bookInfo.unknown'),
         fromHistory: 'false'
       }
     });
@@ -288,7 +281,7 @@ export default function TabOneScreen() {
 
   const toggleManualMode = () => {
     setIsManualMode(true);
-    setScanned(true); // Prevent scanning while in manual mode
+    setScanned(true);
   };
 
   if (hasPermission === null) {
@@ -322,16 +315,21 @@ export default function TabOneScreen() {
             <BarCodeScanner
                 key={`barcode-scanner-${cameraKey}`}
                 onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-                style={[StyleSheet.absoluteFill, styles.barcodeScanner]}
+                style={
+                  Platform.OS === "android"
+                      ? {
+                        position: "absolute",
+                        top: 0,
+                        transform: [{ translateX: width / 2 }],
+                        right: 0,
+                        bottom: 0,
+                        width: width * 2,
+                        height: height,
+                      }
+                      : StyleSheet.absoluteFillObject
+                }
             >
               <View style={styles.cameraOverlay}>
-                <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={toggleManualMode}
-                >
-                  <Ionicons name="close" size={32} color="white" />
-                </TouchableOpacity>
-
                 <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
                   <View style={styles.scanFrameTopLeft} />
                   <View style={styles.scanFrameTopRight} />
@@ -344,31 +342,40 @@ export default function TabOneScreen() {
             </BarCodeScanner>
         )}
 
+        {/* Przycisk zamknięcia na stałe w lewym górnym rogu */}
+        {!isManualMode && !scanned && (
+            <TouchableOpacity
+                style={styles.closeButton}
+                onPress={toggleManualMode}
+            >
+              <Ionicons name="close" size={32} color="white" />
+            </TouchableOpacity>
+        )}
+
         {isManualMode && (
             <View style={styles.manualInputContainer}>
-              <Text style={[typography.h1, styles.manualInputTitle]}>{t('labels.enterISBNManually')}</Text>
-
-              <TextInput
-                  style={styles.input}
-                  placeholder={t('placeholders.enterISBN')}
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={manualISBN}
-                  onChangeText={setManualISBN}
-                  autoFocus
-              />
-
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
-                    onPress={resetScanner}
-                >
-                  <Text style={styles.cancelButtonText}>
-                    {t('buttons.cancel')}
-                  </Text>
+              <View style={styles.manualHeader}>
+                <TouchableOpacity onPress={resetScanner}>
+                  <Ionicons name="arrow-back" size={24} color={colors.primary} />
                 </TouchableOpacity>
+                <Text style={[typography.h1, styles.manualInputTitle]}>
+                  {t('labels.enterISBNManually')}
+                </Text>
+                <View style={{ width: 24 }} />
+              </View>
+
+              <View style={styles.inputRow}>
+                <TextInput
+                    style={[styles.input, styles.flexInput]}
+                    placeholder={t('placeholders.enterISBN')}
+                    placeholderTextColor="#888"
+                    keyboardType="numeric"
+                    value={manualISBN}
+                    onChangeText={setManualISBN}
+                    autoFocus
+                />
                 <TouchableOpacity
-                    style={[styles.button, styles.submitButton]}
+                    style={styles.submitButton}
                     onPress={handleManualSubmit}
                 >
                   <Text style={styles.submitButtonText}>
@@ -380,15 +387,15 @@ export default function TabOneScreen() {
         )}
 
         <Modal
-            animationType="slide"
+            animationType="fade"
             transparent
             visible={modalVisible}
             onRequestClose={handleCancel}
             key={currentLang}
         >
-          <View style={styles.modalContainer}>
-            <ScrollView contentContainerStyle={styles.modalContent}>
-              <Text style={[typography.h1, styles.modalTitle]}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>
                 {t('bookInfo.scannedISBN')}: {isbn}
               </Text>
 
@@ -433,27 +440,27 @@ export default function TabOneScreen() {
                       />
                     </View>
 
-                    <View style={styles.buttonContainer}>
+                    <View style={styles.modalButtonsContainer}>
                       <TouchableOpacity
-                          style={[styles.button, styles.primaryButton]}
-                          onPress={handlePrice}
-                      >
-                        <Text style={styles.continueButtonText}>
-                          {t('buttons.continue')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                          style={[styles.button, styles.cancelButton]}
+                          style={styles.cancelButton}
                           onPress={handleCancel}
                       >
                         <Text style={styles.cancelButtonText}>
                           {t('buttons.cancel')}
                         </Text>
                       </TouchableOpacity>
+                      <TouchableOpacity
+                          style={styles.primaryButton}
+                          onPress={handlePrice}
+                      >
+                        <Text style={styles.continueButtonText}>
+                          {t('buttons.continue')}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </>
               )}
-            </ScrollView>
+            </View>
           </View>
         </Modal>
       </View>
@@ -477,16 +484,16 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
+    top: Platform.OS === 'ios' ? 50 : 30,
     left: 20,
-    zIndex: 1,
+    zIndex: 100,
     borderRadius: 50,
     padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'transparent',
   },
   scanFrame: {
     width: width * 0.7,
-    height: width * 0.8,
+    height: width * 0.7,
     position: 'relative',
     backgroundColor: 'transparent',
   },
@@ -537,14 +544,30 @@ const styles = StyleSheet.create({
   },
   manualInputContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
     padding: 20,
     backgroundColor: '#f8f9fa',
   },
-  manualInputTitle: {
+  manualHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
     marginBottom: 24,
+    marginTop: responsive.largeMargin
+  },
+  manualInputTitle: {
     textAlign: 'center',
+    flex: 1,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  flexInput: {
+    flex: 1,
+    marginRight: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -573,21 +596,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '500',
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContent: {
+  modalContainer: {
+    width: '90%',
     backgroundColor: 'white',
-    margin: 20,
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 20,
     maxHeight: '80%',
   },
   modalTitle: {
+    ...typography.h1,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: 'left',
+    color: colors.black,
   },
   bookInfoContainer: {
     marginBottom: 16,
@@ -621,41 +647,38 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     color: colors.black,
   },
-  buttonContainer: {
+  modalButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 16,
+    justifyContent: 'flex-end',
+    marginTop: 20,
   },
-  button: {
-    flex: 1,
+  primaryButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginLeft: 10,
+  },
+  cancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  continueButtonText: {
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  cancelButtonText: {
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  submitButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
-    marginHorizontal: 8,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-  },
-  submitButton: {
-    backgroundColor: colors.primary,
-  },
-  cancelButton: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  continueButtonText: {
-    fontWeight: '600',
-    color: colors.white
   },
   submitButtonText: {
     fontWeight: '600',
     color: colors.white
-  },
-  cancelButtonText: {
-    fontWeight: '600',
-    color: colors.black
   },
 });

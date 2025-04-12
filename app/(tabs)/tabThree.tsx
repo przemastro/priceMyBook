@@ -11,7 +11,8 @@ import {
   Pressable,
   Animated,
   Easing,
-  FlatList
+  FlatList,
+  TextInput
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
@@ -78,21 +79,29 @@ export default function TabThreeScreen() {
     icon: defect.icon
   })));
   const [isLoading, setIsLoading] = useState(false);
-  const [isScanning, setIsScanning] = useState(true);
+  const [isScanning, setIsScanning] = useState(false); // Zmienione na false
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scannedDefect, setScannedDefect] = useState<BookDefect | null>(null);
   const [showDefectModal, setShowDefectModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState('');
+  const [editingOriginalPrice, setEditingOriginalPrice] = useState(false);
+  const [originalPriceInput, setOriginalPriceInput] = useState('');
+  const [originalPrice, setOriginalPrice] = useState('');
 
   const isbn = params.isbn?.toString() || '';
-  const originalPrice = params.originalPrice?.toString() || '0';
-  const averagePrice = params.averagePrice?.toString() || originalPrice;
+  const originalPriceParam = params.originalPrice?.toString() || '0';
+  const averagePrice = params.averagePrice?.toString() || originalPriceParam;
   const title = params.title?.toString() || t('bookInfo.unknownTitle');
   const authors = params.authors?.toString() || t('bookInfo.unknown');
   const editMode = params.editMode === 'true';
   const collectionName = params.collectionName?.toString();
   const bookIndex = params.bookIndex ? parseInt(params.bookIndex.toString()) : null;
+
+  useEffect(() => {
+    setOriginalPrice(originalPriceParam);
+    setOriginalPriceInput(originalPriceParam);
+  }, [originalPriceParam]);
 
   const getBookCount = (collection: string) => {
     return books[collection]?.length || 0;
@@ -104,15 +113,6 @@ export default function TabThreeScreen() {
       setSelectedCollection(initialCollection);
     }
   }, [collections, editMode, collectionName]);
-
-  useEffect(() => {
-    const requestCameraPermission = async () => {
-      if (!permission?.granted) {
-        await requestPermission();
-      }
-    };
-    requestCameraPermission();
-  }, []);
 
   useEffect(() => {
     Animated.loop(
@@ -143,9 +143,16 @@ export default function TabThreeScreen() {
 
   const finalPrice = calculateFinalPrice();
 
-  const startScanning = () => {
-    setIsScanning(true);
-    setScanProgress(0);
+  const startScanning = async () => {
+    if (!permission?.granted) {
+      await requestPermission();
+    }
+    if (permission?.granted) {
+      setIsScanning(true);
+      setScanProgress(0);
+    } else {
+      Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+    }
   };
 
   const stopScanning = () => {
@@ -233,6 +240,22 @@ export default function TabThreeScreen() {
     }
   };
 
+  const toggleEditOriginalPrice = () => {
+    setEditingOriginalPrice(!editingOriginalPrice);
+    if (!editingOriginalPrice) {
+      setOriginalPriceInput(originalPrice);
+    }
+  };
+
+  const saveOriginalPrice = () => {
+    if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
+      Alert.alert(t('alerts.error'), t('alerts.enterValidPrice'));
+      return;
+    }
+    setOriginalPrice(originalPriceInput);
+    setEditingOriginalPrice(false);
+  };
+
   const renderDefectItem = ({ item }: { item: BookDefect }) => (
       <TouchableOpacity
           style={[
@@ -296,23 +319,7 @@ export default function TabThreeScreen() {
     );
   }
 
-  if (!permission.granted) {
-    return (
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>{t('status.noCameraAccess')}</Text>
-          <TouchableOpacity
-              style={styles.permissionButton}
-              onPress={requestPermission}
-          >
-            <Text style={styles.permissionButtonText}>
-              {t('buttons.requestPermission')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-    );
-  }
-
-  if (isScanning) {
+  if (isScanning && permission?.granted) {
     return (
         <View style={styles.fullScreenContainer}>
           <CameraView
@@ -369,42 +376,54 @@ export default function TabThreeScreen() {
           <Modal
               visible={showDefectModal}
               transparent={true}
-              animationType="slide"
+              animationType="fade"
+              onRequestClose={rejectDefect}
           >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                {scannedDefect && (
-                    <>
-                      <Text style={styles.modalTitle}>
-                        {t('labels.defectDetected')}: {t(`defects.${scannedDefect.id}`)}
-                      </Text>
-                      <Text style={styles.modalText}>
-                        {t('labels.confidence')}: {scannedDefect.confidence}%
-                      </Text>
-                      <Text style={[typography.h2, { color: colors.primary }]}>
-                        {t('labels.priceReduction')}: {scannedDefect.priceReduction}%
-                      </Text>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>
+                  {t('labels.defectDetected')}
+                </Text>
 
-                      <View style={styles.modalButtonsContainer}>
-                        <TouchableOpacity
-                            style={[styles.modalButton, styles.rejectButton]}
-                            onPress={rejectDefect}
-                        >
-                          <Text style={styles.rejectButtonText}>
-                            {t('buttons.reject')}
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.modalButton, styles.acceptButton]}
-                            onPress={acceptDefect}
-                        >
-                          <Text style={styles.acceptButtonText}>
-                            {t('buttons.confirmDefect')}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                )}
+                <View style={styles.modalContent}>
+                  <View style={styles.modalDefectInfo}>
+                    <Ionicons
+                        name={scannedDefect?.icon as any}
+                        size={32}
+                        color={colors.primary}
+                        style={styles.modalDefectIcon}
+                    />
+                    <Text style={styles.modalDefectName}>
+                      {t(`defects.${scannedDefect?.id}`)}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.modalText}>
+                    {t('labels.confidence')}: <Text style={styles.modalBoldText}>{scannedDefect?.confidence}%</Text>
+                  </Text>
+                  <Text style={styles.modalText}>
+                    {t('labels.priceReduction')}: <Text style={styles.modalBoldText}>{scannedDefect?.priceReduction}%</Text>
+                  </Text>
+                </View>
+
+                <View style={styles.modalButtonsContainer}>
+                  <TouchableOpacity
+                      style={[styles.modalButton, styles.rejectButton]}
+                      onPress={rejectDefect}
+                  >
+                    <Text style={styles.rejectButtonText}>
+                      {t('buttons.reject')}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                      style={[styles.modalButton, styles.acceptButton]}
+                      onPress={acceptDefect}
+                  >
+                    <Text style={styles.acceptButtonText}>
+                      {t('buttons.confirmDefect')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </Modal>
@@ -421,9 +440,45 @@ export default function TabThreeScreen() {
         <View style={styles.combinedSection}>
           <View style={styles.priceSection}>
             <Text style={typography.body}>{t('bookInfo.isbn')}: {isbn || t('bookInfo.noISBN')}</Text>
-            <Text style={typography.body}>
-              {t('bookInfo.originalPrice')}: {formatCurrency(originalPrice)}
-            </Text>
+
+            <View style={styles.priceRow}>
+              <Text style={typography.body}>
+                {t('bookInfo.originalPrice')}:
+              </Text>
+              {editingOriginalPrice ? (
+                  <View style={styles.priceInputContainer}>
+                    <TextInput
+                        style={styles.priceInput}
+                        value={originalPriceInput}
+                        onChangeText={setOriginalPriceInput}
+                        keyboardType="numeric"
+                        autoFocus
+                    />
+                    <TouchableOpacity
+                        style={styles.savePriceButton}
+                        onPress={saveOriginalPrice}
+                    >
+                      <Ionicons name="checkmark" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+              ) : (
+                  <TouchableOpacity
+                      style={styles.priceDisplay}
+                      onPress={toggleEditOriginalPrice}
+                  >
+                    <Text style={typography.body}>
+                      {formatCurrency(originalPrice)}
+                    </Text>
+                    <Ionicons
+                        name="pencil"
+                        size={16}
+                        color={colors.primary}
+                        style={styles.editIcon}
+                    />
+                  </TouchableOpacity>
+              )}
+            </View>
+
             {averagePrice !== originalPrice && (
                 <Text style={typography.body}>
                   {t('bookInfo.discountedPrice')}: {formatCurrency(averagePrice)}
@@ -445,8 +500,12 @@ export default function TabThreeScreen() {
           <View style={styles.horizontalLine} />
 
           <TouchableOpacity
-              style={styles.startScanButton}
+              style={[
+                styles.startScanButton,
+                isScanning && styles.disabledButton
+              ]}
               onPress={startScanning}
+              disabled={isScanning}
           >
             <Ionicons name="camera" size={24} color={colors.primary} style={styles.scanIcon} />
             <Text style={styles.startScanButtonText}>
@@ -559,14 +618,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
     borderRadius: 50,
     padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'transparent',
   },
   scanFrame: {
     position: 'absolute',
     top: '35%',
     alignSelf: 'center',
     width: 250,
-    height: 350,
+    height: 250,
     borderWidth: 0,
   },
   scanFrameTopLeft: {
@@ -670,6 +729,41 @@ const styles = StyleSheet.create({
   },
   priceSection: {
     paddingBottom: 12,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  priceInput: {
+    height: 30,
+    width: 80,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 8,
+    marginRight: 8,
+  },
+  savePriceButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  priceDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  editIcon: {
+    marginLeft: 8,
   },
   horizontalLine: {
     height: 1,
@@ -860,6 +954,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
   startScanButtonText: {
     color: colors.primary,
     fontWeight: '500',
@@ -871,57 +968,82 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingLeft: 4,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContent: {
-    width: '80%',
+  modalContainer: {
+    width: '85%',
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
-    marginBottom: 12,
-    color: '#2c3e50',
+    marginBottom: 15,
+    color: colors.black,
+    textAlign: 'left',
+  },
+  modalContent: {
+    marginBottom: 20,
+  },
+  modalDefectInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalDefectIcon: {
+    marginRight: 10,
+  },
+  modalDefectName: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: colors.black,
   },
   modalText: {
-    marginBottom: 12,
-    color: '#2c3e50',
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 8,
+    textAlign: 'left',
+  },
+  modalBoldText: {
+    fontWeight: '600',
+    color: colors.black,
   },
   modalButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
+    justifyContent: 'flex-end',
+    marginTop: 20,
   },
   modalButton: {
-    padding: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 5,
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 8,
+    marginLeft: 10,
   },
   acceptButton: {
-    backgroundColor: colors.primary,
-    borderWidth: 1,
-    borderColor: colors.primary
+    backgroundColor: 'transparent',
   },
   rejectButton: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.primary
+    backgroundColor: 'transparent',
   },
   acceptButtonText: {
-    color: colors.white,
+    color: colors.primary,
     fontWeight: '500',
   },
   rejectButtonText: {
-    color: colors.black,
+    color: colors.primary,
     fontWeight: '500',
   },
 });

@@ -32,6 +32,8 @@ export default {
         analysisError: 'Nie udało się przeanalizować zdjęcia',
         cameraError: 'Błąd kamery',
         enterISBN: 'Proszę wprowadzić poprawny numer ISBN',
+        noCollectionsTitle: 'Brak kolekcji',
+        noCollectionsMessage: 'Musisz najpierw utworzyć kolekcję. Czy chcesz utworzyć ją teraz?',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -73,7 +75,13 @@ export default {
         priceReduction: 'Obniżka ceny',
         scanBarcode: 'Skanuj kod kreskowy',
         enterISBNManually: 'Wprowadź ISBN ręcznie',
-        books: 'Książek'
+        books: 'Książek',
+        totalCollections: 'Liczba kolekcji',
+        totalBooks: 'Liczba książek',
+        totalValue: 'Wartość całkowita',
+        yourCollections: 'Twoje kolekcje',
+        manageCollections: 'Zarządzaj kolekcjami',
+        importCollection: 'Importuj kolekcję'
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -94,10 +102,10 @@ export default {
         addCollection: 'Dodaj kolekcję',
         requestPermission: 'Poproś o dostęp do kamery',
         price: 'Wyceń',
-        cancel: 'Anuluj',
+        cancel: 'ANULUJ',
         useAPIPrices: 'Użyj cen z API',
         enterPriceManually: 'Wprowadź cenę ręcznie',
-        continue: 'Kontynuuj',
+        continue: 'KONTYNUUJ',
         createCollection: "Utwórz kolekcję",
         createFirstCollection: "Utwórz swoją pierwszą kolekcję",
         deleteCollection: "Usuń kolekcję",
@@ -109,10 +117,11 @@ export default {
         startScanning: 'Rozpocznij skanowanie',
         stopScanning: 'Zatrzymaj skanowanie',
         simulateDefect: 'Symuluj wadę',
-        confirmDefect: 'Potwierdź',
-        reject: 'Odrzuć',
+        confirmDefect: 'POTWIERDŹ',
+        reject: 'ODRZUĆ',
         submit: 'Zatwierdź',
         backToScanner: 'Powrót do skanera',
+        importCollection: 'Importuj kolekcję'
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę kolekcji',
@@ -128,5 +137,14 @@ export default {
         notFound: 'Nieznalezione w bazie danych',
         initializing: 'Inicjalizacja...',
         manualEntry: 'Ręczne wprowadzanie ISBN',
+        importing: 'Importowanie...',
+        exportSuccess: 'Eksport zakończony sukcesem',
+        exportError: 'Błąd podczas eksportu',
+        importSuccess: 'Import zakończony sukcesem',
+        importError: 'Błąd podczas importu'
+    },
+    currency: {
+        symbol: 'zł',
+        code: 'PLN'
     }
 };

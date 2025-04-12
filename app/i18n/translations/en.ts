@@ -34,6 +34,8 @@ export default {
         analysisError: 'Failed to analyze image',
         cameraError: 'Camera error',
         enterISBN: 'Please enter a valid ISBN number',
+        createCollection: 'Create Collection',
+        importError: 'Failed to import collection',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -75,7 +77,13 @@ export default {
         priceReduction: 'Price reduction',
         scanBarcode: 'Scan barcode',
         enterISBNManually: 'Enter ISBN manually',
-        books: 'Books'
+        books: 'Books',
+        totalCollections: 'Total Collections',
+        totalBooks: 'Total Books',
+        totalValue: 'Total Value',
+        yourCollections: 'Your Collections',
+        manageCollections: 'Manage Collections',
+        importCollection: 'Import Collection'
     },
     titles: {
         scan: 'Scan ISBN',
@@ -96,10 +104,10 @@ export default {
         addCollection: 'Add Collection',
         requestPermission: 'Request Camera Permission',
         price: 'Price',
-        cancel: 'Cancel',
+        cancel: 'CANCEL',
         useAPIPrices: 'Use API Prices',
         enterPriceManually: 'Enter Price Manually',
-        continue: 'Continue',
+        continue: 'CONTINUE',
         createCollection: 'Create Collection',
         createFirstCollection: 'Create Your First Collection',
         deleteCollection: "Delete Collection",
@@ -111,10 +119,11 @@ export default {
         startScanning: 'Start Scanning',
         stopScanning: 'Stop Scanning',
         simulateDefect: 'Simulate Defect',
-        confirmDefect: 'Confirm',
-        reject: 'Reject',
+        confirmDefect: 'CONFIRM',
+        reject: 'REJECT',
         submit: 'Submit',
         backToScanner: 'Back to scanner',
+        importCollection: 'Import Collection'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
@@ -130,6 +139,11 @@ export default {
         notFound: 'Not found in database',
         initializing: 'Initializing...',
         manualEntry: 'Manual ISBN entry',
+        importing: 'Importing...',
+        exportSuccess: 'Export completed successfully',
+        exportError: 'Export failed',
+        importError: 'Import failed',
+        importSuccess: 'Collection imported successfully',
     },
     currency: {
         symbol: '$',

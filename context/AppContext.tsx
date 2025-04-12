@@ -9,15 +9,15 @@ interface BookDefect {
 }
 
 interface BookData {
-    isbn: string;
     title: string;
     authors: string;
+    isbn: string;
     price: string;
     displayPrice: string;
-    createdAt?: string;
     foundInApi: boolean;
-    defects?: Record<string, BookDefect>;
-    originalPrice: string;
+    originalPrice?: string; // Zmienione na opcjonalne
+    defects?: Record<string, any>; // Zmienione na opcjonalne
+    averagePrice?: string; // Zmienione na opcjonalne
 }
 
 interface AppContextType {
