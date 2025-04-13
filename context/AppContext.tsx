@@ -5,7 +5,8 @@ import i18n from '@/app/i18n/config';
 
 interface BookDefect {
     selected: boolean;
-    reduction?: number;
+    reduction: number;
+    count: number;
 }
 
 interface BookData {
@@ -15,10 +16,11 @@ interface BookData {
     price: string;
     displayPrice: string;
     foundInApi: boolean;
-    originalPrice?: string;
-    defects?: Record<string, BookDefect>;
-    averagePrice?: string;
+    originalPrice: string;
+    defects: Record<string, BookDefect>;
+    averagePrice: string;
     createdAt?: string;
+    rating: number;
 }
 
 interface AppContextType {
@@ -29,7 +31,7 @@ interface AppContextType {
     removeCollection: (name: string) => void;
     books: { [key: string]: BookData[] };
     addBookToCollection: (collectionName: string, bookData: Omit<BookData, 'createdAt'>) => void;
-    addBooksToCollection: (collectionName: string, booksData: Omit<BookData, 'createdAt'>[]) => Promise<void>;
+    addBooksToCollection: (collectionName: string, booksData: BookData[]) => Promise<void>;
     removeBookFromCollection: (collectionName: string, bookIndex: number) => void;
     exchangeRate: number;
     exchangeRateError: string | null;
@@ -60,21 +62,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [exchangeRateError, setExchangeRateError] = useState<string | null>(null);
     const [lastRateUpdate, setLastRateUpdate] = useState<Date | null>(null);
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
-    const [_, forceUpdate] = useState({});
-    const [updateTrigger, setUpdateTrigger] = useState(0); // Dodaj tę linię
+    const [updateTrigger, setUpdateTrigger] = useState(0);
 
     const forceUpdateCollections = useCallback(() => {
-        console.log('Force update triggered');
-        setUpdateTrigger(prev => prev + 1); // To teraz będzie działać
+        setUpdateTrigger(prev => prev + 1);
     }, []);
-    // Debug useEffect
-    useEffect(() => {
-        console.log('Collections updated:', collections);
-        console.log('Books updated:', Object.keys(books).map(key => ({
-            collection: key,
-            count: books[key].length
-        })));
-    }, [collections, books]);
 
     // Load all persisted data on app start
     useEffect(() => {
@@ -153,21 +145,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const addCollection = useCallback((name: string) => {
         if (!name.trim()) return;
 
-        console.log('[Context] Before adding collection:', { collections, books });
-
-        setCollections(prev => {
-            const newCollections = [...prev, name];
-            console.log('[Context] Collections after add:', newCollections);
-            return newCollections;
-        });
-
-        setBooks(prev => {
-            const newBooks = { ...prev, [name]: prev[name] || [] };
-            console.log('[Context] Books after add:', Object.keys(newBooks));
-            return newBooks;
-        });
-    }, []); // Usuwamy zależności, aby uniknąć problemów z zamknięciami
-
+        setCollections(prev => [...prev, name]);
+        setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
+    }, []);
 
     const removeCollection = useCallback((name: string) => {
         setCollections(prev => prev.filter(c => c !== name));
@@ -194,7 +174,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 isbn: bookData.isbn,
                 createdAt: new Date().toISOString(),
                 defects: bookData.defects || {},
-                displayPrice: bookData.displayPrice || formatCurrency(bookData.price)
+                displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
+                rating: bookData.rating || 10,
+                originalPrice: bookData.originalPrice || bookData.price,
+                averagePrice: bookData.averagePrice || bookData.price
             };
 
             return {
@@ -205,29 +188,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, [formatCurrency]);
 
     const addBooksToCollection = useCallback(async (collectionName: string, booksData: BookData[]) => {
-        console.log('[Context] Before adding books:', { collectionName, booksData });
-
         return new Promise<void>((resolve) => {
             setBooks(prev => {
                 if (!prev[collectionName]) {
-                    console.error(`[Context] Collection ${collectionName} doesn't exist`);
+                    console.error(`Collection ${collectionName} doesn't exist`);
                     return prev;
                 }
 
-                const newBooks = {
-                    ...prev,
-                    [collectionName]: [...(prev[collectionName] || []), ...booksData]
-                };
+                const booksWithDefaults = booksData.map(book => ({
+                    ...book,
+                    defects: book.defects || {},
+                    rating: book.rating || 10,
+                    originalPrice: book.originalPrice || book.price,
+                    averagePrice: book.averagePrice || book.price,
+                    displayPrice: book.displayPrice || formatCurrency(book.price),
+                    createdAt: book.createdAt || new Date().toISOString()
+                }));
 
-                console.log('[Context] Books after adding:', {
-                    collections: Object.keys(newBooks),
-                    booksCount: newBooks[collectionName]?.length
-                });
-                return newBooks;
+                return {
+                    ...prev,
+                    [collectionName]: [...(prev[collectionName] || []), ...booksWithDefaults]
+                };
             });
             resolve();
         });
-    }, []);
+    }, [formatCurrency]);
 
     const updateBookInCollection = useCallback((
         collectionName: string,
@@ -242,7 +227,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     ...updatedCollection[bookIndex],
                     ...updatedData,
                     displayPrice: updatedData.price ? formatCurrency(updatedData.price) :
-                        updatedCollection[bookIndex].displayPrice
+                        updatedCollection[bookIndex].displayPrice,
+                    defects: updatedData.defects || updatedCollection[bookIndex].defects,
+                    rating: updatedData.rating || updatedCollection[bookIndex].rating
                 };
 
                 return {
@@ -269,7 +256,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
                 originalPrice: bookData.originalPrice || bookData.price || '0',
                 createdAt: new Date().toISOString(),
-                foundInApi: bookData.foundInApi || false
+                foundInApi: bookData.foundInApi || false,
+                defects: bookData.defects || {},
+                rating: bookData.rating || 10,
+                averagePrice: bookData.averagePrice || bookData.price
             };
 
             return [newItem, ...prev.filter(item => item.isbn !== bookData.isbn)];

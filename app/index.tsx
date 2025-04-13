@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Redirect, router } from 'expo-router';
-import { colors, typography } from '@/styles/styles';
+import { colors, typography, responsive } from '@/styles/styles';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -10,19 +11,19 @@ const slides = [
         id: '1',
         title: 'Witaj w PriceMyBook',
         description: 'Skanuj ISBN książek i sprawdzaj ich wartość',
-        image: require('@/assets/images/welcome1.png'),
+        icon: 'scan-outline' // Zmienione z barcode-outline na scan-outline
     },
     {
         id: '2',
         title: 'Analizuj stan książek',
         description: 'Oceń wady i oblicz końcową cenę',
-        image: require('@/assets/images/welcome2.png'),
+        icon: 'analytics-outline' // Zmienione z camera-outline na analytics-outline
     },
     {
         id: '3',
         title: 'Zarządzaj kolekcjami',
         description: 'Twórz kolekcje i eksportuj dane',
-        image: require('@/assets/images/welcome3.png'),
+        icon: 'library-outline' // Pozostawione library-outline (spójne z tabFour)
     },
 ];
 
@@ -65,7 +66,14 @@ export default function WelcomeScreen() {
             >
                 {slides.map((slide) => (
                     <View key={slide.id} style={styles.slide}>
-                        <Image source={slide.image} style={styles.image} />
+                        <View style={styles.iconContainer}>
+                            <Ionicons
+                                name={slide.icon as any}
+                                size={48}
+                                color={colors.primary}
+                                style={styles.icon}
+                            />
+                        </View>
                         <Text style={styles.title}>{slide.title}</Text>
                         <Text style={styles.description}>{slide.description}</Text>
                     </View>
@@ -89,10 +97,22 @@ export default function WelcomeScreen() {
                     <Text style={styles.skipButtonText}>Pomiń</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+                <TouchableOpacity
+                    style={[
+                        styles.nextButton,
+                        currentIndex === slides.length - 1 && styles.startButton
+                    ]}
+                    onPress={handleNext}
+                >
                     <Text style={styles.nextButtonText}>
                         {currentIndex === slides.length - 1 ? 'Rozpocznij' : 'Dalej'}
                     </Text>
+                    <Ionicons
+                        name="arrow-forward"
+                        size={20}
+                        color="white"
+                        style={styles.arrowIcon}
+                    />
                 </TouchableOpacity>
             </View>
         </View>
@@ -102,18 +122,27 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: colors.white,
         justifyContent: 'center',
     },
     slide: {
         width,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 40,
+        padding: responsive.largeMargin,
+    },
+    iconContainer: {
+        backgroundColor: 'rgba(74,108,247,0.1)',
+        borderRadius: 50,
+        padding: 16,
+        marginBottom: 24,
+    },
+    icon: {
+        alignSelf: 'center',
     },
     image: {
-        width: width * 0.8,
-        height: width * 0.8,
+        width: width * 0.7,
+        height: width * 0.7,
         resizeMode: 'contain',
         marginBottom: 40,
     },
@@ -126,7 +155,7 @@ const styles = StyleSheet.create({
     description: {
         ...typography.body,
         textAlign: 'center',
-        color: '#5c6b7e',
+        color: colors.gray,
         paddingHorizontal: 24,
         lineHeight: 24,
     },
@@ -139,7 +168,7 @@ const styles = StyleSheet.create({
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: '#e0e3e7',
+        backgroundColor: colors.gray,
         marginHorizontal: 5,
     },
     activeDot: {
@@ -149,7 +178,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 40,
+        paddingHorizontal: responsive.largeMargin,
         marginBottom: 24,
     },
     skipButton: {
@@ -157,22 +186,30 @@ const styles = StyleSheet.create({
     },
     skipButtonText: {
         ...typography.body,
-        color: '#5c6b7e',
+        color: colors.gray,
     },
     nextButton: {
         backgroundColor: colors.primary,
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
         shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 3,
     },
+    startButton: {
+        paddingHorizontal: 32,
+    },
     nextButtonText: {
         ...typography.body,
-        color: 'white',
+        color: colors.white,
         fontWeight: '600',
     },
+    arrowIcon: {
+        marginLeft: 8,
+    }
 });

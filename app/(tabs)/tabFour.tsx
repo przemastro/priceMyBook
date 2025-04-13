@@ -20,7 +20,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
 
-type BookData = {
+interface BookDefect {
+  selected: boolean;
+  reduction: number;
+  count: number;
+}
+
+interface BookData {
   title: string;
   authors: string;
   isbn: string;
@@ -28,9 +34,10 @@ type BookData = {
   displayPrice: string;
   foundInApi: boolean;
   originalPrice: string;
-  defects: Record<string, any>;
+  defects: Record<string, BookDefect>;
+  rating: number;
   averagePrice: string;
-};
+}
 
 export default function TabFourScreen() {
   const router = useRouter();
@@ -39,7 +46,6 @@ export default function TabFourScreen() {
   const [collapsedCollections, setCollapsedCollections] = useState<Record<string, boolean>>({});
   const [isImporting, setIsImporting] = useState(false);
 
-  // Używamy kontekstu dla głównego stanu
   const {
     collections,
     books,
@@ -50,21 +56,18 @@ export default function TabFourScreen() {
     formatCurrency,
   } = useAppContext();
 
-  // Stan tymczasowy dla importu
   const [importPreview, setImportPreview] = useState<{
     collectionName: string;
     books: BookData[];
     showPreview: boolean;
   } | null>(null);
 
-  // Dodawanie kolekcji - od razu do kontekstu
   const handleAddCollection = () => {
     if (!collectionName.trim()) return;
     addCollection(collectionName);
     setCollectionName('');
   };
 
-  // Import kolekcji - najpierw do stanu lokalnego (podgląd)
   const handleImportCollection = async () => {
     try {
       setIsImporting(true);
@@ -91,17 +94,36 @@ export default function TabFourScreen() {
 
       const validBooks = parseResult
           .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
-          .map(book => ({
-            title: book.Title.trim(),
-            authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
-            isbn: book.ISBN.trim(),
-            price: book['Price (PLN)'].trim(),
-            displayPrice: `${book['Price (PLN)']} PLN`,
-            foundInApi: book['Found in API'] === 'Yes',
-            originalPrice: book['Price (PLN)'].trim(),
-            defects: {},
-            averagePrice: book['Price (PLN)'].trim()
-          }));
+          .map(book => {
+            const defects: Record<string, BookDefect> = {};
+            try {
+              if (book.Defects) {
+                const parsedDefects = JSON.parse(book.Defects);
+                Object.keys(parsedDefects).forEach(defectId => {
+                  defects[defectId] = {
+                    selected: true,
+                    reduction: parsedDefects[defectId].reduction || 0,
+                    count: parsedDefects[defectId].count || 0
+                  };
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing defects:', e);
+            }
+
+            return {
+              title: book.Title.trim(),
+              authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
+              isbn: book.ISBN.trim(),
+              price: book['Price (PLN)'].trim(),
+              displayPrice: `${book['Price (PLN)']} PLN`,
+              foundInApi: book['Found in API'] === 'Yes',
+              originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
+              defects: defects,
+              rating: parseInt(book['Condition Rating'] || '10'),
+              averagePrice: book['Average Price'] || book['Price (PLN)'].trim()
+            } as BookData;
+          });
 
       if (validBooks.length === 0) {
         Alert.alert(t('alerts.error'), t('alerts.noValidBooks'));
@@ -111,7 +133,6 @@ export default function TabFourScreen() {
 
       const newCollectionName = file.name.replace('.csv', '').slice(0, 30);
 
-      // Pokazujemy podgląd zamiast od razu dodawać
       setImportPreview({
         collectionName: newCollectionName,
         books: validBooks,
@@ -126,15 +147,11 @@ export default function TabFourScreen() {
     }
   };
 
-  // Potwierdzenie importu - migracja do kontekstu
   const confirmImport = async () => {
     if (!importPreview) return;
 
     try {
-      // Dodajemy kolekcję do kontekstu
       addCollection(importPreview.collectionName);
-
-      // Dodajemy książki do kontekstu
       await addBooksToCollection(importPreview.collectionName, importPreview.books);
 
       Alert.alert(
@@ -152,12 +169,10 @@ export default function TabFourScreen() {
     }
   };
 
-  // Anulowanie importu
   const cancelImport = () => {
     setImportPreview(null);
   };
 
-  // Usuwanie kolekcji
   const handleDeleteCollection = (collectionName: string) => {
     const bookCount = books[collectionName]?.length || 0;
 
@@ -184,13 +199,23 @@ export default function TabFourScreen() {
     );
   };
 
-  // Eksport do CSV
   const handleExportCSV = async (collectionName: string) => {
     const booksToExport = books[collectionName] || [];
 
-    let csvContent = "Title,Authors,ISBN,Price (PLN),Found in API\n";
+    let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Average Price,Condition Rating,Found in API,Defects\n";
+
     booksToExport.forEach(book => {
-      csvContent += `"${book.title.replace(/"/g, '""')}","${book.authors.replace(/"/g, '""')}",${book.isbn},${book.price},${book.foundInApi ? 'Yes' : 'No'}\n`;
+      const defectsString = JSON.stringify(book.defects || {});
+
+      csvContent += `"${book.title.replace(/"/g, '""')}",` +
+          `"${book.authors.replace(/"/g, '""')}",` +
+          `${book.isbn},` +
+          `${book.originalPrice},` +
+          `${book.price},` +
+          `${book.averagePrice},` +
+          `${book.rating},` +
+          `${book.foundInApi ? 'Yes' : 'No'},` +
+          `"${defectsString.replace(/"/g, '""')}"\n`;
     });
 
     try {
@@ -211,7 +236,6 @@ export default function TabFourScreen() {
     }
   };
 
-  // Funkcje pomocnicze
   const toggleCollapse = (collection: string) => {
     setCollapsedCollections(prev => ({
       ...prev,
@@ -227,7 +251,8 @@ export default function TabFourScreen() {
         isbn: book.isbn,
         title: book.title,
         authors: book.authors,
-        averagePrice: book.price,
+        averagePrice: book.averagePrice,
+        originalPrice: book.originalPrice,
         fromHistory: 'false',
         editMode: 'true',
         collectionName,
@@ -257,7 +282,18 @@ export default function TabFourScreen() {
     );
   };
 
-  // Modal podglądu importu
+  const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined) => {
+    if (!defects) return t('labels.noDefects');
+
+    const defectList = Object.keys(defects)
+        .filter(key => defects[key].selected)
+        .map(key => `${t(`defects.${key}`)} (${defects[key].count}x)`);
+
+    return defectList.length > 0
+        ? defectList.join(', ')
+        : t('labels.noDefects');
+  };
+
   const ImportPreviewModal = () => {
     if (!importPreview) return null;
 
@@ -276,6 +312,12 @@ export default function TabFourScreen() {
                   <View key={index} style={styles.previewBook}>
                     <Text style={styles.previewBookTitle}>{book.title}</Text>
                     <Text style={styles.previewBookIsbn}>ISBN: {book.isbn}</Text>
+                    <Text style={styles.previewBookRating}>
+                      {t('labels.condition')}: {book.rating}/10
+                    </Text>
+                    <Text style={styles.previewBookDefects}>
+                      {t('labels.defects')}: {formatDefectsSummary(book.defects)}
+                    </Text>
                   </View>
               ))}
               {importPreview.books.length > 5 && (
@@ -310,7 +352,6 @@ export default function TabFourScreen() {
           {t('titles.manageCollections')}
         </Text>
 
-        {/* Summary Section */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryItem}>
             <Ionicons name="library-outline" size={24} color={colors.primary} />
@@ -332,7 +373,6 @@ export default function TabFourScreen() {
           </View>
         </View>
 
-        {/* Add/Import Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeader}>{t('labels.manageCollections')}</Text>
           <View style={styles.addCollectionContainer}>
@@ -368,7 +408,6 @@ export default function TabFourScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Collections List */}
         <Text style={styles.sectionHeader}>{t('labels.yourCollections')}</Text>
 
         {collections.length === 0 ? (
@@ -445,6 +484,12 @@ export default function TabFourScreen() {
                                   <Text style={styles.bookPrice}>
                                     {t('bookInfo.finalPrice')}: {book.displayPrice}
                                   </Text>
+                                  <Text style={styles.bookCondition}>
+                                    {t('labels.condition')}: {book.rating}/10
+                                  </Text>
+                                  <Text style={styles.bookDefects}>
+                                    {t('labels.defects')}: {formatDefectsSummary(book.defects)}
+                                  </Text>
                                   <Text style={[
                                     styles.bookStatus,
                                     { color: book.foundInApi ? colors.success : colors.error }
@@ -470,7 +515,6 @@ export default function TabFourScreen() {
             })
         )}
 
-        {/* Modal podglądu importu */}
         <ImportPreviewModal />
       </ScrollView>
   );
@@ -647,6 +691,19 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: '500',
+    marginBottom: 4,
+  },
+  bookCondition: {
+    ...typography.caption,
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  bookDefects: {
+    ...typography.caption,
+    color: colors.gray,
+    marginBottom: 4,
+    fontStyle: 'italic',
+    fontSize: 12,
   },
   bookStatus: {
     fontSize: 12,
@@ -719,6 +776,17 @@ const styles = StyleSheet.create({
   previewBookIsbn: {
     fontSize: 12,
     color: colors.gray,
+  },
+  previewBookRating: {
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 4,
+  },
+  previewBookDefects: {
+    fontSize: 12,
+    color: colors.gray,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   previewMore: {
     textAlign: 'center',

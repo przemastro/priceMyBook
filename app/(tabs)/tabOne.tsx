@@ -156,6 +156,9 @@ export default function TabOneScreen() {
       price: '0',
       displayPrice: 'N/A',
       originalPrice: '0',
+      averagePrice: '0',
+      defects: {},
+      rating: 10,
       foundInApi: false
     });
 
@@ -170,6 +173,9 @@ export default function TabOneScreen() {
         price: book.price ? book.price.toString() : '0',
         displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
         originalPrice: book.price ? book.price.toString() : '0',
+        averagePrice: book.price ? book.price.toString() : '0',
+        defects: {},
+        rating: 10,
         foundInApi: !!book.title
       });
     } catch (error) {
@@ -181,6 +187,9 @@ export default function TabOneScreen() {
         price: '0',
         displayPrice: 'N/A',
         originalPrice: '0',
+        averagePrice: '0',
+        defects: {},
+        rating: 10,
         foundInApi: false
       });
     } finally {
@@ -208,6 +217,9 @@ export default function TabOneScreen() {
       price: '0',
       displayPrice: 'N/A',
       originalPrice: '0',
+      averagePrice: '0',
+      defects: {},
+      rating: 10,
       foundInApi: false
     });
 
@@ -221,6 +233,9 @@ export default function TabOneScreen() {
             price: book.price ? book.price.toString() : '0',
             displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
             originalPrice: book.price ? book.price.toString() : '0',
+            averagePrice: book.price ? book.price.toString() : '0',
+            defects: {},
+            rating: 10,
             foundInApi: !!book.title
           });
         })
@@ -233,6 +248,9 @@ export default function TabOneScreen() {
             price: '0',
             displayPrice: 'N/A',
             originalPrice: '0',
+            averagePrice: '0',
+            defects: {},
+            rating: 10,
             foundInApi: false
           });
         })
@@ -259,6 +277,9 @@ export default function TabOneScreen() {
       price: numericPrice,
       displayPrice: `$${numericPrice}`,
       originalPrice: numericPrice,
+      averagePrice: numericPrice,
+      defects: {},
+      rating: 10,
       foundInApi: !!bookInfo?.title
     });
 
@@ -331,140 +352,139 @@ export default function TabOneScreen() {
             >
               <View style={styles.cameraOverlay}>
                 <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
-                  <View style={styles.scanFrameTopLeft} />
+                    <View style={styles.scanFrameTopLeft} />
                   <View style={styles.scanFrameTopRight} />
-                  <View style={styles.scanFrameBottomLeft} />
-                  <View style={styles.scanFrameBottomRight} />
-                </Animated.View>
+                <View style={styles.scanFrameBottomLeft} />
+                <View style={styles.scanFrameBottomRight} />
+              </Animated.View>
 
-                <Text style={styles.scanHintText}>{t('labels.scanBarcode')}</Text>
-              </View>
-            </BarCodeScanner>
-        )}
-
-        {/* Przycisk zamknięcia na stałe w lewym górnym rogu */}
-        {!isManualMode && !scanned && (
-            <TouchableOpacity
-                style={styles.closeButton}
-                onPress={toggleManualMode}
-            >
-              <Ionicons name="close" size={32} color="white" />
-            </TouchableOpacity>
-        )}
-
-        {isManualMode && (
-            <View style={styles.manualInputContainer}>
-              <View style={styles.manualHeader}>
-                <TouchableOpacity onPress={resetScanner}>
-                  <Ionicons name="arrow-back" size={24} color={colors.primary} />
-                </TouchableOpacity>
-                <Text style={[typography.h1, styles.manualInputTitle]}>
-                  {t('labels.enterISBNManually')}
-                </Text>
-                <View style={{ width: 24 }} />
-              </View>
-
-              <View style={styles.inputRow}>
-                <TextInput
-                    style={[styles.input, styles.flexInput]}
-                    placeholder={t('placeholders.enterISBN')}
-                    placeholderTextColor="#888"
-                    keyboardType="numeric"
-                    value={manualISBN}
-                    onChangeText={setManualISBN}
-                    autoFocus
-                />
-                <TouchableOpacity
-                    style={styles.submitButton}
-                    onPress={handleManualSubmit}
-                >
-                  <Text style={styles.submitButtonText}>
-                    {t('buttons.submit')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.scanHintText}>{t('labels.scanBarcode')}</Text>
             </View>
-        )}
+          </BarCodeScanner>
+          )}
 
-        <Modal
-            animationType="fade"
-            transparent
-            visible={modalVisible}
-            onRequestClose={handleCancel}
-            key={currentLang}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>
-                {t('bookInfo.scannedISBN')}: {isbn}
-              </Text>
+{!isManualMode && !scanned && (
+    <TouchableOpacity
+        style={styles.closeButton}
+        onPress={toggleManualMode}
+    >
+      <Ionicons name="close" size={32} color="white" />
+    </TouchableOpacity>
+)}
 
-              {loading ? (
-                  <ActivityIndicator size="large" color={colors.primary} />
-              ) : (
-                  <>
-                    {bookInfo && (
-                        <View style={styles.bookInfoContainer}>
-                          {bookInfo.image && (
-                              <Image
-                                  source={{ uri: bookInfo.image }}
-                                  style={styles.bookImage}
-                              />
-                          )}
-                          <Text style={styles.bookInfoText}>
-                            {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
-                          </Text>
-                          <Text style={styles.bookInfoText}>
-                            {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
-                          </Text>
-                          {bookInfo.publisher && (
-                              <Text style={styles.bookInfoText}>
-                                {t('bookInfo.publisher')}: {bookInfo.publisher}
-                              </Text>
-                          )}
-                        </View>
-                    )}
-
-                    <View style={styles.priceInputContainer}>
-                      <Text style={styles.suggestedPriceText}>
-                        {t('bookInfo.suggestedPrice')}: {bookInfo?.price ? `$${bookInfo.price.toFixed(2)}` : t('bookInfo.noPrice')}
-                      </Text>
-                      <TextInput
-                          style={styles.input}
-                          placeholder={t('placeholders.enterPrice')}
-                          placeholderTextColor="#888"
-                          keyboardType="numeric"
-                          value={manualPrice}
-                          onChangeText={setManualPrice}
-                          autoFocus={!bookInfo?.price}
-                      />
-                    </View>
-
-                    <View style={styles.modalButtonsContainer}>
-                      <TouchableOpacity
-                          style={styles.cancelButton}
-                          onPress={handleCancel}
-                      >
-                        <Text style={styles.cancelButtonText}>
-                          {t('buttons.cancel')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                          style={styles.primaryButton}
-                          onPress={handlePrice}
-                      >
-                        <Text style={styles.continueButtonText}>
-                          {t('buttons.continue')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-              )}
-            </View>
-          </View>
-        </Modal>
+{isManualMode && (
+    <View style={styles.manualInputContainer}>
+      <View style={styles.manualHeader}>
+        <TouchableOpacity onPress={resetScanner}>
+          <Ionicons name="arrow-back" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[typography.h1, styles.manualInputTitle]}>
+          {t('labels.enterISBNManually')}
+        </Text>
+        <View style={{ width: 24 }} />
       </View>
-  );
+
+      <View style={styles.inputRow}>
+        <TextInput
+            style={[styles.input, styles.flexInput]}
+            placeholder={t('placeholders.enterISBN')}
+            placeholderTextColor="#888"
+            keyboardType="numeric"
+            value={manualISBN}
+            onChangeText={setManualISBN}
+            autoFocus
+        />
+        <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleManualSubmit}
+        >
+          <Text style={styles.submitButtonText}>
+            {t('buttons.submit')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+)}
+
+<Modal
+    animationType="fade"
+    transparent
+    visible={modalVisible}
+    onRequestClose={handleCancel}
+    key={currentLang}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContainer}>
+      <Text style={styles.modalTitle}>
+        {t('bookInfo.scannedISBN')}: {isbn}
+      </Text>
+
+      {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} />
+      ) : (
+          <>
+            {bookInfo && (
+                <View style={styles.bookInfoContainer}>
+                  {bookInfo.image && (
+                      <Image
+                          source={{ uri: bookInfo.image }}
+                          style={styles.bookImage}
+                      />
+                  )}
+                  <Text style={styles.bookInfoText}>
+                    {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
+                  </Text>
+                  <Text style={styles.bookInfoText}>
+                    {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
+                  </Text>
+                  {bookInfo.publisher && (
+                      <Text style={styles.bookInfoText}>
+                        {t('bookInfo.publisher')}: {bookInfo.publisher}
+                      </Text>
+                  )}
+                </View>
+            )}
+
+            <View style={styles.priceInputContainer}>
+              <Text style={styles.suggestedPriceText}>
+                {t('bookInfo.suggestedPrice')}: {bookInfo?.price ? `$${bookInfo.price.toFixed(2)}` : t('bookInfo.noPrice')}
+              </Text>
+              <TextInput
+                  style={styles.input}
+                  placeholder={t('placeholders.enterPrice')}
+                  placeholderTextColor="#888"
+                  keyboardType="numeric"
+                  value={manualPrice}
+                  onChangeText={setManualPrice}
+                  autoFocus={!bookInfo?.price}
+              />
+            </View>
+
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleCancel}
+              >
+                <Text style={styles.cancelButtonText}>
+                  {t('buttons.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={handlePrice}
+              >
+                <Text style={styles.continueButtonText}>
+                  {t('buttons.continue')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+      )}
+    </View>
+  </View>
+</Modal>
+</View>
+);
 }
 
 const styles = StyleSheet.create({

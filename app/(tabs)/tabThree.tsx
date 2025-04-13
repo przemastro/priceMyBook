@@ -27,6 +27,7 @@ interface BookDefect {
   id: string;
   selected: boolean;
   priceReduction: number;
+  count: number;
   confidence?: number;
   icon: string;
 }
@@ -76,10 +77,11 @@ export default function TabThreeScreen() {
     id: defect.id,
     selected: false,
     priceReduction: getDefaultReduction(defect.id),
+    count: 0,
     icon: defect.icon
   })));
   const [isLoading, setIsLoading] = useState(false);
-  const [isScanning, setIsScanning] = useState(false); // Zmienione na false
+  const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scannedDefect, setScannedDefect] = useState<BookDefect | null>(null);
@@ -137,21 +139,52 @@ export default function TabThreeScreen() {
     const basePrice = parseFloat(originalPrice) || 0;
     const totalReduction = defects
         .filter((defect) => defect.selected)
-        .reduce((sum, defect) => sum + (defect.priceReduction || 0), 0);
-    return basePrice * (1 - totalReduction / 100);
+        .reduce((sum, defect) => {
+          const reduction = defect.priceReduction * Math.min(defect.count, 5);
+          return sum + reduction;
+        }, 0);
+
+    const maxReduction = 0.9 * basePrice;
+    const reducedPrice = basePrice * (1 - totalReduction / 100);
+
+    return Math.max(reducedPrice, basePrice - maxReduction);
+  };
+
+  const calculateBookRating = (): number => {
+    const selectedDefects = defects.filter(d => d.selected);
+    if (selectedDefects.length === 0) return 10;
+
+    let ratingReduction = selectedDefects.length;
+    const countReduction = selectedDefects.reduce((sum, defect) => {
+      return sum + Math.floor(defect.count / 5);
+    }, 0);
+
+    const totalReduction = ratingReduction + countReduction;
+    return Math.max(1, 10 - totalReduction);
   };
 
   const finalPrice = calculateFinalPrice();
+  const bookRating = calculateBookRating();
 
   const startScanning = async () => {
-    if (!permission?.granted) {
-      await requestPermission();
-    }
-    if (permission?.granted) {
-      setIsScanning(true);
-      setScanProgress(0);
-    } else {
-      Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+    setIsLoading(true);
+    try {
+      if (!permission) {
+        const { status } = await requestPermission();
+        if (status !== 'granted') {
+          Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+          return;
+        }
+      }
+
+      if (permission?.granted) {
+        setIsScanning(true);
+        setScanProgress(0);
+      } else {
+        Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -198,13 +231,27 @@ export default function TabThreeScreen() {
   const acceptDefect = () => {
     if (!scannedDefect) return;
     setDefects(prev => prev.map(d =>
-        d.id === scannedDefect.id ? { ...d, selected: true } : d
+        d.id === scannedDefect.id ? {
+          ...d,
+          selected: true,
+          count: d.count + 1
+        } : d
     ));
     setShowDefectModal(false);
   };
 
   const rejectDefect = () => {
     setShowDefectModal(false);
+  };
+
+  const toggleDefectSelection = (id: string) => {
+    setDefects(prev => prev.map(d =>
+        d.id === id ? {
+          ...d,
+          selected: !d.selected,
+          count: !d.selected ? Math.max(1, d.count) : 0
+        } : d
+    ));
   };
 
   const handleSaveBook = () => {
@@ -220,8 +267,13 @@ export default function TabThreeScreen() {
       originalPrice: originalPrice,
       defects: selectedDefects.reduce((acc, defect) => ({
         ...acc,
-        [defect.id]: { selected: true, reduction: defect.priceReduction }
-      }), {})
+        [defect.id]: {
+          selected: true,
+          reduction: defect.priceReduction,
+          count: defect.count
+        }
+      }), {}),
+      rating: bookRating
     };
 
     if (editMode && collectionName && bookIndex !== null) {
@@ -262,14 +314,15 @@ export default function TabThreeScreen() {
             styles.defectItemContainer,
             item.selected && styles.selectedDefect
           ]}
-          onPress={() => {
-            const updatedDefects = defects.map(d =>
-                d.id === item.id ? { ...d, selected: !d.selected } : d
-            );
-            setDefects(updatedDefects);
-          }}
+          onPress={() => toggleDefectSelection(item.id)}
           activeOpacity={0.7}
       >
+        {item.selected && item.count > 0 && (
+            <View style={styles.defectCountBadge}>
+              <Text style={styles.defectCountBadgeText}>{item.count}</Text>
+            </View>
+        )}
+
         <View style={styles.defectIconContainer}>
           <Ionicons
               name={item.icon as any}
@@ -282,31 +335,32 @@ export default function TabThreeScreen() {
           item.selected && styles.selectedDefectName
         ]}>
           {t(`defects.${item.id}`)}
-          {item.confidence && ` (${item.confidence}%)`}
         </Text>
 
         {item.selected && (
-            <View style={styles.sliderRow}>
-              <Slider
-                  value={item.priceReduction}
-                  onValueChange={(value) => {
-                    const updatedDefects = defects.map(d =>
-                        d.id === item.id ? { ...d, priceReduction: value } : d
-                    );
-                    setDefects(updatedDefects);
-                  }}
-                  minimumValue={0}
-                  maximumValue={100}
-                  step={1}
-                  style={styles.slider}
-                  minimumTrackTintColor={colors.primary}
-                  maximumTrackTintColor="#e0e3e7"
-                  thumbTintColor={colors.primary}
-              />
-              <Text style={styles.reductionText}>
-                {item.priceReduction.toFixed(0)}%
-              </Text>
-            </View>
+            <>
+              <View style={styles.sliderRow}>
+                <Slider
+                    value={item.priceReduction}
+                    onValueChange={(value) => {
+                      const updatedDefects = defects.map(d =>
+                          d.id === item.id ? { ...d, priceReduction: value } : d
+                      );
+                      setDefects(updatedDefects);
+                    }}
+                    minimumValue={0}
+                    maximumValue={100}
+                    step={1}
+                    style={styles.slider}
+                    minimumTrackTintColor={colors.primary}
+                    maximumTrackTintColor="#e0e3e7"
+                    thumbTintColor={colors.primary}
+                />
+                <Text style={styles.reductionText}>
+                  {item.priceReduction.toFixed(0)}%
+                </Text>
+              </View>
+            </>
         )}
       </TouchableOpacity>
   );
@@ -437,6 +491,26 @@ export default function TabThreeScreen() {
           {editMode ? t('titles.editBook') : t('titles.analyzeCondition')}
         </Text>
 
+        <View style={styles.ratingContainer}>
+          <Text style={styles.ratingLabel}>{t('labels.bookCondition')}:</Text>
+          <View style={styles.ratingStars}>
+            {[...Array(10)].map((_, i) => (
+                <Ionicons
+                    key={i}
+                    name={i < bookRating ? 'star' : 'star-outline'}
+                    size={24}
+                    color={i < bookRating ? colors.primary : colors.gray}
+                />
+            ))}
+          </View>
+          <Text style={styles.ratingText}>
+            {bookRating}/10 {bookRating >= 8 ? t('labels.excellent') :
+              bookRating >= 6 ? t('labels.good') :
+                  bookRating >= 4 ? t('labels.fair') :
+                      t('labels.poor')}
+          </Text>
+        </View>
+
         <View style={styles.combinedSection}>
           <View style={styles.priceSection}>
             <Text style={typography.body}>{t('bookInfo.isbn')}: {isbn || t('bookInfo.noISBN')}</Text>
@@ -502,16 +576,37 @@ export default function TabThreeScreen() {
           <TouchableOpacity
               style={[
                 styles.startScanButton,
-                isScanning && styles.disabledButton
+                (isScanning || isLoading) && styles.disabledButton
               ]}
               onPress={startScanning}
-              disabled={isScanning}
+              disabled={isScanning || isLoading}
+              activeOpacity={0.7}
           >
-            <Ionicons name="camera" size={24} color={colors.primary} style={styles.scanIcon} />
-            <Text style={styles.startScanButtonText}>
+            <Ionicons
+                name="camera"
+                size={24}
+                color={isScanning || isLoading ? colors.gray : colors.primary}
+                style={styles.scanIcon}
+            />
+            <Text style={[
+              styles.startScanButtonText,
+              (isScanning || isLoading) && styles.disabledButtonText
+            ]}>
               {t('buttons.startScanning')}
             </Text>
           </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionHeader}>{t('labels.selectDefects')}</Text>
+        <View style={styles.defectsGrid}>
+          <FlatList
+              data={defects}
+              renderItem={renderDefectItem}
+              keyExtractor={item => item.id}
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              scrollEnabled={false}
+          />
         </View>
 
         <Text style={styles.sectionHeader}>{t('labels.selectCollection')}</Text>
@@ -580,18 +675,6 @@ export default function TabThreeScreen() {
                 </View>
             )}
           </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionHeader}>{t('labels.selectDefects')}</Text>
-        <View style={styles.defectsGrid}>
-          <FlatList
-              data={defects}
-              renderItem={renderDefectItem}
-              keyExtractor={item => item.id}
-              numColumns={2}
-              columnWrapperStyle={styles.columnWrapper}
-              scrollEnabled={false}
-          />
         </View>
       </ScrollView>
   );
@@ -718,6 +801,62 @@ const styles = StyleSheet.create({
     marginTop: responsive.largeMargin,
     textAlign: 'center',
     color: colors.black,
+  },
+  reductionLevelContainer: {
+    backgroundColor: 'white',
+    borderRadius: 5,
+    padding: 16,
+    marginBottom: 16,
+  },
+  reductionLevelLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: colors.black,
+  },
+  reductionLevelButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  reductionLevelButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: colors.gray,
+    alignItems: 'center',
+  },
+  reductionLevelButtonActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(74,108,247,0.1)',
+  },
+  reductionLevelButtonText: {
+    color: colors.black,
+  },
+  reductionLevelButtonTextActive: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  ratingContainer: {
+    backgroundColor: 'white',
+    borderRadius: 5,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  ratingLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: colors.black,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  ratingText: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: 'bold',
   },
   combinedSection: {
     backgroundColor: 'white',
@@ -861,7 +1000,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     marginBottom: 12,
     alignItems: 'center',
-    height: 130
+    height: 130,
+    position: 'relative'
   },
   selectedDefect: {
     borderColor: colors.primary,
@@ -882,6 +1022,22 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '500',
   },
+  defectCountBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  defectCountBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   sliderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -899,6 +1055,12 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'right',
     fontWeight: '500',
+  },
+  totalReductionText: {
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 4,
+    textAlign: 'center',
   },
   createCollectionButton: {
     height: 50,
@@ -947,7 +1109,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: 'rgba(74,108,247,0.2)',
+    borderColor: colors.primary,
     flexDirection: 'row',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -956,6 +1118,10 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+    borderColor: colors.gray,
+  },
+  disabledButtonText: {
+    color: colors.gray,
   },
   startScanButtonText: {
     color: colors.primary,
