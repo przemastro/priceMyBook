@@ -33,6 +33,7 @@ interface AppContextType {
     addBookToCollection: (collectionName: string, bookData: Omit<BookData, 'createdAt'>) => void;
     addBooksToCollection: (collectionName: string, booksData: BookData[]) => Promise<void>;
     removeBookFromCollection: (collectionName: string, bookIndex: number) => void;
+    updateBookInCollection: (collectionName: string, bookIndex: number, updatedData: Partial<BookData>) => void;
     exchangeRate: number;
     exchangeRateError: string | null;
     lastRateUpdate: Date | null;
@@ -41,7 +42,6 @@ interface AppContextType {
     addToScanHistory: (bookData: Omit<BookData, 'createdAt'>) => void;
     clearScanHistory: () => void;
     formatCurrency: (price: string) => string;
-    updateBookInCollection: (collectionName: string, bookIndex: number, updatedData: Partial<BookData>) => void;
     forceUpdateCollections: () => void;
 }
 
@@ -229,7 +229,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     displayPrice: updatedData.price ? formatCurrency(updatedData.price) :
                         updatedCollection[bookIndex].displayPrice,
                     defects: updatedData.defects || updatedCollection[bookIndex].defects,
-                    rating: updatedData.rating || updatedCollection[bookIndex].rating
+                    rating: updatedData.rating || updatedCollection[bookIndex].rating,
+                    averagePrice: updatedData.averagePrice || updatedCollection[bookIndex].averagePrice
                 };
 
                 return {

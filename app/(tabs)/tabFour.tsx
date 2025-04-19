@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { colors, responsive, typography } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
@@ -256,7 +247,9 @@ export default function TabFourScreen() {
         fromHistory: 'false',
         editMode: 'true',
         collectionName,
-        bookIndex: bookIndex.toString()
+        bookIndex: bookIndex.toString(),
+        // Upewnij się, że defects są przekazywane jako string JSON
+        defects: JSON.stringify(book.defects || {})
       }
     });
   };

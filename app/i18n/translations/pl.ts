@@ -117,7 +117,7 @@ export default {
         enterPriceManually: 'Wprowadź cenę ręcznie',
         continue: 'KONTYNUUJ',
         createCollection: "Utwórz księgozbiór",
-        createFirstCollection: "Utwórz swoją pierwszy księgozbiór",
+        createFirstCollection: "Utwórz swój pierwszy księgozbiór",
         deleteCollection: "Usuń księgozbiór",
         confirm: "Potwierdź",
         clearHistory: 'Wyczyść historię',

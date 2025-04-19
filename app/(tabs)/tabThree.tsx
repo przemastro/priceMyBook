@@ -23,15 +23,6 @@ import { colors, typography, responsive } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
-interface BookDefect {
-  id: string;
-  selected: boolean;
-  priceReduction: number;
-  count: number;
-  confidence?: number;
-  icon: string;
-}
-
 const DEFECT_TYPES = [
   { id: 'tornPages', icon: 'document-text-outline' },
   { id: 'brokenSpine', icon: 'book-outline' },
@@ -44,6 +35,15 @@ const DEFECT_TYPES = [
   { id: 'foldedCorners', icon: 'copy-outline' },
   { id: 'fadedCover', icon: 'sunny-outline' }
 ] as const;
+
+interface BookDefect {
+  id: string;
+  selected: boolean;
+  priceReduction: number;
+  count: number;
+  confidence?: number;
+  icon: string;
+}
 
 const getDefaultReduction = (id: string): number => {
   const reductions: Record<string, number> = {
@@ -67,6 +67,7 @@ export default function TabThreeScreen() {
     collections,
     addBookToCollection,
     removeBookFromCollection,
+    updateBookInCollection,
     exchangeRate,
     exchangeRateError,
     formatCurrency,
@@ -80,6 +81,7 @@ export default function TabThreeScreen() {
     count: 0,
     icon: defect.icon
   })));
+
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -99,6 +101,46 @@ export default function TabThreeScreen() {
   const editMode = params.editMode === 'true';
   const collectionName = params.collectionName?.toString();
   const bookIndex = params.bookIndex ? parseInt(params.bookIndex.toString()) : null;
+
+  // Reset defects when book changes
+  useEffect(() => {
+    if (params.editMode === 'true' && params.defects) {
+      try {
+        const bookDefects = typeof params.defects === 'string'
+            ? JSON.parse(params.defects)
+            : params.defects;
+
+        const updatedDefects = DEFECT_TYPES.map(defect => {
+          const bookDefect = bookDefects[defect.id];
+          return {
+            id: defect.id,
+            selected: bookDefect?.selected || false,
+            priceReduction: bookDefect?.reduction || getDefaultReduction(defect.id),
+            count: bookDefect?.count || 0,
+            icon: defect.icon
+          };
+        });
+        setDefects(updatedDefects);
+      } catch (error) {
+        console.error('Error parsing defects:', error);
+        setDefects(DEFECT_TYPES.map(defect => ({
+          id: defect.id,
+          selected: false,
+          priceReduction: getDefaultReduction(defect.id),
+          count: 0,
+          icon: defect.icon
+        })));
+      }
+    } else {
+      setDefects(DEFECT_TYPES.map(defect => ({
+        id: defect.id,
+        selected: false,
+        priceReduction: getDefaultReduction(defect.id),
+        count: 0,
+        icon: defect.icon
+      })));
+    }
+  }, [params.editMode, params.defects]);
 
   useEffect(() => {
     setOriginalPrice(originalPriceParam);
@@ -273,15 +315,19 @@ export default function TabThreeScreen() {
           count: defect.count
         }
       }), {}),
-      rating: bookRating
+      rating: bookRating,
+      averagePrice: averagePrice
     };
 
     if (editMode && collectionName && bookIndex !== null) {
-      if (selectedCollection !== collectionName) {
+      if (selectedCollection === collectionName) {
+        updateBookInCollection(collectionName, bookIndex, bookData);
+      } else {
         removeBookFromCollection(collectionName, bookIndex);
+        addBookToCollection(selectedCollection, bookData);
       }
-      addBookToCollection(selectedCollection, bookData);
       Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
+      router.back();
     } else {
       if (!selectedCollection && collections.length > 0) {
         Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
@@ -289,6 +335,7 @@ export default function TabThreeScreen() {
       }
       addBookToCollection(selectedCollection, bookData);
       Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`);
+      router.back();
     }
   };
 
