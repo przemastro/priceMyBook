@@ -111,12 +111,13 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 16,
+        paddingTop: 6,
         backgroundColor: '#f8f9fa',
     },
     header: {
         marginBottom: 24,
         marginTop: responsive.largeMargin,
-        textAlign: 'center',
+        textAlign: 'left',
         color: colors.black,
     },
     searchInput: {
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
     emptyText: {
         ...typography.body,
         textAlign: 'center',
-        color: colors.gray,
+        color: colors.grayDark,
     },
     clearButton: {
         height: 50,
@@ -172,13 +173,13 @@ const styles = StyleSheet.create({
     },
     originalPrice: {
         ...typography.caption,
-        color: colors.gray,
+        color: colors.grayDark,
         textDecorationLine: 'line-through',
         marginTop: 4
     },
     noPrice: {
         ...typography.caption,
-        color: colors.gray,
+        color: colors.grayDark,
         fontStyle: 'italic',
         marginTop: 4
     },

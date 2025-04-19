@@ -524,11 +524,12 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
+    paddingTop: 6,
     backgroundColor: '#f8f9fa',
   },
   header: {
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: 'left',
     color: colors.black,
     marginTop: responsive.largeMargin,
   },
@@ -680,11 +681,11 @@ const styles = StyleSheet.create({
   bookAuthors: {
     ...typography.caption,
     marginBottom: 4,
-    color: colors.gray,
+    color: colors.grayDark,
   },
   bookIsbn: {
     ...typography.caption,
-    color: colors.gray,
+    color: colors.grayDark,
     marginBottom: 4,
   },
   bookPrice: {
@@ -700,7 +701,7 @@ const styles = StyleSheet.create({
   },
   bookDefects: {
     ...typography.caption,
-    color: colors.gray,
+    color: colors.grayDark,
     marginBottom: 4,
     fontStyle: 'italic',
     fontSize: 12,
@@ -746,7 +747,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '90%',
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 2,
     padding: 20,
     maxHeight: '80%',
   },
@@ -775,7 +776,7 @@ const styles = StyleSheet.create({
   },
   previewBookIsbn: {
     fontSize: 12,
-    color: colors.gray,
+    color: colors.grayDark,
   },
   previewBookRating: {
     fontSize: 12,
@@ -784,7 +785,7 @@ const styles = StyleSheet.create({
   },
   previewBookDefects: {
     fontSize: 12,
-    color: colors.gray,
+    color: colors.grayDark,
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -806,15 +807,15 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   cancelButton: {
-    backgroundColor: colors.gray,
+    backgroundColor: colors.white,
   },
   confirmButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.white,
   },
   cancelButtonText: {
-    color: colors.black,
+    color: colors.primary,
   },
   confirmButtonText: {
-    color: 'white',
+    color: colors.primary,
   },
 });

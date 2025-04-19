@@ -9,6 +9,7 @@ export const colors = {
     background: '#f5f5f5', // Kolor tła
     white: '#ffffff', // Kolor tła elementów
     gray: '#eeeded', // Kolor obramowań i nieaktywnych elementów
+    grayDark: '#b6b5b5',
     error: '#e74c3c', // Kolor błędów
     success: '#2ecc71', // Kolor sukcesu
     black: '#696767'
@@ -44,7 +45,7 @@ export const typography = StyleSheet.create({
     },
     caption: {
         fontSize: 14,
-        color: colors.gray,
+        color: colors.grayDark,
     },
 });
 

@@ -794,12 +794,13 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
+    paddingTop: 6,
     backgroundColor: '#f8f9fa',
   },
   header: {
     marginBottom: 24,
     marginTop: responsive.largeMargin,
-    textAlign: 'center',
+    textAlign: 'left',
     color: colors.black,
   },
   reductionLevelContainer: {

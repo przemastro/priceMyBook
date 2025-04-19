@@ -41,7 +41,7 @@ export default {
         isbn: 'ISBN',
         title: 'Title',
         authors: 'Authors',
-        unknown: 'Unknown',
+        unknown: 'Author Unknown',
         finalPrice: 'Final Price',
         noISBN: 'No ISBN scanned',
         basePrice: 'Base Price',
@@ -58,6 +58,7 @@ export default {
         priceNotAvailable: 'Price not available',
         suggestedPrice: 'Suggested price', // lub 'Recommended price'
         noPrice: 'No price available',    // lub 'Price not available'
+        discountedPrice: 'Discounted Price'
     },
     labels: {
         selectCollection: 'Select Collection',
@@ -83,7 +84,16 @@ export default {
         totalValue: 'Total Value',
         yourCollections: 'Your Collections',
         manageCollections: 'Manage Collections',
-        importCollection: 'Import Collection'
+        importCollection: 'Import Collection',
+        excellent: 'Excellent',
+        good: 'Good',
+        fair: 'Fair',
+        poor: 'Poor',
+        bookCondition: 'Book Condition',
+        importPreview: 'Import Preview',
+        condition: 'Condition',
+        collectionName: 'Collection Name',
+        noDefects: 'No Defects',
     },
     titles: {
         scan: 'Scan ISBN',
@@ -123,7 +133,8 @@ export default {
         reject: 'REJECT',
         submit: 'Submit',
         backToScanner: 'Back to scanner',
-        importCollection: 'Import Collection'
+        importCollection: 'Import Collection',
+        confirmImport: 'CONFIRM'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
@@ -148,5 +159,26 @@ export default {
     currency: {
         symbol: '$',
         code: 'USD'
+    },
+    settings: {
+        title: 'Settings',
+        language: 'Language',
+        about: 'About',
+        priceAlgorithm: 'Price Algorithm',
+        appName: 'App',
+        name: 'Price My Book',
+        version: 'App Version',
+        changelog: 'changelog',
+        algorithmDescription: 'Algorithm Description',
+        finalPrice: 'Final Price',
+        basePrice: 'Base Price',
+        defectReduction: 'Defect Reduction',
+        steps: 'Steps',
+        maxReduction: 'Max Reduction',
+        finalPriceCalculation: 'Final Price Calculation',
+        example: 'Example',
+        changelog1: 'Initial release with price calculation',
+        changelog2: 'Multi-language support',
+        changelog3: 'Defect scanning feature'
     }
 };

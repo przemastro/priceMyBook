@@ -18,7 +18,7 @@ interface BookData {
     foundInApi: boolean;
     originalPrice: string;
     defects: Record<string, BookDefect>;
-    averagePrice: string;
+    averagePrice?: string;
     createdAt?: string;
     rating: number;
 }

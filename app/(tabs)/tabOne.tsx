@@ -565,7 +565,8 @@ const styles = StyleSheet.create({
   manualInputContainer: {
     flex: 1,
     justifyContent: 'flex-start',
-    padding: 20,
+    padding: 16,
+    paddingTop: 6,
     backgroundColor: '#f8f9fa',
   },
   manualHeader: {
@@ -574,7 +575,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginBottom: 24,
-    marginTop: responsive.largeMargin
+    marginTop: responsive.largeMargin,
+    textAlign: "left"
   },
   manualInputTitle: {
     textAlign: 'center',
