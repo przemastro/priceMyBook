@@ -21,6 +21,8 @@ interface BookData {
     averagePrice?: string;
     createdAt?: string;
     rating: number;
+    source?: 'google' | 'amazon' | 'manual'; // Dodane nowe pole
+    priceSource?: string; // Dodane nowe pole
 }
 
 interface AppContextType {
