@@ -70,6 +70,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUpdateTrigger(prev => prev + 1);
     }, []);
 
+    const initialState = {
+        collections: [], // zawsze tablica
+        books: {},       // zawsze obiekt
+    };
+
     // Load all persisted data on app start
     useEffect(() => {
         const loadPersistedData = async () => {

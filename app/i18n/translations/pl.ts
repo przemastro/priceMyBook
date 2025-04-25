@@ -54,13 +54,14 @@ export default {
         unknownTitle: 'Nieznany tytuł',
         originalPrice: "Cena pierwotna",
         priceNotAvailable: 'Cena niedostępna',
-        suggestedPrice: 'Sugerowana cena', // lub 'Cena rekomendowana'
-        noPrice: 'Brak dostępnej ceny',   // lub 'Cena niedostępna'
-        discountedPrice: 'Cena po obniżce'
+        suggestedPrice: 'Sugerowana cena',
+        noPrice: 'Brak dostępnej ceny',
+        discountedPrice: 'Cena po obniżce',
+        amazonPrices: 'Najnowsze ceny na Amazon'
     },
     labels: {
         selectCollection: 'Wybierz księgozbiór',
-        selectDefects: 'Wybierz wady',
+        selectDefects: 'Wykryte wady ksiązki',
         collections: 'Księgozbiory',
         total: 'Razem',
         noCollections: 'Brak księgozbioru',
@@ -79,7 +80,7 @@ export default {
         books: 'Książek',
         totalCollections: 'Liczba księgozbiorów',
         totalBooks: 'Liczba książek',
-        totalValue: 'Wartość całkowita',
+        totalValue: 'Wartość całkowita księgozbiorów',
         yourCollections: 'Twoje księgozbiory',
         manageCollections: 'Zarządzaj księgozbiorami',
         importCollection: 'Importuj księgozbiór',
@@ -92,18 +93,37 @@ export default {
         condition: 'Stan',
         collectionName: 'Nazwa księgozbioru',
         noDefects: 'Brak wad',
+        bookAge: 'Wiek książki',
+        yearsOld: 'Lata',
+        massMarket: 'Masowa produkcja',
+        uniqueness: 'Unikatowość książki',
+        firstEdition: 'Pierwsze wydanie',
+        collectorsEdition: 'Wydanie kolekcjonerskie',
+        authorSignature: 'Podpis autora',
+        limitedEdition: 'Limitowana edycja',
+        defunctPublisher: 'Niedziałający wydawca',
+        marketFactors: 'Pozostałe czynniki',
+        demand: 'Popyt',
+        supply: 'Podaż',
+        veryHigh: 'Bardzo wysoki',
+        high: 'Wysoki',
+        medium: 'Średni',
+        low: 'Niski',
+        veryLow: 'Bardzo niski',
+        flooded: 'Zalany rynek',
+        collection: 'Dodaj do księgozbioru'
     },
     titles: {
         scan: 'Skanuj ISBN',
-        analyzeCondition: 'Analiza stanu książki',
-        manageCollections: 'Zarządzanie księgozbiorami',
+        analyzeCondition: 'Analiza',
+        manageCollections: 'Księgozbiory',
         history: 'Historia skanowań',
         editBook: "Analiza stanu książki"
     },
     titlesShort: {
         scan: 'Skanuj ISBN',
         analyzeCondition: 'Analiza',
-        manageCollections: 'Zarządzanie',
+        manageCollections: 'Księgozbiory',
         history: 'Historia',
         editBook: "Analiza"
     },
@@ -139,6 +159,7 @@ export default {
         enterPrice: 'Wprowadź cenę ręcznie',
         searchHistory: 'Szukaj po ISBN/tytule',
         enterISBN: 'Wprowadź numer ISBN',
+        enterPricePLN: 'Wprowadź cenę'
     },
     status: {
         requestingPermission: 'Proszę czekać...',
@@ -177,7 +198,12 @@ export default {
         example: 'Przykład',
         changelog1: 'Pierwsze wydanie z obliczaniem ceny',
         changelog2: 'Wsparcie dla wielu języków',
-        changelog3: 'Funkcja skanowania uszkodzeń'
-
+        changelog3: 'Funkcja skanowania uszkodzeń',
+        activeFactors: "Współczynniki ceny końcowej",
+        defectsFactor: "Uszkodzenia",
+        uniquenessFactor: "Unikatowość",
+        marketFactor: "Czynniki rynkowe",
+        uniquenessBonus: "Bonus wynikający z unikatowości",
+        marketAdjustment: "Dostosowanie ceny w oparciu o czynniki rynkowe"
     }
-};
+}

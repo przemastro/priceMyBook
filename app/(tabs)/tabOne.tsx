@@ -73,9 +73,10 @@ interface AmazonApiResponse {
   error?: string;
 }
 
-const fetchBookPriceFromAmazonAPI = async (isbn: string): Promise<AmazonApiResponse> => {
+const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Promise<AmazonApiResponse> => {
   const asin = convertIsbnToAsin(isbn);
-  const url = `https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${asin}&country=US&limit=5&page=1`;
+  const country = language === 'pl' ? 'PL' : 'US';
+  const url = `https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${asin}&country=${country}&limit=5&page=1`;
 
   console.log('[Amazon API] Request:', {
     url,
@@ -101,10 +102,15 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string): Promise<AmazonApiRespo
       const offers = data.data.product_offers.slice(0, 5);
       const prices = offers.map((offer: any): AmazonPriceOffer => {
         const priceStr = offer.product_price || '';
-        const priceValue = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+        // Dla Polski zamieniamy przecinek na kropkę przed parsowaniem
+        const normalizedPriceStr = country === 'PL'
+            ? priceStr.replace(/\./g, '').replace(',', '.')
+            : priceStr.replace(/[^0-9.]/g, '');
+
+        const priceValue = parseFloat(normalizedPriceStr);
         return {
           price: isNaN(priceValue) ? 0 : priceValue,
-          currency: offer.currency || 'USD',
+          currency: offer.currency || (country === 'PL' ? 'PLN' : 'USD'),
           condition: offer.product_condition,
           seller: offer.seller,
           delivery: offer.delivery_price,
@@ -119,7 +125,7 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string): Promise<AmazonApiRespo
         productImage: data.data.product_photo,
         productUrl: data.data.product_url,
         isPrime: data.data.is_prime || false,
-        marketplace: data.data.country || 'US',
+        marketplace: country,
         rawResponse: data
       };
     }
@@ -128,7 +134,7 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string): Promise<AmazonApiRespo
       prices: [],
       rawResponse: data,
       isPrime: false,
-      marketplace: 'US'
+      marketplace: country
     };
   } catch (error: unknown) {
     console.error('[Amazon API] Error:', error);
@@ -136,7 +142,7 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string): Promise<AmazonApiRespo
       prices: [],
       rawResponse: null,
       isPrime: false,
-      marketplace: 'US',
+      marketplace: country,
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
@@ -182,8 +188,8 @@ const fetchBookInfoFromGoogleAPI = async (isbn: string): Promise<BookInfo | null
   }
 };
 
-const fetchBookInfoFromAmazon = async (isbn: string): Promise<BookInfo | null> => {
-  const amazonData = await fetchBookPriceFromAmazonAPI(isbn);
+const fetchBookInfoFromAmazon = async (isbn: string, language: string): Promise<BookInfo | null> => {
+  const amazonData = await fetchBookPriceFromAmazonAPI(isbn, language);
 
   if (amazonData.prices.length > 0) {
     return {
@@ -323,14 +329,14 @@ export default function TabOneScreen() {
       let book = await fetchBookInfoFromGoogleAPI(data);
 
       if (!book) {
-        book = await fetchBookInfoFromAmazon(data);
+        book = await fetchBookInfoFromAmazon(data, i18n.language);
       }
 
       if (book) {
         setBookInfo(book);
 
         if (book.source === 'google' && !book.price) {
-          const amazonData = await fetchBookPriceFromAmazonAPI(data);
+          const amazonData = await fetchBookPriceFromAmazonAPI(data, i18n.language);
           if (amazonData.prices.length > 0) {
             setBookInfo(prev => ({
               ...prev!,
@@ -345,7 +351,7 @@ export default function TabOneScreen() {
           title: book.title || t('bookInfo.notFound'),
           authors: book.authors || t('bookInfo.unknown'),
           price: book.price ? book.price.toString() : '0',
-          displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
+          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency || 'USD'}` : 'N/A',
           originalPrice: book.price ? book.price.toString() : '0',
           averagePrice: book.price ? book.price.toString() : '0',
           defects: {},
@@ -407,14 +413,14 @@ export default function TabOneScreen() {
       let book = await fetchBookInfoFromGoogleAPI(manualISBN);
 
       if (!book) {
-        book = await fetchBookInfoFromAmazon(manualISBN);
+        book = await fetchBookInfoFromAmazon(manualISBN, i18n.language);
       }
 
       if (book) {
         setBookInfo(book);
 
         if (book.source === 'google' && !book.price) {
-          const amazonData = await fetchBookPriceFromAmazonAPI(manualISBN);
+          const amazonData = await fetchBookPriceFromAmazonAPI(manualISBN, i18n.language);
           if (amazonData.prices.length > 0) {
             setBookInfo(prev => ({
               ...prev!,
@@ -429,7 +435,7 @@ export default function TabOneScreen() {
           title: book.title || t('bookInfo.notFound'),
           authors: book.authors || t('bookInfo.unknown'),
           price: book.price ? book.price.toString() : '0',
-          displayPrice: book.price ? `$${book.price.toFixed(2)}` : 'N/A',
+          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency || 'USD'}` : 'N/A',
           originalPrice: book.price ? book.price.toString() : '0',
           averagePrice: book.price ? book.price.toString() : '0',
           defects: {},
@@ -463,17 +469,17 @@ export default function TabOneScreen() {
   const handlePrice = () => {
     let priceValue = manualPrice;
     let priceSource = 'manual';
-    let currency = 'USD';
+    let currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
 
     if (selectedPrice !== null) {
       priceValue = selectedPrice.toString();
       priceSource = 'amazon';
-      currency = bookInfo?.amazonData?.prices?.[0]?.currency || 'USD';
+      currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
     }
     else if (!priceValue && bookInfo?.price) {
       priceValue = bookInfo.price.toString();
       priceSource = bookInfo.source || 'manual';
-      currency = 'USD';
+      currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
     }
     else if (!priceValue) {
       Alert.alert(t('alerts.error'), t('alerts.enterPrice'));
@@ -539,8 +545,9 @@ export default function TabOneScreen() {
       logs += `ISBN: ${isbn}\n\n`;
     } else {
       logs += 'Source: Amazon API\n';
+      logs += `Marketplace: ${bookInfo?.amazonData?.marketplace || 'US'}\n`;
       logs += `ASIN: ${bookInfo?.asin}\n`;
-      logs += `URL: https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${bookInfo?.asin}&country=US&limit=5&page=1\n\n`;
+      logs += `URL: https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${bookInfo?.asin}&country=${bookInfo?.amazonData?.marketplace || 'US'}&limit=5&page=1\n\n`;
     }
 
     logs += '=== API Response ===\n';
@@ -554,7 +561,7 @@ export default function TabOneScreen() {
     logs += '=== Processed Book Info ===\n';
     logs += `Title: ${bookInfo?.title || 'N/A'}\n`;
     logs += `Authors: ${bookInfo?.authors || 'N/A'}\n`;
-    logs += `Price: ${bookInfo?.price || 'N/A'} ${bookInfo?.amazonData?.prices?.[0]?.currency || 'USD'}\n`;
+    logs += `Price: ${bookInfo?.price || 'N/A'} ${bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD')}\n`;
     logs += `Image URL: ${bookInfo?.image || 'N/A'}\n`;
     logs += `Source: ${bookInfo?.source || 'manual'}\n`;
 
@@ -569,7 +576,7 @@ export default function TabOneScreen() {
 
     return (
         <View style={styles.amazonPricesContainer}>
-          <Text style={styles.amazonPricesTitle}>{t('bookInfo.amazonPrices')}:</Text>
+          <Text style={styles.amazonPricesTitle}>{t('bookInfo.amazonPrices')} ({bookInfo.amazonData.marketplace}):</Text>
           {bookInfo.amazonData.prices.map((offer: AmazonPriceOffer, index: number) => (
               <TouchableOpacity
                   key={index}
@@ -642,206 +649,206 @@ export default function TabOneScreen() {
             >
               <View style={styles.cameraOverlay}>
                 <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
-                  <View style={styles.scanFrameTopLeft} />
+                    <View style={styles.scanFrameTopLeft} />
                   <View style={styles.scanFrameTopRight} />
-                  <View style={styles.scanFrameBottomLeft} />
-                  <View style={styles.scanFrameBottomRight} />
-                </Animated.View>
+                <View style={styles.scanFrameBottomLeft} />
+                <View style={styles.scanFrameBottomRight} />
+              </Animated.View>
 
-                <Text style={styles.scanHintText}>{t('labels.scanBarcode')}</Text>
-              </View>
-            </BarCodeScanner>
-        )}
+              <Text style={styles.scanHintText}>{t('labels.scanBarcode')}</Text>
+            </View>
+          </BarCodeScanner>
+          )}
 
-        {!isManualMode && !scanned && (
-            <TouchableOpacity
-                style={styles.closeButton}
-                onPress={toggleManualMode}
-            >
-              <Ionicons name="close" size={32} color="white" />
-            </TouchableOpacity>
-        )}
+{!isManualMode && !scanned && (
+    <TouchableOpacity
+        style={styles.closeButton}
+        onPress={toggleManualMode}
+    >
+      <Ionicons name="close" size={32} color="white" />
+    </TouchableOpacity>
+)}
 
-        {isManualMode && (
-            <View style={styles.manualInputContainer}>
-              <View style={styles.manualHeader}>
-                <TouchableOpacity onPress={resetScanner}>
-                  <Ionicons name="arrow-back" size={24} color={colors.primary} />
-                </TouchableOpacity>
-                <Text style={[typography.h1, styles.manualInputTitle]}>
-                  {t('labels.enterISBNManually')}
-                </Text>
-                <View style={{ width: 24 }} />
-              </View>
+{isManualMode && (
+    <View style={styles.manualInputContainer}>
+      <View style={styles.manualHeader}>
+        <TouchableOpacity onPress={resetScanner}>
+          <Ionicons name="arrow-back" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[typography.h1, styles.manualInputTitle]}>
+          {t('labels.enterISBNManually')}
+        </Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-              <View style={styles.inputRow}>
+      <View style={styles.inputRow}>
+        <TextInput
+            style={[styles.input, styles.flexInput]}
+            placeholder={t('placeholders.enterISBN')}
+            placeholderTextColor="#888"
+            keyboardType="numeric"
+            value={manualISBN}
+            onChangeText={setManualISBN}
+            autoFocus
+        />
+        <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleManualSubmit}
+        >
+          <Text style={styles.submitButtonText}>
+            {t('buttons.submit')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+)}
+
+<Modal
+    animationType="fade"
+    transparent
+    visible={modalVisible}
+    onRequestClose={handleCancel}
+    key={currentLang}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContainer}>
+      <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.modalScrollContent}
+          showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.modalTitle}>
+          {t('bookInfo.scannedISBN')}: {isbn}
+        </Text>
+
+        {loading ? (
+            <ActivityIndicator size="large" color={colors.primary} />
+        ) : (
+            <>
+              {bookInfo && (
+                  <View style={styles.bookInfoContainer}>
+                    {bookInfo.image && (
+                        <Image
+                            source={{ uri: bookInfo.image }}
+                            style={styles.bookImage}
+                            resizeMode="contain"
+                        />
+                    )}
+                    <Text style={styles.bookInfoText}>
+                      {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
+                    </Text>
+                    <Text style={styles.bookInfoText}>
+                      {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
+                    </Text>
+                    {bookInfo.publisher && bookInfo.publisher !== 'Unknown' && (
+                        <Text style={styles.bookInfoText}>
+                          {t('bookInfo.publisher')}: {bookInfo.publisher}
+                        </Text>
+                    )}
+                    {bookInfo.source === 'amazon' && (
+                        <Text style={styles.bookInfoText}>
+                          Source: Amazon ({bookInfo.amazonData?.marketplace})
+                        </Text>
+                    )}
+                  </View>
+              )}
+
+              <View style={styles.priceInputContainer}>
+                {bookInfo?.price && (
+                    <Text style={styles.suggestedPriceText}>
+                      {t('bookInfo.suggestedPrice')}: {bookInfo.price.toFixed(2)} {bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD')}
+                    </Text>
+                )}
+                {(!bookInfo?.price && !bookInfo?.amazonData) && (
+                    <Text style={styles.suggestedPriceText}>
+                      {t('bookInfo.noPrice')}
+                    </Text>
+                )}
+
+                {renderAmazonPriceButtons()}
+
                 <TextInput
-                    style={[styles.input, styles.flexInput]}
-                    placeholder={t('placeholders.enterISBN')}
+                    style={styles.input}
+                    placeholder={i18n.language === 'pl' ?
+                        t('placeholders.enterPricePLN') :
+                        t('placeholders.enterPriceUSD')}
                     placeholderTextColor="#888"
                     keyboardType="numeric"
-                    value={manualISBN}
-                    onChangeText={setManualISBN}
-                    autoFocus
+                    value={manualPrice}
+                    onChangeText={(text) => {
+                      setManualPrice(text);
+                      setSelectedPrice(null);
+                    }}
+                    autoFocus={!bookInfo?.price && !bookInfo?.amazonData}
                 />
+              </View>
+
+              <View style={styles.modalButtonsContainer}>
                 <TouchableOpacity
-                    style={styles.submitButton}
-                    onPress={handleManualSubmit}
+                    style={styles.cancelButton}
+                    onPress={handleCancel}
                 >
-                  <Text style={styles.submitButtonText}>
-                    {t('buttons.submit')}
+                  <Text style={styles.cancelButtonText}>
+                    {t('buttons.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={handlePrice}
+                >
+                  <Text style={styles.continueButtonText}>
+                    {t('buttons.continue')}
                   </Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </>
         )}
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
 
-        <Modal
-            animationType="fade"
-            transparent
-            visible={modalVisible}
-            onRequestClose={handleCancel}
-            key={currentLang}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <ScrollView
-                  ref={scrollViewRef}
-                  contentContainerStyle={styles.modalScrollContent}
-                  showsVerticalScrollIndicator={false}
-              >
-                <Text style={styles.modalTitle}>
-                  {t('bookInfo.scannedISBN')}: {isbn}
-                </Text>
+{bookInfo && (
+    <TouchableOpacity
+        style={styles.logsButton}
+        onPress={showApiLogs}
+    >
+      <Ionicons name="information-circle" size={24} color="white" />
+    </TouchableOpacity>
+)}
 
-                {loading ? (
-                    <ActivityIndicator size="large" color={colors.primary} />
-                ) : (
-                    <>
-                      {bookInfo && (
-                          <View style={styles.bookInfoContainer}>
-                            {bookInfo.image && (
-                                <Image
-                                    source={{ uri: bookInfo.image }}
-                                    style={styles.bookImage}
-                                    resizeMode="contain"
-                                />
-                            )}
-                            <Text style={styles.bookInfoText}>
-                              {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
-                            </Text>
-                            <Text style={styles.bookInfoText}>
-                              {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
-                            </Text>
-                            {bookInfo.publisher && bookInfo.publisher !== 'Unknown' && (
-                                <Text style={styles.bookInfoText}>
-                                  {t('bookInfo.publisher')}: {bookInfo.publisher}
-                                </Text>
-                            )}
-                            {bookInfo.source === 'amazon' && (
-                                <Text style={styles.bookInfoText}>
-                                  Source: Amazon
-                                </Text>
-                            )}
-                          </View>
-                      )}
-
-                      <View style={styles.priceInputContainer}>
-                        {bookInfo?.price && (
-                            <Text style={styles.suggestedPriceText}>
-                              {t('bookInfo.suggestedPrice')}: {bookInfo.price.toFixed(2)} {bookInfo?.amazonData?.prices?.[0]?.currency || 'USD'}
-                            </Text>
-                        )}
-                        {(!bookInfo?.price && !bookInfo?.amazonData) && (
-                            <Text style={styles.suggestedPriceText}>
-                              {t('bookInfo.noPrice')}
-                            </Text>
-                        )}
-
-                        {renderAmazonPriceButtons()}
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder={i18n.language === 'pl' ?
-                                t('placeholders.enterPricePLN') :
-                                t('placeholders.enterPriceUSD')}
-                            placeholderTextColor="#888"
-                            keyboardType="numeric"
-                            value={manualPrice}
-                            onChangeText={(text) => {
-                              setManualPrice(text);
-                              setSelectedPrice(null);
-                            }}
-                            autoFocus={!bookInfo?.price && !bookInfo?.amazonData}
-                        />
-                      </View>
-
-                      <View style={styles.modalButtonsContainer}>
-                        <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={handleCancel}
-                        >
-                          <Text style={styles.cancelButtonText}>
-                            {t('buttons.cancel')}
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.primaryButton}
-                            onPress={handlePrice}
-                        >
-                          <Text style={styles.continueButtonText}>
-                            {t('buttons.continue')}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                )}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-
-        {bookInfo && (
-            <TouchableOpacity
-                style={styles.logsButton}
-                onPress={showApiLogs}
-            >
-              <Ionicons name="information-circle" size={24} color="white" />
-            </TouchableOpacity>
-        )}
-
-        <Modal
-            animationType="slide"
-            transparent={false}
-            visible={logsVisible}
-            onRequestClose={() => setLogsVisible(false)}
-        >
-          <View style={styles.logsContainer}>
-            <View style={styles.logsHeader}>
-              <Text style={styles.logsTitle}>API Logs</Text>
-              <TouchableOpacity
-                  style={styles.closeLogsButton}
-                  onPress={() => setLogsVisible(false)}
-              >
-                <Ionicons name="close" size={24} color="black" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.logsContent}>
-              <Text style={styles.logsText}>{apiLogs}</Text>
-            </ScrollView>
-            <TouchableOpacity
-                style={styles.copyLogsButton}
-                onPress={() => {
-                  Clipboard.setString(apiLogs);
-                  Alert.alert('Logs copied to clipboard');
-                }}
-            >
-              <Text style={styles.copyLogsText}>Copy to Clipboard</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-      </View>
-  );
+<Modal
+    animationType="slide"
+    transparent={false}
+    visible={logsVisible}
+    onRequestClose={() => setLogsVisible(false)}
+>
+  <View style={styles.logsContainer}>
+    <View style={styles.logsHeader}>
+      <Text style={styles.logsTitle}>API Logs</Text>
+      <TouchableOpacity
+          style={styles.closeLogsButton}
+          onPress={() => setLogsVisible(false)}
+      >
+        <Ionicons name="close" size={24} color="black" />
+      </TouchableOpacity>
+    </View>
+    <ScrollView style={styles.logsContent}>
+      <Text style={styles.logsText}>{apiLogs}</Text>
+    </ScrollView>
+    <TouchableOpacity
+        style={styles.copyLogsButton}
+        onPress={() => {
+          Clipboard.setString(apiLogs);
+          Alert.alert('Logs copied to clipboard');
+        }}
+    >
+      <Text style={styles.copyLogsText}>Copy to Clipboard</Text>
+    </TouchableOpacity>
+  </View>
+</Modal>
+</View>
+);
 }
 
 const styles = StyleSheet.create({
@@ -964,7 +971,7 @@ const styles = StyleSheet.create({
   permissionButton: {
     backgroundColor: colors.primary,
     padding: 16,
-    borderRadius: 5,
+    borderRadius: 2,
   },
   permissionButtonText: {
     color: 'white',
@@ -979,7 +986,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '90%',
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 2,
     padding: 20,
     maxHeight: '80%',
   },
@@ -1005,7 +1012,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 180,
     marginBottom: 16,
-    borderRadius: 5,
+    borderRadius: 2,
   },
   priceInputContainer: {
     width: '100%',
@@ -1021,7 +1028,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderColor: 'rgba(0,0,0,0.1)',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 2,
     paddingHorizontal: 16,
     backgroundColor: 'white',
     color: colors.black,
@@ -1055,7 +1062,7 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 5,
+    borderRadius: 2,
   },
   submitButtonText: {
     fontWeight: '600',
@@ -1073,7 +1080,7 @@ const styles = StyleSheet.create({
   amazonPriceButton: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 10,
     marginBottom: 8,
     backgroundColor: '#f9f9f9',
@@ -1098,7 +1105,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 2,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
@@ -1124,7 +1131,7 @@ const styles = StyleSheet.create({
   logsContent: {
     flex: 1,
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 2,
     padding: 16,
     marginBottom: 16,
   },
@@ -1135,7 +1142,7 @@ const styles = StyleSheet.create({
   copyLogsButton: {
     backgroundColor: colors.primary,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 2,
     alignItems: 'center',
   },
   copyLogsText: {

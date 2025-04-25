@@ -36,6 +36,8 @@ export default {
         enterISBN: 'Please enter a valid ISBN number',
         createCollection: 'Create Collection',
         importError: 'Failed to import collection',
+        disabledTab: "Disabled feature",
+        enableInSettings: "This feature is currently disabled. You can enable it in the algorithm settings."
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -56,13 +58,14 @@ export default {
         unknownTitle: 'Unknown title',
         originalPrice: "Base price",
         priceNotAvailable: 'Price not available',
-        suggestedPrice: 'Suggested price', // lub 'Recommended price'
-        noPrice: 'No price available',    // lub 'Price not available'
-        discountedPrice: 'Discounted Price'
+        suggestedPrice: 'Suggested price',
+        noPrice: 'No price available',
+        discountedPrice: 'Discounted Price',
+        amazonPrices: 'Latest Amazon Prices'
     },
     labels: {
         selectCollection: 'Select Collection',
-        selectDefects: 'Select Defects',
+        selectDefects: 'Select Book Defects',
         collections: 'Collections',
         total: 'Total',
         noCollections: 'No collections yet',
@@ -81,7 +84,7 @@ export default {
         books: 'Books',
         totalCollections: 'Total Collections',
         totalBooks: 'Total Books',
-        totalValue: 'Total Value',
+        totalValue: 'Collections Total Value',
         yourCollections: 'Your Collections',
         manageCollections: 'Manage Collections',
         importCollection: 'Import Collection',
@@ -94,18 +97,38 @@ export default {
         condition: 'Condition',
         collectionName: 'Collection Name',
         noDefects: 'No Defects',
+        bookAge: 'Book Age',
+        yearsOld: 'Years old',
+        massMarket: 'Mass Market',
+        uniqueness: 'Book Uniqueness',
+        firstEdition: 'First Edition',
+        collectorsEdition: "Collector's Edition",
+        authorSignature: 'Author Signature',
+        limitedEdition: 'Limited Edition',
+        defunctPublisher: 'Defunct Publisher',
+        marketFactors: 'Market Factors',
+        demand: 'Demand',
+        supply: 'Supply',
+        veryHigh: 'Very High',
+        high: 'High',
+        medium: 'Medium',
+        low: 'Low',
+        veryLow: 'Very Low',
+        flooded: 'Flooded',
+        collection: 'Add to Collection',
+        publicationYear: 'Publication year',
     },
     titles: {
         scan: 'Scan ISBN',
-        analyzeCondition: 'Analyze book condition',
-        manageCollections: 'Manage collections',
+        analyzeCondition: 'Analysis',
+        manageCollections: 'Collections',
         history: 'Scan history',
         editBook: 'Analyze book condition'
     },
     titlesShort: {
         scan: 'Scan ISBN',
         analyzeCondition: 'Analysis',
-        manageCollections: 'Management',
+        manageCollections: 'Collections',
         history: 'History',
         editBook: "Analysis"
     },
@@ -141,6 +164,7 @@ export default {
         enterPrice: 'Enter price manually',
         searchHistory: 'Search by ISBN/title',
         enterISBN: 'Enter ISBN number',
+        enterPriceUSD: 'Enter price'
     },
     status: {
         requestingPermission: 'Requesting camera permission...',
@@ -179,6 +203,12 @@ export default {
         example: 'Example',
         changelog1: 'Initial release with price calculation',
         changelog2: 'Multi-language support',
-        changelog3: 'Defect scanning feature'
+        changelog3: 'Defect scanning feature',
+        activeFactors: "Active price factors",
+        defectsFactor: "Defects",
+        uniquenessFactor: "Uniqueness",
+        marketFactor: "Market factors",
+        uniquenessBonus: "Uniqueness bonus calculation",
+        marketAdjustment: "Market factors adjustment"
     }
-};
+}

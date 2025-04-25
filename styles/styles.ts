@@ -5,6 +5,7 @@ export const { width, height } = Dimensions.get('window');
 // Kolory
 export const colors = {
     primary: '#0167ae', // Główny kolor (np. przyciski, akcenty)
+    primary2: '#4a6cf714',
     secondary: '#2c3e50', // Kolor tekstu i nagłówków
     background: '#f5f5f5', // Kolor tła
     white: '#ffffff', // Kolor tła elementów
