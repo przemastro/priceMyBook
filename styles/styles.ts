@@ -24,6 +24,11 @@ export const typography = StyleSheet.create({
         color: colors.black,
         marginBottom: 10,
     },
+    h1b: {
+        fontSize: 20,
+        color: colors.black,
+        marginBottom: 10,
+    },
     h2: {
         fontSize: 15,
         fontWeight: 'bold',

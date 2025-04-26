@@ -99,8 +99,8 @@ function RootLayoutNav() {
               options={{
                 title: t('settings.title'),
                 headerTitleStyle: {
-                  color: colors.black, // Tutaj ustawiasz kolor tytułu
-                  fontSize: 20, // Możesz też dodać inne style
+                  color: colors.black,
+                  fontSize: 20,
                   fontWeight: 'bold',
                 },
                 headerLeft: () => (
@@ -121,14 +121,14 @@ function RootLayoutNav() {
               onPress={() => console.log('Rating pressed')}
               activeOpacity={0.7}
           >
-            <Ionicons name="heart-outline" size={24} color={colors.primary} />
+            <Ionicons name="heart-outline" size={24} color={colors.black} />
           </TouchableOpacity>
           <TouchableOpacity
               style={styles.settingsButton}
               onPress={navigateToSettings}
               activeOpacity={0.7}
           >
-            <Ionicons name="settings-outline" size={24} color={colors.primary} />
+            <Ionicons name="settings-outline" size={24} color={colors.black} />
           </TouchableOpacity>
         </View>
       </>
@@ -154,6 +154,3 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-
-// Nowy plik dla ekranu ustawień (settings.tsx)
-// Umieść go w odpowiednim folderze (np. screens/settings.tsx)

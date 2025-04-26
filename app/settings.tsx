@@ -1,7 +1,7 @@
 // screens/settings.tsx
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import {useLocalSearchParams, useRouter} from 'expo-router';
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/config';
@@ -10,8 +10,9 @@ import { colors } from "@/styles/styles";
 export default function SettingsScreen() {
     const { t } = useTranslation();
     const router = useRouter();
+    const { initialTab } = useLocalSearchParams<SettingsScreenParams>();
+    const [activeTab, setActiveTab] = useState(initialTab || 'about');
     const spinValue = useRef(new Animated.Value(0)).current;
-    const [activeTab, setActiveTab] = useState('about');
     const [activeFactors, setActiveFactors] = useState({
         defects: true,
         uniqueness: true,

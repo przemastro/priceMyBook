@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Dimensions, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
+import { FontAwesome, Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { colors, responsive, typography } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
@@ -10,7 +10,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
 import { FlashList } from '@shopify/flash-list';
-import { FontAwesome5 } from '@expo/vector-icons';
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -18,6 +17,25 @@ interface BookDefect {
   selected: boolean;
   reduction: number;
   count: number;
+}
+
+interface BookUniqueness {
+  isMassMarket: boolean;
+  isFirstEdition: boolean;
+  isCollectorsEdition: boolean;
+  hasAuthorSignature: boolean;
+  isLimitedEdition: boolean;
+  isPublisherDefunct: boolean;
+}
+
+interface MarketFactors {
+  demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
+  supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
+  publicationYear?: number;
+}
+
+interface BookAgeInfo {
+  years: number;
 }
 
 interface BookData {
@@ -29,8 +47,15 @@ interface BookData {
   foundInApi: boolean;
   originalPrice: string;
   defects: Record<string, BookDefect>;
-  rating: number;
   averagePrice: string;
+  createdAt: string;
+  rating: number;
+  source?: 'google' | 'amazon' | 'manual';
+  priceSource?: string;
+  uniqueness: BookUniqueness;
+  marketFactors: MarketFactors;
+  ageInfo: BookAgeInfo;
+  isExpanded?: boolean;
 }
 
 export default function TabFourScreen() {
@@ -40,6 +65,18 @@ export default function TabFourScreen() {
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<string | null>(null);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [validBooks, setValidBooks] = useState<Omit<BookData, 'createdAt'>[]>([]);
+  const [importPreview, setImportPreview] = useState<{
+    collectionName: string;
+    books: Omit<BookData, 'createdAt'>[];
+    showPreview: boolean;
+  } | null>(null);
+  const [editingCollectionName, setEditingCollectionName] = useState(false);
+  const [newCollectionNameInput, setNewCollectionNameInput] = useState('');
+  const [currentlyEditedCollection, setCurrentlyEditedCollection] = useState<string | null>(null);
 
   const {
     collections,
@@ -49,19 +86,69 @@ export default function TabFourScreen() {
     addBooksToCollection,
     removeBookFromCollection,
     formatCurrency,
+    renameCollection,
+    updateBooksInCollection,
   } = useAppContext();
 
-  const [importPreview, setImportPreview] = useState<{
-    collectionName: string;
-    books: BookData[];
-    showPreview: boolean;
-  } | null>(null);
+  const toggleBookExpansion = (collectionName: string, bookIndex: number) => {
+    if (!books[collectionName]) return;
+
+    const updatedBooks = [...books[collectionName]];
+    updatedBooks[bookIndex] = {
+      ...updatedBooks[bookIndex],
+      isExpanded: !updatedBooks[bookIndex].isExpanded
+    };
+
+    updateBooksInCollection(collectionName, updatedBooks);
+  };
+
+  const defaultUniqueness: BookUniqueness = {
+    isMassMarket: false,
+    isFirstEdition: false,
+    isCollectorsEdition: false,
+    hasAuthorSignature: false,
+    isLimitedEdition: false,
+    isPublisherDefunct: false
+  };
+
+  const defaultMarketFactors: MarketFactors = {
+    demand: 'medium',
+    supply: 'medium'
+  };
+
+  const defaultAgeInfo: BookAgeInfo = {
+    years: 0
+  };
 
   const handleAddCollection = () => {
     if (!collectionName.trim()) return;
     addCollection(collectionName);
     setCollectionName('');
     setShowAddModal(false);
+  };
+
+  const handleRenameCollection = () => {
+    if (!currentlyEditedCollection || !newCollectionNameInput.trim()) return;
+
+    if (newCollectionNameInput.trim() === currentlyEditedCollection) {
+      setEditingCollectionName(false);
+      return;
+    }
+
+    renameCollection(currentlyEditedCollection, newCollectionNameInput.trim());
+
+    if (selectedCollection === currentlyEditedCollection) {
+      setSelectedCollection(newCollectionNameInput.trim());
+    }
+
+    setEditingCollectionName(false);
+    setCurrentlyEditedCollection(null);
+  };
+
+  const handleEditCollectionName = (collectionName: string) => {
+    setEditingCollectionName(true);
+    setNewCollectionNameInput(collectionName);
+    setCurrentlyEditedCollection(collectionName);
   };
 
   const handleImportCollection = async () => {
@@ -88,23 +175,35 @@ export default function TabFourScreen() {
         });
       });
 
-      const validBooks = parseResult
+      const importedBooks = parseResult
           .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
           .map(book => {
-            const defects: Record<string, BookDefect> = {};
+            let defects = {};
             try {
-              if (book.Defects) {
-                const parsedDefects = JSON.parse(book.Defects);
-                Object.keys(parsedDefects).forEach(defectId => {
-                  defects[defectId] = {
-                    selected: true,
-                    reduction: parsedDefects[defectId].reduction || 0,
-                    count: parsedDefects[defectId].count || 0
-                  };
-                });
-              }
+              if (book.Defects) defects = JSON.parse(book.Defects);
             } catch (e) {
               console.error('Error parsing defects:', e);
+            }
+
+            let uniqueness = defaultUniqueness;
+            try {
+              if (book.Uniqueness) uniqueness = JSON.parse(book.Uniqueness);
+            } catch (e) {
+              console.error('Error parsing uniqueness:', e);
+            }
+
+            let marketFactors = defaultMarketFactors;
+            try {
+              if (book['Market Factors']) marketFactors = JSON.parse(book['Market Factors']);
+            } catch (e) {
+              console.error('Error parsing market factors:', e);
+            }
+
+            let ageInfo = defaultAgeInfo;
+            try {
+              if (book['Age Info']) ageInfo = JSON.parse(book['Age Info']);
+            } catch (e) {
+              console.error('Error parsing age info:', e);
             }
 
             return {
@@ -115,23 +214,19 @@ export default function TabFourScreen() {
               displayPrice: `${book['Price (PLN)']} PLN`,
               foundInApi: book['Found in API'] === 'Yes',
               originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
-              defects: defects,
+              defects,
               rating: parseInt(book['Condition Rating'] || '10'),
-              averagePrice: book['Average Price'] || book['Price (PLN)'].trim()
-            } as BookData;
+              averagePrice: book['Average Price'] || book['Price (PLN)'].trim(),
+              uniqueness,
+              marketFactors,
+              ageInfo
+            };
           });
 
-      if (validBooks.length === 0) {
-        Alert.alert(t('alerts.error'), t('alerts.noValidBooks'));
-        setIsImporting(false);
-        return;
-      }
-
-      const newCollectionName = file.name.replace('.csv', '').slice(0, 30);
-
+      setValidBooks(importedBooks);
       setImportPreview({
-        collectionName: newCollectionName,
-        books: validBooks,
+        collectionName: file.name.replace('.csv', '').slice(0, 30),
+        books: importedBooks,
         showPreview: true
       });
 
@@ -148,7 +243,7 @@ export default function TabFourScreen() {
 
     try {
       addCollection(importPreview.collectionName);
-      await addBooksToCollection(importPreview.collectionName, importPreview.books);
+      await addBooksToCollection(importPreview.collectionName, validBooks);
 
       Alert.alert(
           t('alerts.success'),
@@ -159,6 +254,7 @@ export default function TabFourScreen() {
       );
 
       setImportPreview(null);
+      setValidBooks([]);
     } catch (error) {
       Alert.alert(t('alerts.error'), t('alerts.importSaveError'));
       console.error('Failed to save import:', error);
@@ -167,6 +263,7 @@ export default function TabFourScreen() {
 
   const cancelImport = () => {
     setImportPreview(null);
+    setValidBooks([]);
   };
 
   const handleDeleteCollection = (collectionName: string) => {
@@ -203,10 +300,13 @@ export default function TabFourScreen() {
   const handleExportCSV = async (collectionName: string) => {
     const booksToExport = books[collectionName] || [];
 
-    let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Average Price,Condition Rating,Found in API,Defects\n";
+    let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Average Price,Condition Rating,Found in API,Defects,Uniqueness,Market Factors,Age Info\n";
 
     booksToExport.forEach(book => {
       const defectsString = JSON.stringify(book.defects || {});
+      const uniquenessString = JSON.stringify(book.uniqueness || defaultUniqueness);
+      const marketFactorsString = JSON.stringify(book.marketFactors || defaultMarketFactors);
+      const ageInfoString = JSON.stringify(book.ageInfo || defaultAgeInfo);
 
       csvContent += `"${book.title.replace(/"/g, '""')}",` +
           `"${book.authors.replace(/"/g, '""')}",` +
@@ -216,7 +316,10 @@ export default function TabFourScreen() {
           `${book.averagePrice},` +
           `${book.rating},` +
           `${book.foundInApi ? 'Yes' : 'No'},` +
-          `"${defectsString.replace(/"/g, '""')}"\n`;
+          `"${defectsString.replace(/"/g, '""')}",` +
+          `"${uniquenessString.replace(/"/g, '""')}",` +
+          `"${marketFactorsString.replace(/"/g, '""')}",` +
+          `"${ageInfoString.replace(/"/g, '""')}"\n`;
     });
 
     try {
@@ -237,7 +340,26 @@ export default function TabFourScreen() {
     }
   };
 
+  const carouselRef = React.useRef<FlashList<string>>(null);
+  const [scrollEnabled, setScrollEnabled] = React.useState(true);
+
+  const scrollToItem = (index: number) => {
+    setScrollEnabled(false); // Temporarily disable scrolling
+    carouselRef.current?.scrollToIndex({
+      index,
+      animated: true,
+      viewPosition: 0.5 // Center the element
+    });
+
+    // Re-enable scrolling after a short delay
+    setTimeout(() => setScrollEnabled(true), 500);
+  };
+
   const toggleCollection = (collection: string) => {
+    const index = collections.indexOf(collection);
+    if (index !== -1) {
+      scrollToItem(index);
+    }
     setSelectedCollection(prev => prev === collection ? null : collection);
   };
 
@@ -255,7 +377,10 @@ export default function TabFourScreen() {
         editMode: 'true',
         collectionName,
         bookIndex: bookIndex.toString(),
-        defects: JSON.stringify(book.defects || {})
+        defects: JSON.stringify(book.defects || {}),
+        uniqueness: JSON.stringify(book.uniqueness || defaultUniqueness),
+        marketFactors: JSON.stringify(book.marketFactors || defaultMarketFactors),
+        ageInfo: JSON.stringify(book.ageInfo || defaultAgeInfo)
       }
     });
   };
@@ -286,33 +411,72 @@ export default function TabFourScreen() {
         : t('labels.noDefects');
   };
 
-  const renderCarouselItem = ({ item }: { item: string }) => {
+  const formatUniquenessSummary = (uniqueness: BookUniqueness | undefined) => {
+    if (!uniqueness) return t('labels.standardEdition');
+
+    const uniqueFeatures = [];
+    if (uniqueness.isFirstEdition) uniqueFeatures.push(t('labels.firstEdition'));
+    if (uniqueness.isCollectorsEdition) uniqueFeatures.push(t('labels.collectorsEdition'));
+    if (uniqueness.hasAuthorSignature) uniqueFeatures.push(t('labels.authorSignature'));
+    if (uniqueness.isLimitedEdition) uniqueFeatures.push(t('labels.limitedEdition'));
+    if (uniqueness.isPublisherDefunct) uniqueFeatures.push(t('labels.defunctPublisher'));
+
+    return uniqueFeatures.length > 0
+        ? uniqueFeatures.join(', ')
+        : t('labels.standardEdition');
+  };
+
+  const formatMarketFactorsSummary = (marketFactors: MarketFactors | undefined) => {
+    if (!marketFactors) return '';
+
+    return `${t(`labels.${marketFactors.demand}`)} ${t('labels.demand')}, ${t(`labels.${marketFactors.supply}`)} ${t('labels.supply')}`;
+  };
+
+  const renderCarouselItem = ({ item, index }: { item: string; index: number }) => {
     const bookCount = books[item]?.length || 0;
     const collectionTotal = calculateCollectionTotal(item);
+    const isSelected = selectedCollection === item;
 
     return (
         <TouchableOpacity
             style={[
               styles.carouselItem,
-              selectedCollection === item && styles.selectedCarouselItem
+              isSelected && styles.selectedCarouselItem,
+              !isSelected && styles.unselectedCarouselItem
             ]}
             onPress={() => toggleCollection(item)}
             activeOpacity={0.8}
+            key={item}
         >
           <View style={styles.carouselContent}>
             <Text style={styles.carouselCollectionName} numberOfLines={1}>
               {item}
             </Text>
-            <Text style={styles.carouselCollectionValue}>
+            <Text style={[
+              styles.carouselCollectionValue,
+              isSelected && styles.selectedText
+            ]}>
               {formatCurrency(collectionTotal.toString())}
             </Text>
-            <Text style={styles.carouselBookCount}>
+            <Text style={[
+              styles.carouselBookCount,
+              isSelected && styles.selectedBadge
+            ]}>
               {bookCount} {t('labels.books')}
             </Text>
           </View>
         </TouchableOpacity>
     );
   };
+
+  React.useEffect(() => {
+    if (collections.length > 0 && selectedCollection) {
+      const index = collections.indexOf(selectedCollection);
+      if (index !== -1) {
+        setTimeout(() => scrollToItem(index), 100);
+      }
+    }
+  }, [collections, selectedCollection]);
 
   const AddCollectionModal = () => {
     const [localCollectionName, setLocalCollectionName] = useState('');
@@ -365,6 +529,48 @@ export default function TabFourScreen() {
     );
   };
 
+  const EditCollectionModal = () => {
+    return (
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showEditModal}
+            onRequestClose={() => setShowEditModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>{t('labels.editCollectionName')}</Text>
+              <TextInput
+                  style={styles.modalInput}
+                  placeholder={t('placeholders.enterNewCollectionName')}
+                  placeholderTextColor="#888"
+                  value={newCollectionName}
+                  onChangeText={setNewCollectionName}
+                  autoFocus
+                  onSubmitEditing={handleRenameCollection}
+                  returnKeyType="done"
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setShowEditModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleRenameCollection}
+                    disabled={!newCollectionName.trim() || newCollectionName.trim() === editingCollection}
+                >
+                  <Text style={styles.confirmButtonText}>{t('buttons.save')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+    );
+  };
+
   const ImportPreviewModal = () => {
     if (!importPreview) return null;
 
@@ -395,6 +601,21 @@ export default function TabFourScreen() {
                       <Text style={styles.previewBookDefects}>
                         {t('labels.defects')}: {formatDefectsSummary(book.defects)}
                       </Text>
+                      {book.uniqueness && (
+                          <Text style={styles.previewBookUniqueness}>
+                            {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
+                          </Text>
+                      )}
+                      {book.marketFactors && (
+                          <Text style={styles.previewBookMarket}>
+                            {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
+                          </Text>
+                      )}
+                      {book.ageInfo && (
+                          <Text style={styles.previewBookAge}>
+                            {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
+                          </Text>
+                      )}
                     </View>
                 ))}
                 {importPreview.books.length > 5 && (
@@ -433,13 +654,20 @@ export default function TabFourScreen() {
         <View style={styles.totalValueContainer}>
           <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
           <View style={styles.valueRow}>
-            <View style={styles.coinIconContainer}>
+            <TouchableOpacity
+                style={styles.coinIconContainer}
+                onPress={() => router.push({
+                  pathname: '/settings',
+                  params: { initialTab: 'algorithm' } as SettingsScreenParams
+                })}
+                activeOpacity={0.7}
+            >
               <FontAwesome5
                   name="coins"
                   size={20}
                   color={colors.primary}
               />
-            </View>
+            </TouchableOpacity>
             <View style={styles.priceContainer}>
               <Text style={styles.totalValueAmount}>
                 {formatCurrency(calculateTotalValue().toString())}
@@ -449,141 +677,247 @@ export default function TabFourScreen() {
         </View>
 
         <View style={styles.sectionContainer}>
-          <View style={styles.collectionActionsContainer}>
+          <View style={styles.topActionsContainer}>
             <TouchableOpacity
-                style={styles.subtleActionButton}
+                style={styles.addCollectionButton}
                 onPress={() => setShowAddModal(true)}
                 activeOpacity={0.6}
             >
               <Ionicons
-                  name="add"
-                  size={18}
+                  name="add-circle"
+                  size={24}
                   color={colors.primary}
               />
-              <Text style={styles.subtleActionText}>
+              <Text style={styles.addCollectionText}>
                 {t('buttons.addCollection')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-                style={styles.subtleActionButton}
-                onPress={handleImportCollection}
-                disabled={isImporting}
-                activeOpacity={0.6}
-            >
-              {isImporting ? (
-                  <ActivityIndicator
-                      size="small"
-                      color={colors.primary}
-                  />
-              ) : (
-                  <Ionicons
-                      name="cloud-upload"
-                      size={18}
-                      color={colors.primary}
-                  />
-              )}
-              <Text style={styles.subtleActionText}>
-                {t('buttons.importCollection')}
-              </Text>
-            </TouchableOpacity>
+            {collections.length > 0 && (
+                <View style={styles.collectionCounterContainer}>
+                  <TouchableOpacity
+                      style={styles.collectionCounter}
+                      onPress={() => router.push({
+                        pathname: '/settings',
+                        params: { initialTab: 'about' } as SettingsScreenParams
+                      })}
+                      activeOpacity={0.7}
+                  >
+                    <MaterialIcons name="menu-book" size={24} color={colors.primary} />
+                    <Text style={styles.collectionCounterText}>
+                      {Object.values(books).reduce((sum, collection) => sum + collection.length, 0)}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+            )}
           </View>
 
-          <View style={styles.yourCollectionsContainer}>
-            <Text style={styles.yourCollectionsLabel}>{t('labels.yourCollections')}</Text>
-          </View>
+          <View style={styles.divider} />
 
-          <View style={styles.carouselContainer}>
-            <FlashList
-                data={collections}
-                renderItem={renderCarouselItem}
-                horizontal
-                estimatedItemSize={viewportWidth * 0.6}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.toString()}
-            />
-          </View>
+          <TouchableOpacity
+              style={[
+                styles.importButton,
+                collections.length === 0 && { marginBottom: 0 }
+              ]}
+              onPress={handleImportCollection}
+              disabled={isImporting}
+              activeOpacity={0.6}
+          >
+            {isImporting ? (
+                <ActivityIndicator
+                    size="small"
+                    color={colors.primary}
+                />
+            ) : (
+                <Ionicons
+                    name="cloud-upload"
+                    size={18}
+                    color={colors.primary}
+                />
+            )}
+            <Text style={styles.importButtonText}>
+              {t('buttons.importCollection')}
+            </Text>
+          </TouchableOpacity>
 
-          {collections.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
-              </View>
-          ) : selectedCollection && (
-              <View style={styles.collectionDetails}>
-                <View style={styles.collectionHeader}>
-                  <Text style={styles.collectionName}>{selectedCollection}</Text>
-                  <View style={styles.collectionActions}>
-                    <TouchableOpacity
-                        onPress={() => handleExportCSV(selectedCollection)}
-                        style={styles.exportButton}
-                    >
-                      <FontAwesome name="file-excel-o" size={18} color={colors.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => handleDeleteCollection(selectedCollection)}
-                        style={styles.deleteCollectionButton}
-                    >
-                      <FontAwesome name="trash" size={18} color={colors.error} />
-                    </TouchableOpacity>
-                  </View>
+          {collections.length > 0 && (
+              <>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.collectionsTitle}>{t('labels.yourCollections')}</Text>
                 </View>
 
-                {books[selectedCollection]?.length === 0 ? (
-                    <View style={styles.emptyBookContainer}>
-                      <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
-                    </View>
-                ) : (
-                    books[selectedCollection]?.map((book, index) => (
-                        <TouchableOpacity
-                            key={`${selectedCollection}-${index}`}
-                            style={styles.bookContainer}
-                            onPress={() => handleEditBook(selectedCollection, index)}
-                        >
-                          <View style={styles.bookInfo}>
-                            <View style={styles.bookTitleRow}>
+                <View style={styles.carouselContainer}>
+                  <FlashList
+                      ref={carouselRef}
+                      data={collections}
+                      renderItem={renderCarouselItem}
+                      horizontal
+                      estimatedItemSize={viewportWidth * 0.6}
+                      showsHorizontalScrollIndicator={false}
+                      keyExtractor={(item) => item}
+                      contentContainerStyle={styles.carouselContentContainer}
+                      extraData={[collections, selectedCollection]}
+                      snapToAlignment="center"
+                      snapToInterval={viewportWidth * 0.6 + 8}
+                      decelerationRate="fast"
+                      scrollEnabled={scrollEnabled}
+                  />
+                </View>
+
+                {selectedCollection && (
+                    <View style={styles.collectionDetails}>
+                      <View style={styles.collectionHeader}>
+                        {editingCollectionName && currentlyEditedCollection === selectedCollection ? (
+                            <View style={styles.nameEditContainer}>
+                              <TextInput
+                                  style={styles.nameInput}
+                                  value={newCollectionNameInput}
+                                  onChangeText={setNewCollectionNameInput}
+                                  autoFocus
+                                  onSubmitEditing={handleRenameCollection}
+                              />
+                              <TouchableOpacity
+                                  style={styles.confirmEditButton}
+                                  onPress={handleRenameCollection}
+                              >
+                                <Ionicons name="checkmark" size={20} color="white" />
+                              </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                onPress={() => handleEditCollectionName(selectedCollection)}
+                                style={styles.nameDisplayContainer}
+                            >
+                              <Text style={styles.collectionName} numberOfLines={1} ellipsizeMode="tail">
+                                {selectedCollection}
+                              </Text>
                               <Ionicons
-                                  name="arrow-forward"
+                                  name="pencil"
                                   size={16}
                                   color={colors.primary}
-                                  style={styles.bookArrowIcon}
+                                  style={styles.editIcon}
                               />
-                              <Text style={styles.bookTitle}>{book.title}</Text>
-                            </View>
-                            <Text style={styles.bookAuthors}>{book.authors}</Text>
-                            <Text style={styles.bookIsbn}>ISBN: {book.isbn}</Text>
-                            <Text style={styles.bookPrice}>
-                              {t('bookInfo.finalPrice')}: {book.displayPrice}
-                            </Text>
-                            <Text style={styles.bookCondition}>
-                              {t('labels.condition')}: {book.rating}/10
-                            </Text>
-                            <Text style={styles.bookDefects}>
-                              {t('labels.defects')}: {formatDefectsSummary(book.defects)}
-                            </Text>
-                            <Text style={[
-                              styles.bookStatus,
-                              { color: book.foundInApi ? colors.success : colors.error }
-                            ]}>
-                              {book.foundInApi ? t('status.found') : t('status.notFound')}
-                            </Text>
-                          </View>
+                            </TouchableOpacity>
+                        )}
+                        <View style={styles.collectionActions}>
                           <TouchableOpacity
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                removeBookFromCollection(selectedCollection, index);
-                              }}
-                              style={styles.deleteButton}
+                              onPress={() => handleExportCSV(selectedCollection)}
+                              style={styles.exportButton}
+                          >
+                            <FontAwesome name="file-excel-o" size={18} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                              onPress={() => handleDeleteCollection(selectedCollection)}
+                              style={styles.deleteCollectionButton}
                           >
                             <FontAwesome name="trash" size={18} color={colors.error} />
                           </TouchableOpacity>
-                        </TouchableOpacity>
-                    ))
+                        </View>
+                      </View>
+
+                      {books[selectedCollection]?.length === 0 ? (
+                          <View style={styles.emptyBookContainer}>
+                            <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
+                          </View>
+                      ) : (
+                          books[selectedCollection]?.map((book, index) => (
+                              <View key={`${selectedCollection}-${index}`}>
+                                <TouchableOpacity
+                                    style={styles.bookContainer}
+                                    onPress={() => toggleBookExpansion(selectedCollection, index)}
+                                >
+                                  <View style={styles.bookMainInfo}>
+                                    <View style={styles.bookTitleRow}>
+                                      <Ionicons
+                                          name={book.isExpanded ? "chevron-down" : "chevron-forward"}
+                                          size={16}
+                                          color={colors.primary}
+                                          style={styles.bookArrowIcon}
+                                      />
+                                      <Text style={styles.bookTitle} numberOfLines={1}>
+                                        {book.title}
+                                      </Text>
+                                    </View>
+                                    <View style={styles.bookBasicDetails}>
+                                      <Text style={styles.bookAuthors} numberOfLines={1}>
+                                        {book.authors}
+                                      </Text>
+                                      <Text style={styles.bookIsbn}>ISBN: {book.isbn}</Text>
+                                      <Text style={styles.bookPrice}>
+                                        {t('bookInfo.finalPrice')}: {book.displayPrice}
+                                      </Text>
+                                      <Text style={styles.bookCondition}>
+                                        {t('labels.condition')}: {book.rating}/10
+                                      </Text>
+                                    </View>
+                                  </View>
+                                  <View style={styles.bookActions}>
+                                    <TouchableOpacity
+                                        onPress={(e) => {
+                                          e.stopPropagation();
+                                          handleEditBook(selectedCollection, index);
+                                        }}
+                                        style={styles.editButton}
+                                    >
+                                      <Ionicons name="create" size={18} color={colors.primary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={(e) => {
+                                          e.stopPropagation();
+                                          removeBookFromCollection(selectedCollection, index);
+                                        }}
+                                        style={styles.deleteButton}
+                                    >
+                                      <FontAwesome name="trash" size={18} color={colors.error} />
+                                    </TouchableOpacity>
+                                  </View>
+                                </TouchableOpacity>
+
+                                {book.isExpanded && (
+                                    <View style={styles.bookAdditionalDetails}>
+                                      <Text style={styles.bookDefects}>
+                                        {t('labels.defects')}: {formatDefectsSummary(book.defects)}
+                                      </Text>
+                                      {book.uniqueness && (
+                                          <Text style={styles.bookUniqueness}>
+                                            {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
+                                          </Text>
+                                      )}
+                                      {book.marketFactors && (
+                                          <Text style={styles.bookMarket}>
+                                            {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
+                                          </Text>
+                                      )}
+                                      {book.ageInfo && (
+                                          <Text style={styles.bookAge}>
+                                            {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
+                                          </Text>
+                                      )}
+                                      <Text style={[
+                                        styles.bookStatus,
+                                        { color: book.foundInApi ? colors.success : colors.error }
+                                      ]}>
+                                        {book.foundInApi ? t('status.found') : t('status.notFound')}
+                                      </Text>
+                                    </View>
+                                )}
+                              </View>
+                          ))
+                      )}
+                    </View>
                 )}
+              </>
+          )}
+
+          {collections.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
               </View>
           )}
         </View>
 
         <AddCollectionModal />
+        <EditCollectionModal />
         <ImportPreviewModal />
       </ScrollView>
   );
@@ -630,120 +964,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
   },
-  collectionActionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 16,
-    gap: 10,
-  },
-  subtleActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.gray,
-  },
-  subtleActionText: {
-    marginLeft: 6,
-    color: colors.primary,
-    fontSize: 14,
-  },
-  yourCollectionsContainer: {
-    backgroundColor: colors.white,
-    borderRadius: 5,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  yourCollectionsLabel: {
+  collectionsTitle: {
     ...typography.body,
     color: colors.black,
-    marginBottom: 4,
+    marginTop: 10,
+    marginBottom: 16,
   },
-  carouselContainer: {
-    height: 140,
-    marginBottom: 10,
-  },
-  carouselItem: {
-    width: viewportWidth * 0.6 - 16,
-    backgroundColor: colors.white,
-    borderRadius: 5,
-    padding: 12,
-    height: 110,
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: colors.gray,
-  },
-  selectedCarouselItem: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-  },
-  carouselContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  carouselCollectionName: {
-    ...typography.h3,
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  carouselCollectionValue: {
-    ...typography.body,
-    color: colors.primary,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  carouselBookCount: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: colors.primary,
-    color: colors.white,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    textAlign: 'center',
-    fontSize: 12,
-    overflow: 'hidden',
-    minWidth: 24,
+  carouselContentContainer: {
+    paddingLeft: 16,
+    paddingRight: 8,
   },
   collectionDetails: {
     marginTop: 10,
-  },
-  collectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  collectionName: {
-    ...typography.h2,
-    flex: 1,
-  },
-  collectionActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deleteCollectionButton: {
-    marginLeft: 12,
-    padding: 8,
-  },
-  exportButton: {
-    padding: 8,
-  },
-  bookContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
   },
   bookInfo: {
     flex: 1,
@@ -789,13 +1021,28 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 12,
   },
+  bookUniqueness: {
+    fontSize: 12,
+    color: colors.grayDark,
+    marginBottom: 4,
+    fontStyle: 'italic',
+  },
+  bookMarket: {
+    fontSize: 12,
+    color: colors.grayDark,
+    marginBottom: 4,
+    fontStyle: 'italic',
+  },
+  bookAge: {
+    fontSize: 12,
+    color: colors.grayDark,
+    marginBottom: 4,
+    fontStyle: 'italic',
+  },
   bookStatus: {
     fontSize: 12,
     fontStyle: 'italic',
     marginTop: 4,
-  },
-  deleteButton: {
-    padding: 8,
   },
   emptyContainer: {
     justifyContent: 'center',
@@ -805,6 +1052,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
+    marginTop: 20
   },
   emptyBookContainer: {
     padding: 16,
@@ -881,6 +1129,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontStyle: 'italic',
   },
+  previewBookUniqueness: {
+    fontSize: 12,
+    color: colors.grayDark,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  previewBookMarket: {
+    fontSize: 12,
+    color: colors.grayDark,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  previewBookAge: {
+    fontSize: 12,
+    color: colors.grayDark,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
   previewMore: {
     textAlign: 'center',
     marginTop: 5,
@@ -939,5 +1205,238 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.background,
     zIndex: 2,
+  },
+  topActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addCollectionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  addCollectionText: {
+    marginLeft: 8,
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.gray,
+    marginBottom: 12,
+  },
+  importButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 16,
+  },
+  importButtonText: {
+    marginLeft: 8,
+    color: colors.primary,
+    fontSize: 16,
+  },
+  titleContainer: {
+    height: 50,
+    marginBottom: 10,
+    alignItems: 'center'
+  },
+  carouselContainer: {
+    height: 140,
+    marginBottom: 10,
+  },
+  collectionCounterContainer: {
+    alignItems: 'center',
+  },
+  collectionCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 4,
+  },
+  collectionCounterText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primary,
+  },
+  collectionNameWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  collectionNameInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  collectionNameInput: {
+    flex: 1,
+    height: 40,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    ...typography.h2,
+  },
+  saveCollectionNameButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  collectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  nameEditContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  nameInput: {
+    flex: 1,
+    height: 30,
+    width: 80,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 12,
+    ...typography.h2,
+    fontSize: 18, // Dostosuj rozmiar czcionki do nagłówka
+  },
+  confirmEditButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  nameDisplayContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  collectionName: {
+    ...typography.h2,
+    fontSize: 18, // Spójne z inputem
+    flexShrink: 1, // Pozwala na zawijanie tekstu
+  },
+  editIcon: {
+    marginLeft: 8,
+  },
+  collectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  exportButton: {
+    padding: 8,
+  },
+  deleteCollectionButton: {
+    marginLeft: 12,
+    padding: 8,
+  },
+  bookContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  bookMainInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  bookBasicDetails: {
+    marginLeft: 24, // Wyrównanie z ikoną strzałki
+  },
+  bookActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editButton: {
+    padding: 8,
+    marginRight: 4,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  bookAdditionalDetails: {
+    padding: 16,
+    paddingTop: 0,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: colors.background,
+  },
+  carouselItem: {
+    width: viewportWidth * 0.6 - 16,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    padding: 16,
+    height: 120,
+    marginRight: 8,
+    borderWidth: 1,
+  },
+  selectedCarouselItem: {
+    borderColor: colors.primary,
+  },
+  unselectedCarouselItem: {
+    borderColor: colors.gray,
+  },
+  carouselContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  carouselCollectionName: {
+    ...typography.h1b,
+    textAlign: 'center',
+    marginBottom: 5,
+    color: colors.black,
+  },
+  carouselCollectionValue: {
+    ...typography.body,
+    textAlign: 'center',
+    marginBottom: 10,
+    color: colors.grayDark,
+  },
+  selectedText: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  carouselBookCount: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: colors.gray,
+    color: colors.white,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    textAlign: 'center',
+    fontSize: 12,
+    overflow: 'hidden',
+    minWidth: 24,
+  },
+  selectedBadge: {
+    backgroundColor: colors.primary,
   },
 });

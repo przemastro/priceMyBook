@@ -9,6 +9,25 @@ interface BookDefect {
     count: number;
 }
 
+interface BookUniqueness {
+    isMassMarket: boolean;
+    isFirstEdition: boolean;
+    isCollectorsEdition: boolean;
+    hasAuthorSignature: boolean;
+    isLimitedEdition: boolean;
+    isPublisherDefunct: boolean;
+}
+
+interface MarketFactors {
+    demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
+    supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
+    publicationYear?: number;
+}
+
+interface BookAgeInfo {
+    years: number;
+}
+
 interface BookData {
     title: string;
     authors: string;
@@ -18,11 +37,15 @@ interface BookData {
     foundInApi: boolean;
     originalPrice: string;
     defects: Record<string, BookDefect>;
-    averagePrice?: string;
-    createdAt?: string;
+    averagePrice: string;
+    createdAt: string;
     rating: number;
-    source?: 'google' | 'amazon' | 'manual'; // Dodane nowe pole
-    priceSource?: string; // Dodane nowe pole
+    source?: 'google' | 'amazon' | 'manual';
+    priceSource?: string;
+    uniqueness: BookUniqueness;
+    marketFactors: MarketFactors;
+    ageInfo: BookAgeInfo;
+    isExpanded?: boolean;
 }
 
 interface AppContextType {
@@ -33,9 +56,10 @@ interface AppContextType {
     removeCollection: (name: string) => void;
     books: { [key: string]: BookData[] };
     addBookToCollection: (collectionName: string, bookData: Omit<BookData, 'createdAt'>) => void;
-    addBooksToCollection: (collectionName: string, booksData: BookData[]) => Promise<void>;
+    addBooksToCollection: (collectionName: string, booksData: Omit<BookData, 'createdAt'>[]) => Promise<void>;
     removeBookFromCollection: (collectionName: string, bookIndex: number) => void;
     updateBookInCollection: (collectionName: string, bookIndex: number, updatedData: Partial<BookData>) => void;
+    updateBooksInCollection: (collectionName: string, updatedBooks: BookData[]) => void;
     exchangeRate: number;
     exchangeRateError: string | null;
     lastRateUpdate: Date | null;
@@ -45,6 +69,7 @@ interface AppContextType {
     clearScanHistory: () => void;
     formatCurrency: (price: string) => string;
     forceUpdateCollections: () => void;
+    renameCollection: (oldName: string, newName: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -55,6 +80,24 @@ const STORAGE_KEYS = {
     SCAN_HISTORY: '@scanHistory',
     EXCHANGE_RATE: '@exchangeRate'
 } as const;
+
+const defaultUniqueness: BookUniqueness = {
+    isMassMarket: false,
+    isFirstEdition: false,
+    isCollectorsEdition: false,
+    hasAuthorSignature: false,
+    isLimitedEdition: false,
+    isPublisherDefunct: false
+};
+
+const defaultMarketFactors: MarketFactors = {
+    demand: 'medium',
+    supply: 'medium'
+};
+
+const defaultAgeInfo: BookAgeInfo = {
+    years: 0
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isbn, setISBN] = useState<string | null>(null);
@@ -69,11 +112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const forceUpdateCollections = useCallback(() => {
         setUpdateTrigger(prev => prev + 1);
     }, []);
-
-    const initialState = {
-        collections: [], // zawsze tablica
-        books: {},       // zawsze obiekt
-    };
 
     // Load all persisted data on app start
     useEffect(() => {
@@ -156,6 +194,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
     }, []);
 
+    const renameCollection = useCallback((oldName: string, newName: string) => {
+        if (!newName.trim() || oldName === newName) return;
+
+        setCollections(prev => prev.map(name => name === oldName ? newName : name));
+        setBooks(prev => {
+            const newBooks = {...prev};
+            if (newBooks[oldName]) {
+                newBooks[newName] = newBooks[oldName];
+                delete newBooks[oldName];
+            }
+            return newBooks;
+        });
+        forceUpdateCollections();
+    }, [forceUpdateCollections]);
+
     const removeCollection = useCallback((name: string) => {
         setCollections(prev => prev.filter(c => c !== name));
         setBooks(prev => {
@@ -176,25 +229,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 newBooks[collectionName] = [];
             }
 
-            const bookWithISBN = {
+            const bookWithDefaults: BookData = {
                 ...bookData,
-                isbn: bookData.isbn,
                 createdAt: new Date().toISOString(),
                 defects: bookData.defects || {},
                 displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
                 rating: bookData.rating || 10,
                 originalPrice: bookData.originalPrice || bookData.price,
-                averagePrice: bookData.averagePrice || bookData.price
+                averagePrice: bookData.averagePrice || bookData.price,
+                uniqueness: bookData.uniqueness || defaultUniqueness,
+                marketFactors: bookData.marketFactors || defaultMarketFactors,
+                ageInfo: bookData.ageInfo || defaultAgeInfo,
+                isExpanded: false
             };
 
             return {
                 ...newBooks,
-                [collectionName]: [...newBooks[collectionName], bookWithISBN]
+                [collectionName]: [...newBooks[collectionName], bookWithDefaults]
             };
         });
     }, [formatCurrency]);
 
-    const addBooksToCollection = useCallback(async (collectionName: string, booksData: BookData[]) => {
+    const addBooksToCollection = useCallback(async (
+        collectionName: string,
+        booksData: Array<Omit<BookData, 'createdAt'> & {
+            uniqueness?: BookUniqueness;
+            marketFactors?: MarketFactors;
+            ageInfo?: BookAgeInfo;
+        }>
+    ) => {
         return new Promise<void>((resolve) => {
             setBooks(prev => {
                 if (!prev[collectionName]) {
@@ -204,13 +267,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
                 const booksWithDefaults = booksData.map(book => ({
                     ...book,
+                    createdAt: new Date().toISOString(),
                     defects: book.defects || {},
                     rating: book.rating || 10,
                     originalPrice: book.originalPrice || book.price,
                     averagePrice: book.averagePrice || book.price,
                     displayPrice: book.displayPrice || formatCurrency(book.price),
-                    createdAt: book.createdAt || new Date().toISOString()
-                }));
+                    uniqueness: book.uniqueness || defaultUniqueness,
+                    marketFactors: book.marketFactors || defaultMarketFactors,
+                    ageInfo: book.ageInfo || defaultAgeInfo,
+                    isExpanded: false
+                } as BookData));
 
                 return {
                     ...prev,
@@ -237,7 +304,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         updatedCollection[bookIndex].displayPrice,
                     defects: updatedData.defects || updatedCollection[bookIndex].defects,
                     rating: updatedData.rating || updatedCollection[bookIndex].rating,
-                    averagePrice: updatedData.averagePrice || updatedCollection[bookIndex].averagePrice
+                    averagePrice: updatedData.averagePrice || updatedCollection[bookIndex].averagePrice,
+                    uniqueness: updatedData.uniqueness || updatedCollection[bookIndex].uniqueness,
+                    marketFactors: updatedData.marketFactors || updatedCollection[bookIndex].marketFactors,
+                    ageInfo: updatedData.ageInfo || updatedCollection[bookIndex].ageInfo,
+                    isExpanded: updatedData.isExpanded !== undefined ?
+                        updatedData.isExpanded : updatedCollection[bookIndex].isExpanded
                 };
 
                 return {
@@ -249,6 +321,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
     }, [formatCurrency]);
 
+    const updateBooksInCollection = useCallback((collectionName: string, updatedBooks: BookData[]) => {
+        setBooks(prev => ({
+            ...prev,
+            [collectionName]: updatedBooks
+        }));
+    }, []);
+
     const removeBookFromCollection = useCallback((collectionName: string, bookIndex: number) => {
         setBooks(prev => ({
             ...prev,
@@ -259,7 +338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const addToScanHistory = useCallback((bookData: Omit<BookData, 'createdAt'>) => {
         setScanHistory(prev => {
-            const newItem = {
+            const newItem: BookData = {
                 ...bookData,
                 displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
                 originalPrice: bookData.originalPrice || bookData.price || '0',
@@ -267,7 +346,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 foundInApi: bookData.foundInApi || false,
                 defects: bookData.defects || {},
                 rating: bookData.rating || 10,
-                averagePrice: bookData.averagePrice || bookData.price
+                averagePrice: bookData.averagePrice || bookData.price,
+                uniqueness: bookData.uniqueness || defaultUniqueness,
+                marketFactors: bookData.marketFactors || defaultMarketFactors,
+                ageInfo: bookData.ageInfo || defaultAgeInfo,
+                isExpanded: false
             };
 
             return [newItem, ...prev.filter(item => item.isbn !== bookData.isbn)];
@@ -286,10 +369,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 collections,
                 addCollection,
                 removeCollection,
+                renameCollection,
                 books,
                 addBookToCollection,
                 addBooksToCollection,
                 updateBookInCollection,
+                updateBooksInCollection,
                 removeBookFromCollection,
                 exchangeRate,
                 exchangeRateError,

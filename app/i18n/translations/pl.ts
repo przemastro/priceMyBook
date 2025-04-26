@@ -111,7 +111,8 @@ export default {
         low: 'Niski',
         veryLow: 'Bardzo niski',
         flooded: 'Zalany rynek',
-        collection: 'Dodaj do księgozbioru'
+        collection: 'Dodaj do księgozbioru',
+        totalBooksInCollections: "Książek w księgozbiorach"
     },
     titles: {
         scan: 'Skanuj ISBN',

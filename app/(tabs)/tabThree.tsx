@@ -183,7 +183,6 @@ export default function TabThreeScreen() {
     addBookToCollection,
     removeBookFromCollection,
     updateBookInCollection,
-    exchangeRate,
     exchangeRateError,
     formatCurrency,
     books
@@ -568,9 +567,9 @@ export default function TabThreeScreen() {
       }), {}),
       rating: bookRating,
       averagePrice: averagePrice,
-      ageInfo,
-      uniqueness,
-      marketFactors
+      ageInfo, // Dodaj to
+      uniqueness, // Dodaj to
+      marketFactors // Dodaj to
     };
 
     if (editMode && collectionName && bookIndex !== null) {
