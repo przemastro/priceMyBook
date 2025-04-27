@@ -117,6 +117,9 @@ export default {
         flooded: 'Flooded',
         collection: 'Add to Collection',
         publicationYear: 'Publication year',
+        addNewCollection: 'Add New Collection',
+        book_one: "book",
+        book_other: "books",
     },
     titles: {
         scan: 'Scan ISBN',
@@ -157,7 +160,8 @@ export default {
         submit: 'Submit',
         backToScanner: 'Back to scanner',
         importCollection: 'Import Collection',
-        confirmImport: 'CONFIRM'
+        confirmImport: 'CONFIRM',
+        add: 'CONFIRM'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
@@ -210,5 +214,9 @@ export default {
         marketFactor: "Market factors",
         uniquenessBonus: "Uniqueness bonus calculation",
         marketAdjustment: "Market factors adjustment"
-    }
+    },
+    bookCount: {
+        book: "book",
+        book_plural: "books",
+    },
 }

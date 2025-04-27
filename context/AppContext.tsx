@@ -37,7 +37,6 @@ interface BookData {
     foundInApi: boolean;
     originalPrice: string;
     defects: Record<string, BookDefect>;
-    averagePrice: string;
     createdAt: string;
     rating: number;
     source?: 'google' | 'amazon' | 'manual';
@@ -236,7 +235,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
                 rating: bookData.rating || 10,
                 originalPrice: bookData.originalPrice || bookData.price,
-                averagePrice: bookData.averagePrice || bookData.price,
                 uniqueness: bookData.uniqueness || defaultUniqueness,
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
@@ -271,7 +269,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     defects: book.defects || {},
                     rating: book.rating || 10,
                     originalPrice: book.originalPrice || book.price,
-                    averagePrice: book.averagePrice || book.price,
                     displayPrice: book.displayPrice || formatCurrency(book.price),
                     uniqueness: book.uniqueness || defaultUniqueness,
                     marketFactors: book.marketFactors || defaultMarketFactors,
@@ -304,7 +301,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         updatedCollection[bookIndex].displayPrice,
                     defects: updatedData.defects || updatedCollection[bookIndex].defects,
                     rating: updatedData.rating || updatedCollection[bookIndex].rating,
-                    averagePrice: updatedData.averagePrice || updatedCollection[bookIndex].averagePrice,
                     uniqueness: updatedData.uniqueness || updatedCollection[bookIndex].uniqueness,
                     marketFactors: updatedData.marketFactors || updatedCollection[bookIndex].marketFactors,
                     ageInfo: updatedData.ageInfo || updatedCollection[bookIndex].ageInfo,
@@ -346,7 +342,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 foundInApi: bookData.foundInApi || false,
                 defects: bookData.defects || {},
                 rating: bookData.rating || 10,
-                averagePrice: bookData.averagePrice || bookData.price,
                 uniqueness: bookData.uniqueness || defaultUniqueness,
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,

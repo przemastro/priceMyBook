@@ -52,6 +52,25 @@ const convertIsbnToAsin = (isbn: string): string => {
   return isbn;
 };
 
+interface BookUniqueness {
+  isMassMarket: boolean;
+  isFirstEdition: boolean;
+  isCollectorsEdition: boolean;
+  hasAuthorSignature: boolean;
+  isLimitedEdition: boolean;
+  isPublisherDefunct: boolean;
+}
+
+interface MarketFactors {
+  demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
+  supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
+  publicationYear?: number;
+}
+
+interface BookAgeInfo {
+  years: number;
+}
+
 interface AmazonPriceOffer {
   price: number;
   currency: string;
@@ -229,6 +248,25 @@ export default function TabOneScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const defaultUniqueness: BookUniqueness = {
+    isMassMarket: false,
+    isFirstEdition: false,
+    isCollectorsEdition: false,
+    hasAuthorSignature: false,
+    isLimitedEdition: false,
+    isPublisherDefunct: false
+  };
+
+  const defaultMarketFactors: MarketFactors = {
+    demand: 'medium',
+    supply: 'medium',
+    publicationYear: new Date().getFullYear()
+  };
+
+  const defaultAgeInfo: BookAgeInfo = {
+    years: 0
+  };
+
   useEffect(() => {
     const animation = Animated.loop(
         Animated.sequence([
@@ -318,11 +356,13 @@ export default function TabOneScreen() {
       price: '0',
       displayPrice: 'N/A',
       originalPrice: '0',
-      averagePrice: '0',
       defects: {},
       rating: 10,
       foundInApi: false,
-      source: 'manual'
+      source: 'manual',
+      uniqueness: defaultUniqueness,
+      marketFactors: defaultMarketFactors,
+      ageInfo: defaultAgeInfo
     });
 
     try {
@@ -353,11 +393,13 @@ export default function TabOneScreen() {
           price: book.price ? book.price.toString() : '0',
           displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency || 'USD'}` : 'N/A',
           originalPrice: book.price ? book.price.toString() : '0',
-          averagePrice: book.price ? book.price.toString() : '0',
           defects: {},
           rating: 10,
           foundInApi: !!book.title,
-          source: book.source
+          source: book.source,
+          uniqueness: defaultUniqueness,
+          marketFactors: defaultMarketFactors,
+          ageInfo: defaultAgeInfo
         });
       } else {
         throw new Error('Book not found in any API');
@@ -371,11 +413,13 @@ export default function TabOneScreen() {
         price: '0',
         displayPrice: 'N/A',
         originalPrice: '0',
-        averagePrice: '0',
         defects: {},
         rating: 10,
         foundInApi: false,
-        source: 'manual'
+        source: 'manual',
+        uniqueness: defaultUniqueness,
+        marketFactors: defaultMarketFactors,
+        ageInfo: defaultAgeInfo
       });
     } finally {
       setLoading(false);
@@ -402,11 +446,13 @@ export default function TabOneScreen() {
       price: '0',
       displayPrice: 'N/A',
       originalPrice: '0',
-      averagePrice: '0',
       defects: {},
       rating: 10,
       foundInApi: false,
-      source: 'manual'
+      source: 'manual',
+      uniqueness: defaultUniqueness,
+      marketFactors: defaultMarketFactors,
+      ageInfo: defaultAgeInfo
     });
 
     try {
@@ -437,11 +483,13 @@ export default function TabOneScreen() {
           price: book.price ? book.price.toString() : '0',
           displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency || 'USD'}` : 'N/A',
           originalPrice: book.price ? book.price.toString() : '0',
-          averagePrice: book.price ? book.price.toString() : '0',
           defects: {},
           rating: 10,
           foundInApi: !!book.title,
-          source: book.source
+          source: book.source,
+          uniqueness: defaultUniqueness,
+          marketFactors: defaultMarketFactors,
+          ageInfo: defaultAgeInfo
         });
       } else {
         throw new Error('Book not found in any API');
@@ -455,11 +503,13 @@ export default function TabOneScreen() {
         price: '0',
         displayPrice: 'N/A',
         originalPrice: '0',
-        averagePrice: '0',
         defects: {},
         rating: 10,
         foundInApi: false,
-        source: 'manual'
+        source: 'manual',
+        uniqueness: defaultUniqueness,
+        marketFactors: defaultMarketFactors,
+        ageInfo: defaultAgeInfo
       });
     } finally {
       setLoading(false);
@@ -508,11 +558,13 @@ export default function TabOneScreen() {
       price: numericPrice.toFixed(2),
       displayPrice: displayPrice,
       originalPrice: numericPrice.toFixed(2),
-      averagePrice: numericPrice.toFixed(2),
       defects: {},
       rating: 10,
       foundInApi: !!bookInfo?.title,
-      source: bookInfo?.source || 'manual'
+      source: bookInfo?.source || 'manual',
+      uniqueness: defaultUniqueness,
+      marketFactors: defaultMarketFactors,
+      ageInfo: defaultAgeInfo
     });
 
     router.push({
@@ -852,10 +904,6 @@ export default function TabOneScreen() {
 }
 
 const styles = StyleSheet.create({
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
   cameraOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -1148,5 +1196,91 @@ const styles = StyleSheet.create({
   copyLogsText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  scanButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  scanButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 10,
+  },
+  searchModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  searchModalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  searchModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  searchModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.black,
+  },
+  searchInputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    marginBottom: 8,
+    color: colors.black,
+    fontWeight: '500',
+  },
+  searchInput: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: colors.gray,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    color: colors.black,
+  },
+  disabledInput: {
+    backgroundColor: '#f5f5f5',
+    color: '#888',
+  },
+  searchSubmitButton: {
+    backgroundColor: colors.primary,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  searchSubmitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

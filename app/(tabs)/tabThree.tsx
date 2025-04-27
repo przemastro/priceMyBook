@@ -22,6 +22,7 @@ import {useLocalSearchParams, useRouter} from 'expo-router';
 import {colors, responsive, typography} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
 import {Ionicons} from '@expo/vector-icons';
+import i18n from "i18next";
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -207,6 +208,19 @@ export default function TabThreeScreen() {
     isPublisherDefunct: false
   };
   const [uniqueness, setUniqueness] = useState<BookUniqueness>(initialUniqueness);
+
+  const getBookWord = (count: number, language: string) => {
+    if (language === 'pl') {
+      // Odmiana polska
+      if (count === 1) return t('labels.book_one');
+      if (count % 100 >= 12 && count % 100 <= 14) return t('labels.book_many');
+      if ([2,3,4].includes(count % 10)) return t('labels.book_few');
+      return t('labels.book_many');
+    } else {
+      // Odmiana angielska
+      return count === 1 ? t('labels.book_one') : t('labels.book_other');
+    }
+  };
 
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
@@ -825,7 +839,7 @@ export default function TabThreeScreen() {
                     <View style={styles.bookCountContainer}>
                       <Ionicons name="book" size={20} color={colors.primary} />
                       <Text style={styles.bookCountText}>
-                        {getBookCount(selectedCollection)} {t('labels.books')}
+                        {getBookCount(selectedCollection)} {getBookWord(getBookCount(selectedCollection), i18n.language)}
                       </Text>
                     </View>
                 )}
@@ -982,7 +996,6 @@ export default function TabThreeScreen() {
   return (
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={[typography.h1, styles.header]}>
-          {editMode ? t('titles.editBook') : t('titles.analyzeCondition')}
         </Text>
 
         <View style={styles.ratingContainer}>
@@ -1038,7 +1051,7 @@ export default function TabThreeScreen() {
                       {formatCurrency(originalPrice)}
                     </Text>
                     <Ionicons
-                        name="pencil"
+                        name="create"
                         size={16}
                         color={colors.primary}
                         style={styles.editIcon}
@@ -1046,12 +1059,6 @@ export default function TabThreeScreen() {
                   </TouchableOpacity>
               )}
             </View>
-
-            {averagePrice !== originalPrice && (
-                <Text style={typography.body}>
-                  {t('bookInfo.discountedPrice')}: {formatCurrency(averagePrice)}
-                </Text>
-            )}
             <View style={styles.finalPriceContainer}>
               <Ionicons name="pricetag" size={24} color={colors.primary} style={styles.priceIcon} />
               <Text style={[typography.h2, { color: colors.primary }]}>
@@ -1103,14 +1110,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 4,
     marginTop: responsive.largeMargin,
     textAlign: 'left',
     color: colors.black,
   },
   ratingContainer: {
     backgroundColor: colors.white,
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 20,
     marginBottom: 20,
     alignItems: 'center',
@@ -1134,7 +1141,7 @@ const styles = StyleSheet.create({
   },
   combinedSection: {
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
@@ -1158,7 +1165,7 @@ const styles = StyleSheet.create({
     width: 80,
     borderColor: colors.primary,
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 2,
     paddingHorizontal: 8,
     marginRight: 8,
   },
@@ -1188,7 +1195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     padding: 12,
-    borderRadius: 5,
+    borderRadius: 2,
     backgroundColor: 'rgba(74,108,247,0.08)',
   },
   priceIcon: {
@@ -1199,7 +1206,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     borderWidth: 1,
     borderColor: colors.primary,
     flexDirection: 'row',
@@ -1240,7 +1247,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderColor: colors.gray,
-    borderRadius: 5,
+    borderRadius: 2,
     backgroundColor: 'white',
     marginBottom: 12,
     alignItems: 'center',
@@ -1254,7 +1261,7 @@ const styles = StyleSheet.create({
   defectIconContainer: {
     marginBottom: 8,
     backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 50,
+    borderRadius: 20,
     padding: 12,
     marginTop: 10,
   },
@@ -1339,7 +1346,7 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 0,
-    borderRadius: 5,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   bookCountContainer: {
@@ -1359,7 +1366,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
   },
@@ -1372,7 +1379,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderRadius: 5,
+    borderRadius: 2,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -1409,7 +1416,7 @@ const styles = StyleSheet.create({
     top: 40,
     left: 20,
     zIndex: 1,
-    borderRadius: 50,
+    borderRadius: 20,
     padding: 10,
     backgroundColor: 'transparent',
   },
@@ -1472,7 +1479,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    borderRadius: 5,
+    borderRadius: 2,
     marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1490,7 +1497,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: colors.gray,
     height: 5,
-    borderRadius: 5,
+    borderRadius: 2,
     marginBottom: 5,
     overflow: 'hidden'
   },
@@ -1559,7 +1566,7 @@ const styles = StyleSheet.create({
   modalButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 5,
+    borderRadius: 2,
     marginLeft: 10,
   },
   acceptButton: {
@@ -1584,7 +1591,7 @@ const styles = StyleSheet.create({
   },
   slidesContainer: {
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
@@ -1618,7 +1625,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     marginBottom: 0,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
@@ -1674,7 +1681,7 @@ const styles = StyleSheet.create({
   },
   tabSectionContainer: {
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',

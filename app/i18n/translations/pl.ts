@@ -112,7 +112,11 @@ export default {
         veryLow: 'Bardzo niski',
         flooded: 'Zalany rynek',
         collection: 'Dodaj do księgozbioru',
-        totalBooksInCollections: "Książek w księgozbiorach"
+        totalBooksInCollections: "Książek w księgozbiorach",
+        addNewCollection: 'Dodaj nowy księgozbiór',
+        book_one: "książka",
+        book_few: "książki",
+        book_many: "książek",
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -153,7 +157,8 @@ export default {
         submit: 'Zatwierdź',
         backToScanner: 'Powrót do skanera',
         importCollection: 'Importuj księgozbiór',
-        confirmImport: 'POTWIERDŹ'
+        confirmImport: 'POTWIERDŹ',
+        add: 'POTWIERDŹ'
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
@@ -206,5 +211,5 @@ export default {
         marketFactor: "Czynniki rynkowe",
         uniquenessBonus: "Bonus wynikający z unikatowości",
         marketAdjustment: "Dostosowanie ceny w oparciu o czynniki rynkowe"
-    }
+    },
 }

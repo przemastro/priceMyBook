@@ -10,6 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
 import { FlashList } from '@shopify/flash-list';
+import i18n from "i18next";
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -100,6 +101,19 @@ export default function TabFourScreen() {
     };
 
     updateBooksInCollection(collectionName, updatedBooks);
+  };
+
+  const getBookWord = (count: number, language: string) => {
+    if (language === 'pl') {
+      // Odmiana polska
+      if (count === 1) return t('labels.book_one');
+      if (count % 100 >= 12 && count % 100 <= 14) return t('labels.book_many');
+      if ([2,3,4].includes(count % 10)) return t('labels.book_few');
+      return t('labels.book_many');
+    } else {
+      // Odmiana angielska
+      return count === 1 ? t('labels.book_one') : t('labels.book_other');
+    }
   };
 
   const defaultUniqueness: BookUniqueness = {
@@ -313,7 +327,6 @@ export default function TabFourScreen() {
           `${book.isbn},` +
           `${book.originalPrice},` +
           `${book.price},` +
-          `${book.averagePrice},` +
           `${book.rating},` +
           `${book.foundInApi ? 'Yes' : 'No'},` +
           `"${defectsString.replace(/"/g, '""')}",` +
@@ -371,7 +384,6 @@ export default function TabFourScreen() {
         isbn: book.isbn,
         title: book.title,
         authors: book.authors,
-        averagePrice: book.averagePrice,
         originalPrice: book.originalPrice,
         fromHistory: 'false',
         editMode: 'true',
@@ -449,7 +461,10 @@ export default function TabFourScreen() {
             key={item}
         >
           <View style={styles.carouselContent}>
-            <Text style={styles.carouselCollectionName} numberOfLines={1}>
+            <Text style={[
+                styles.carouselCollectionName,
+                isSelected && styles.selectedText
+            ]} numberOfLines={1}>
               {item}
             </Text>
             <Text style={[
@@ -462,7 +477,7 @@ export default function TabFourScreen() {
               styles.carouselBookCount,
               isSelected && styles.selectedBadge
             ]}>
-              {bookCount} {t('labels.books')}
+              {bookCount} {getBookWord(bookCount, i18n.language)}
             </Text>
           </View>
         </TouchableOpacity>
@@ -648,7 +663,6 @@ export default function TabFourScreen() {
   return (
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={[typography.h1, styles.header]}>
-          {t('titles.manageCollections')}
         </Text>
 
         <View style={styles.totalValueContainer}>
@@ -792,7 +806,7 @@ export default function TabFourScreen() {
                                 {selectedCollection}
                               </Text>
                               <Ionicons
-                                  name="pencil"
+                                  name="create"
                                   size={16}
                                   color={colors.primary}
                                   style={styles.editIcon}
@@ -931,14 +945,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 4,
     textAlign: 'left',
     color: colors.black,
     marginTop: responsive.largeMargin,
   },
   totalValueContainer: {
     backgroundColor: colors.white,
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 20,
     marginBottom: 20,
     alignItems: 'center',
@@ -952,13 +966,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   totalValueAmount: {
-    fontSize: 16,
+    fontSize: 18,
     color: colors.primary,
     fontWeight: 'bold',
   },
   sectionContainer: {
     backgroundColor: colors.white,
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
@@ -1049,7 +1063,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: colors.white,
-    borderRadius: 5,
+    borderRadius: 2,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
     marginTop: 20
@@ -1059,7 +1073,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.white,
-    borderRadius: 5,
+    borderRadius: 2,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
   },
@@ -1077,7 +1091,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '90%',
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 2,
     padding: 20,
   },
   modalTitle: {
@@ -1089,7 +1103,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderColor: 'rgba(0,0,0,0.1)',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 2,
     paddingHorizontal: 16,
     backgroundColor: colors.white,
     marginBottom: 15,
@@ -1161,22 +1175,20 @@ const styles = StyleSheet.create({
   modalButton: {
     paddingVertical: 10,
     paddingHorizontal: 15,
-    borderRadius: 5,
+    borderRadius: 2,
     marginLeft: 10,
   },
   cancelButton: {
     backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.gray,
   },
   confirmButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.white,
   },
   cancelButtonText: {
-    color: colors.black,
+    color: colors.primary,
   },
   confirmButtonText: {
-    color: colors.white,
+    color: colors.primary,
   },
   valueRow: {
     flexDirection: 'row',
@@ -1185,7 +1197,7 @@ const styles = StyleSheet.create({
   coinIconContainer: {
     marginTop: 13,
     backgroundColor: colors.white,
-    borderRadius: 50,
+    borderRadius: 20,
     width: 45,
     height: 45,
     justifyContent: 'center',
@@ -1198,7 +1210,7 @@ const styles = StyleSheet.create({
   priceContainer: {
     marginTop: 13,
     backgroundColor: colors.background,
-    borderRadius: 50,
+    borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 16,
     paddingLeft: 10,
@@ -1281,7 +1293,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: colors.primary,
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 2,
     paddingHorizontal: 12,
     marginRight: 8,
     ...typography.h2,
@@ -1314,7 +1326,7 @@ const styles = StyleSheet.create({
     width: 80,
     borderColor: colors.primary,
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 2,
     paddingHorizontal: 12,
     ...typography.h2,
     fontSize: 18, // Dostosuj rozmiar czcionki do nagłówka
@@ -1387,16 +1399,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   carouselItem: {
-    width: viewportWidth * 0.6 - 16,
+    width: viewportWidth * 0.4 - 16,
     backgroundColor: colors.white,
     borderRadius: 8,
-    padding: 16,
+    padding: 10,
     height: 120,
     marginRight: 8,
     borderWidth: 1,
   },
   selectedCarouselItem: {
     borderColor: colors.primary,
+    backgroundColor: 'rgba(74,108,247,0.05)',
   },
   unselectedCarouselItem: {
     borderColor: colors.gray,
@@ -1407,7 +1420,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   carouselCollectionName: {
-    ...typography.h1b,
+    ...typography.body,
     textAlign: 'center',
     marginBottom: 5,
     color: colors.black,
@@ -1415,8 +1428,8 @@ const styles = StyleSheet.create({
   carouselCollectionValue: {
     ...typography.body,
     textAlign: 'center',
-    marginBottom: 10,
-    color: colors.grayDark,
+    marginBottom: 0,
+    color: colors.black,
   },
   selectedText: {
     color: colors.primary,
@@ -1426,7 +1439,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: colors.gray,
+    backgroundColor: colors.grayDark,
     color: colors.white,
     borderRadius: 12,
     paddingHorizontal: 8,

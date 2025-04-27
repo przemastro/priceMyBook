@@ -72,7 +72,6 @@ export default function TabTwoScreen() {
     return (
         <View style={styles.container}>
             <Text style={[typography.h1, styles.header]}>
-                {t('titles.history')}
             </Text>
 
             <TextInput
@@ -115,7 +114,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
     },
     header: {
-        marginBottom: 24,
+        marginBottom: 4,
         marginTop: responsive.largeMargin,
         textAlign: 'left',
         color: colors.black,
@@ -124,7 +123,7 @@ const styles = StyleSheet.create({
         height: 50,
         borderColor: 'rgba(0,0,0,0.1)',
         borderWidth: 1,
-        borderRadius: 5,
+        borderRadius: 2,
         paddingHorizontal: 16,
         marginBottom: 16,
         backgroundColor: colors.white,
@@ -134,7 +133,7 @@ const styles = StyleSheet.create({
         padding: 16,
         marginBottom: 12,
         backgroundColor: colors.white,
-        borderRadius: 5,
+        borderRadius: 2,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
     },
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: colors.white,
-        borderRadius: 5,
+        borderRadius: 2,
         borderWidth: 1,
         borderColor: colors.primary,
         marginVertical: 16,
