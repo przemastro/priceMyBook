@@ -584,11 +584,6 @@ export default function TabOneScreen() {
     resetScanner();
   };
 
-  const toggleManualMode = () => {
-    setIsManualMode(true);
-    setScanned(true);
-  };
-
   const showApiLogs = () => {
     let logs = '=== API Request Details ===\n';
 
@@ -701,206 +696,175 @@ export default function TabOneScreen() {
             >
               <View style={styles.cameraOverlay}>
                 <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
-                    <View style={styles.scanFrameTopLeft} />
+                  <View style={styles.scanFrameTopLeft} />
                   <View style={styles.scanFrameTopRight} />
-                <View style={styles.scanFrameBottomLeft} />
-                <View style={styles.scanFrameBottomRight} />
-              </Animated.View>
+                  <View style={styles.scanFrameBottomLeft} />
+                  <View style={styles.scanFrameBottomRight} />
+                </Animated.View>
 
-              <Text style={styles.scanHintText}>{t('labels.scanBarcode')}</Text>
-            </View>
-          </BarCodeScanner>
-          )}
-
-{!isManualMode && !scanned && (
-    <TouchableOpacity
-        style={styles.closeButton}
-        onPress={toggleManualMode}
-    >
-      <Ionicons name="close" size={32} color="white" />
-    </TouchableOpacity>
-)}
-
-{isManualMode && (
-    <View style={styles.manualInputContainer}>
-      <View style={styles.manualHeader}>
-        <TouchableOpacity onPress={resetScanner}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={[typography.h1, styles.manualInputTitle]}>
-          {t('labels.enterISBNManually')}
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <View style={styles.inputRow}>
-        <TextInput
-            style={[styles.input, styles.flexInput]}
-            placeholder={t('placeholders.enterISBN')}
-            placeholderTextColor="#888"
-            keyboardType="numeric"
-            value={manualISBN}
-            onChangeText={setManualISBN}
-            autoFocus
-        />
-        <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleManualSubmit}
-        >
-          <Text style={styles.submitButtonText}>
-            {t('buttons.submit')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-)}
-
-<Modal
-    animationType="fade"
-    transparent
-    visible={modalVisible}
-    onRequestClose={handleCancel}
-    key={currentLang}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContainer}>
-      <ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={styles.modalScrollContent}
-          showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.modalTitle}>
-          {t('bookInfo.scannedISBN')}: {isbn}
-        </Text>
-
-        {loading ? (
-            <ActivityIndicator size="large" color={colors.primary} />
-        ) : (
-            <>
-              {bookInfo && (
-                  <View style={styles.bookInfoContainer}>
-                    {bookInfo.image && (
-                        <Image
-                            source={{ uri: bookInfo.image }}
-                            style={styles.bookImage}
-                            resizeMode="contain"
-                        />
-                    )}
-                    <Text style={styles.bookInfoText}>
-                      {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
-                    </Text>
-                    <Text style={styles.bookInfoText}>
-                      {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
-                    </Text>
-                    {bookInfo.publisher && bookInfo.publisher !== 'Unknown' && (
-                        <Text style={styles.bookInfoText}>
-                          {t('bookInfo.publisher')}: {bookInfo.publisher}
-                        </Text>
-                    )}
-                    {bookInfo.source === 'amazon' && (
-                        <Text style={styles.bookInfoText}>
-                          Source: Amazon ({bookInfo.amazonData?.marketplace})
-                        </Text>
-                    )}
-                  </View>
-              )}
-
-              <View style={styles.priceInputContainer}>
-                {bookInfo?.price && (
-                    <Text style={styles.suggestedPriceText}>
-                      {t('bookInfo.suggestedPrice')}: {bookInfo.price.toFixed(2)} {bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD')}
-                    </Text>
-                )}
-                {(!bookInfo?.price && !bookInfo?.amazonData) && (
-                    <Text style={styles.suggestedPriceText}>
-                      {t('bookInfo.noPrice')}
-                    </Text>
-                )}
-
-                {renderAmazonPriceButtons()}
-
-                <TextInput
-                    style={styles.input}
-                    placeholder={i18n.language === 'pl' ?
-                        t('placeholders.enterPricePLN') :
-                        t('placeholders.enterPriceUSD')}
-                    placeholderTextColor="#888"
-                    keyboardType="numeric"
-                    value={manualPrice}
-                    onChangeText={(text) => {
-                      setManualPrice(text);
-                      setSelectedPrice(null);
-                    }}
-                    autoFocus={!bookInfo?.price && !bookInfo?.amazonData}
-                />
+                <TouchableOpacity
+                    style={styles.manualEntryButton}
+                    onPress={() => setIsManualMode(true)}
+                >
+                  <Ionicons name="keypad-outline" size={24} color="white" />
+                  <Text style={styles.manualEntryButtonText}>
+                    {t('buttons.manualEntry')}
+                  </Text>
+                </TouchableOpacity>
               </View>
+            </BarCodeScanner>
+        )}
+
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={isManualMode}
+            onRequestClose={() => setIsManualMode(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.manualModalContainer}>
+              <Text style={styles.modalTitle}>
+                {t('labels.enterISBNManually')}
+              </Text>
+
+              <TextInput
+                  style={styles.modalInput}
+                  placeholder={t('placeholders.enterISBN')}
+                  placeholderTextColor="#888"
+                  keyboardType="numeric"
+                  value={manualISBN}
+                  onChangeText={setManualISBN}
+                  autoFocus
+              />
 
               <View style={styles.modalButtonsContainer}>
                 <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={handleCancel}
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setIsManualMode(false)}
                 >
                   <Text style={styles.cancelButtonText}>
                     {t('buttons.cancel')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={styles.primaryButton}
-                    onPress={handlePrice}
+                    style={[styles.modalButton, styles.submitButton]}
+                    onPress={handleManualSubmit}
                 >
-                  <Text style={styles.continueButtonText}>
-                    {t('buttons.continue')}
+                  <Text style={styles.submitButtonText}>
+                    {t('buttons.submit')}
                   </Text>
                 </TouchableOpacity>
               </View>
-            </>
-        )}
-      </ScrollView>
-    </View>
-  </View>
-</Modal>
+            </View>
+          </View>
+        </Modal>
 
-{bookInfo && (
-    <TouchableOpacity
-        style={styles.logsButton}
-        onPress={showApiLogs}
-    >
-      <Ionicons name="information-circle" size={24} color="white" />
-    </TouchableOpacity>
-)}
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={handleCancel}
+            key={currentLang}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <ScrollView
+                  ref={scrollViewRef}
+                  contentContainerStyle={styles.modalScrollContent}
+                  showsVerticalScrollIndicator={false}
+              >
+                <Text style={styles.modalTitle}>
+                  {t('bookInfo.scannedISBN')}: {isbn}
+                </Text>
 
-<Modal
-    animationType="slide"
-    transparent={false}
-    visible={logsVisible}
-    onRequestClose={() => setLogsVisible(false)}
->
-  <View style={styles.logsContainer}>
-    <View style={styles.logsHeader}>
-      <Text style={styles.logsTitle}>API Logs</Text>
-      <TouchableOpacity
-          style={styles.closeLogsButton}
-          onPress={() => setLogsVisible(false)}
-      >
-        <Ionicons name="close" size={24} color="black" />
-      </TouchableOpacity>
-    </View>
-    <ScrollView style={styles.logsContent}>
-      <Text style={styles.logsText}>{apiLogs}</Text>
-    </ScrollView>
-    <TouchableOpacity
-        style={styles.copyLogsButton}
-        onPress={() => {
-          Clipboard.setString(apiLogs);
-          Alert.alert('Logs copied to clipboard');
-        }}
-    >
-      <Text style={styles.copyLogsText}>Copy to Clipboard</Text>
-    </TouchableOpacity>
-  </View>
-</Modal>
-</View>
-);
+                {loading ? (
+                    <ActivityIndicator size="large" color={colors.primary} />
+                ) : (
+                    <>
+                      {bookInfo && (
+                          <View style={styles.bookInfoContainer}>
+                            {bookInfo.image && (
+                                <Image
+                                    source={{ uri: bookInfo.image }}
+                                    style={styles.bookImage}
+                                    resizeMode="contain"
+                                />
+                            )}
+                            <Text style={styles.bookInfoText}>
+                              {t('bookInfo.title')}: {bookInfo.title || t('bookInfo.unknown')}
+                            </Text>
+                            <Text style={styles.bookInfoText}>
+                              {t('bookInfo.authors')}: {bookInfo.authors || t('bookInfo.unknown')}
+                            </Text>
+                            {bookInfo.publisher && bookInfo.publisher !== 'Unknown' && (
+                                <Text style={styles.bookInfoText}>
+                                  {t('bookInfo.publisher')}: {bookInfo.publisher}
+                                </Text>
+                            )}
+                            {bookInfo.source === 'amazon' && (
+                                <Text style={styles.bookInfoText}>
+                                  Source: Amazon ({bookInfo.amazonData?.marketplace})
+                                </Text>
+                            )}
+                          </View>
+                      )}
+
+                      <View style={styles.priceInputContainer}>
+                        {bookInfo?.price && (
+                            <Text style={styles.suggestedPriceText}>
+                              {t('bookInfo.suggestedPrice')}: {bookInfo.price.toFixed(2)} {bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD')}
+                            </Text>
+                        )}
+                        {(!bookInfo?.price && !bookInfo?.amazonData) && (
+                            <Text style={styles.suggestedPriceText}>
+                              {t('bookInfo.noPrice')}
+                            </Text>
+                        )}
+
+                        {renderAmazonPriceButtons()}
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder={i18n.language === 'pl' ?
+                                t('placeholders.enterPricePLN') :
+                                t('placeholders.enterPriceUSD')}
+                            placeholderTextColor="#888"
+                            keyboardType="numeric"
+                            value={manualPrice}
+                            onChangeText={(text) => {
+                              setManualPrice(text);
+                              setSelectedPrice(null);
+                            }}
+                            autoFocus={!bookInfo?.price && !bookInfo?.amazonData}
+                        />
+                      </View>
+
+                      <View style={styles.modalButtonsContainer}>
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={handleCancel}
+                        >
+                          <Text style={styles.cancelButtonText}>
+                            {t('buttons.cancel')}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.primaryButton}
+                            onPress={handlePrice}
+                        >
+                          <Text style={styles.continueButtonText}>
+                            {t('buttons.continue')}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -908,15 +872,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 30,
-    left: 20,
-    zIndex: 100,
-    borderRadius: 50,
-    padding: 10,
     backgroundColor: 'transparent',
   },
   scanFrame: {
@@ -965,10 +920,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: 'white',
   },
-  scanHintText: {
-    color: 'white',
+  manualEntryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 2,
     marginTop: 20,
+  },
+  manualEntryButtonText: {
+    color: 'white',
+    marginLeft: 10,
     fontSize: 16,
+    fontWeight: '500',
   },
   manualInputContainer: {
     flex: 1,
@@ -1092,29 +1058,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginLeft: 10,
   },
-  cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
   continueButtonText: {
     color: colors.primary,
     fontWeight: '500',
-  },
-  cancelButtonText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  submitButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 2,
-  },
-  submitButtonText: {
-    fontWeight: '600',
-    color: colors.white
   },
   amazonPricesContainer: {
     marginVertical: 10,
@@ -1145,57 +1091,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 4,
-  },
-  logsButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: colors.primary,
-    width: 50,
-    height: 50,
-    borderRadius: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  logsContainer: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-  },
-  logsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  logsTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  closeLogsButton: {
-    padding: 8,
-  },
-  logsContent: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 2,
-    padding: 16,
-    marginBottom: 16,
-  },
-  logsText: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-    fontSize: 12,
-  },
-  copyLogsButton: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 2,
-    alignItems: 'center',
-  },
-  copyLogsText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
   fullScreenContainer: {
     flex: 1,
@@ -1282,5 +1177,45 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  manualModalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 2,
+    padding: 20,
+    maxHeight: '40%',
+  },
+  modalInput: {
+    height: 50,
+    borderColor: 'rgba(0,0,0,0.1)',
+    borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    color: colors.black,
+    marginVertical: 20,
+    fontSize: 16,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: colors.white,
+  },
+  submitButton: {
+    backgroundColor: colors.white,
+  },
+  cancelButtonText: {
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  submitButtonText: {
+    color: colors.primary,
+    fontWeight: '500',
   },
 });

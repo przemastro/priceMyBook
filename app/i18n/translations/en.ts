@@ -159,7 +159,7 @@ export default {
         simulateDefect: 'Simulate Defect',
         confirmDefect: 'CONFIRM',
         reject: 'REJECT',
-        submit: 'Submit',
+        submit: 'SUBMIT',
         backToScanner: 'Back to scanner',
         importCollection: 'Import Collection',
         confirmImport: 'CONFIRM',
@@ -167,7 +167,8 @@ export default {
         list: 'List for sale',
         listModal: 'LIST',
         listed: 'Listed',
-        sold: 'Sold'
+        sold: 'Sold',
+        manualEntry: 'Manually enter ISBN'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',

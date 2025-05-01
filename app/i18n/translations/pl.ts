@@ -156,7 +156,7 @@ export default {
         simulateDefect: 'Symuluj wadę',
         confirmDefect: 'POTWIERDŹ',
         reject: 'ODRZUĆ',
-        submit: 'Zatwierdź',
+        submit: 'ZATWIERDŹ',
         backToScanner: 'Powrót do skanera',
         importCollection: 'Importuj księgozbiór',
         confirmImport: 'POTWIERDŹ',
@@ -164,7 +164,8 @@ export default {
         list: 'Wystaw na sprzedaż',
         listModal: 'WYSTAW',
         listed: 'Wystawione',
-        sold: 'Sprzedane'
+        sold: 'Sprzedane',
+        manualEntry: 'Wpisz ISBN ręcznie'
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
