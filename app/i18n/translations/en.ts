@@ -120,6 +120,8 @@ export default {
         addNewCollection: 'Add New Collection',
         book_one: "book",
         book_other: "books",
+        activeValue: 'Book collection value',
+        soldValue: 'Sold books value'
     },
     titles: {
         scan: 'Scan ISBN',
@@ -161,7 +163,11 @@ export default {
         backToScanner: 'Back to scanner',
         importCollection: 'Import Collection',
         confirmImport: 'CONFIRM',
-        add: 'CONFIRM'
+        add: 'CONFIRM',
+        list: 'List for sale',
+        listModal: 'LIST',
+        listed: 'Listed',
+        sold: 'Sold'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
@@ -219,4 +225,23 @@ export default {
         book: "book",
         book_plural: "books",
     },
+    listingStatus: {
+        notListed: 'List',
+        listed: 'Listed on {{platforms}}',
+        sold: 'Sold'
+    },
+    platforms: {
+        amazon: 'Amazon',
+        allegro: 'Allegro',
+        olx: 'OLX'
+    },
+    statusChangeModal: {
+        markAsSold: 'Mark as Sold',
+        cancelListing: 'Cancel listing',
+        title: 'Set Book Status',
+        relist: 'Cancel Sold'
+    },
+    listingModal: {
+        title: 'Select Platform'
+    }
 }

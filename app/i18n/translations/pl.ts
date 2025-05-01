@@ -117,6 +117,8 @@ export default {
         book_one: "książka",
         book_few: "książki",
         book_many: "książek",
+        activeValue: 'Wartość księgozbiorów',
+        soldValue: 'Wartość książek sprzedanych'
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -158,7 +160,11 @@ export default {
         backToScanner: 'Powrót do skanera',
         importCollection: 'Importuj księgozbiór',
         confirmImport: 'POTWIERDŹ',
-        add: 'POTWIERDŹ'
+        add: 'POTWIERDŹ',
+        list: 'Wystaw na sprzedaż',
+        listModal: 'WYSTAW',
+        listed: 'Wystawione',
+        sold: 'Sprzedane'
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
@@ -212,4 +218,23 @@ export default {
         uniquenessBonus: "Bonus wynikający z unikatowości",
         marketAdjustment: "Dostosowanie ceny w oparciu o czynniki rynkowe"
     },
+    listingStatus: {
+        notListed: 'Wystaw',
+        listed: 'Wystawione na {{platforms}}',
+        sold: 'Sprzedane'
+    },
+    platforms: {
+        amazon: 'Amazon',
+        allegro: 'Allegro',
+        olx: 'OLX'
+    },
+    statusChangeModal: {
+        markAsSold: 'Ustaw jako sprzedane',
+        cancelListing: 'Anuluj wystawienie',
+        title: 'Ustaw status książki',
+        relist: 'Anuluj sprzedaż'
+    },
+    listingModal: {
+        title: 'Wybierz sklep'
+    }
 }

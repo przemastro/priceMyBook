@@ -9,6 +9,13 @@ interface BookDefect {
     count: number;
 }
 
+interface ListingStatus {
+    status: 'notListed' | 'listed' | 'sold';
+    platforms: ('amazon' | 'allegro' | 'olx')[]; // Dodaj 'olx' do union type
+    listedDate?: string;
+    soldDate?: string;
+}
+
 interface BookUniqueness {
     isMassMarket: boolean;
     isFirstEdition: boolean;
@@ -45,6 +52,7 @@ interface BookData {
     marketFactors: MarketFactors;
     ageInfo: BookAgeInfo;
     isExpanded?: boolean;
+    listingStatus?: ListingStatus;
 }
 
 interface AppContextType {
@@ -79,6 +87,11 @@ const STORAGE_KEYS = {
     SCAN_HISTORY: '@scanHistory',
     EXCHANGE_RATE: '@exchangeRate'
 } as const;
+
+const defaultListingStatus: ListingStatus = {
+    status: 'notListed',
+    platforms: [] // Teraz może zawierać też 'olx'
+};
 
 const defaultUniqueness: BookUniqueness = {
     isMassMarket: false,
@@ -238,7 +251,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 uniqueness: bookData.uniqueness || defaultUniqueness,
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
-                isExpanded: false
+                isExpanded: false,
+                listingStatus: bookData.listingStatus || defaultListingStatus // Teraz wspiera OLX
             };
 
             return {
@@ -254,6 +268,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             uniqueness?: BookUniqueness;
             marketFactors?: MarketFactors;
             ageInfo?: BookAgeInfo;
+            listingStatus?: ListingStatus; // Teraz wspiera OLX
         }>
     ) => {
         return new Promise<void>((resolve) => {
@@ -273,6 +288,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     uniqueness: book.uniqueness || defaultUniqueness,
                     marketFactors: book.marketFactors || defaultMarketFactors,
                     ageInfo: book.ageInfo || defaultAgeInfo,
+                    listingStatus: book.listingStatus || defaultListingStatus,
                     isExpanded: false
                 } as BookData));
 
@@ -304,6 +320,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     uniqueness: updatedData.uniqueness || updatedCollection[bookIndex].uniqueness,
                     marketFactors: updatedData.marketFactors || updatedCollection[bookIndex].marketFactors,
                     ageInfo: updatedData.ageInfo || updatedCollection[bookIndex].ageInfo,
+                    listingStatus: updatedData.listingStatus || updatedCollection[bookIndex].listingStatus || defaultListingStatus,
                     isExpanded: updatedData.isExpanded !== undefined ?
                         updatedData.isExpanded : updatedCollection[bookIndex].isExpanded
                 };
@@ -345,6 +362,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 uniqueness: bookData.uniqueness || defaultUniqueness,
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
+                listingStatus: bookData.listingStatus || defaultListingStatus,
                 isExpanded: false
             };
 
