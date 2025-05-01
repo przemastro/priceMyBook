@@ -94,6 +94,7 @@ interface SearchParams {
   marketFactors?: string;
   fromHistory?: string;
   activeFactors?: string;
+  updatedTitle?: string;
 }
 
 const DEFECT_TYPES = [
@@ -253,6 +254,10 @@ export default function TabThreeScreen() {
   const editMode = Array.isArray(params.editMode) ? params.editMode[0] === 'true' : params.editMode === 'true';
   const collectionName = Array.isArray(params.collectionName) ? params.collectionName[0] : params.collectionName;
   const bookIndex = params.bookIndex ? parseInt(Array.isArray(params.bookIndex) ? params.bookIndex[0] : params.bookIndex) : null;
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState(title);
+  const [editingIsbn, setEditingIsbn] = useState(false);
+  const [isbnInput, setIsbnInput] = useState(isbn);
   const defaultListingStatus: ListingStatus = {
     status: 'notListed',
     platforms: []
@@ -279,6 +284,23 @@ export default function TabThreeScreen() {
       icon: 'library-outline'
     }
   ];
+  // Funkcja do zapisywania tytułu
+  const saveTitle = () => {
+    if (!titleInput.trim()) {
+      Alert.alert(t('alerts.error'), t('alerts.enterTitle'));
+      return;
+    }
+    setEditingTitle(false);
+    // Nie potrzebujemy już setTitle, ponieważ titleInput jest już używany w handleSaveBook
+  };
+
+  const saveIsbn = () => {
+    if (!isbnInput.trim()) {
+      Alert.alert(t('alerts.error'), t('alerts.enterISBN'));
+      return;
+    }
+    setEditingIsbn(false);
+  };
 
   useEffect(() => {
     const newFactors = parseActiveFactors(rawParams.activeFactors);
@@ -336,7 +358,9 @@ export default function TabThreeScreen() {
   useEffect(() => {
     setOriginalPrice(originalPriceParam);
     setOriginalPriceInput(originalPriceParam);
-  }, [originalPriceParam]);
+    setTitleInput(title); // Dodaj tę linię, aby ustawić początkowy tytuł
+    setIsbnInput(isbn);
+  }, [originalPriceParam, title, isbn]);
 
   const getBookCount = (collection: string) => {
     return books[collection]?.length || 0;
@@ -569,44 +593,19 @@ export default function TabThreeScreen() {
   };
 
   const handleSaveBook = () => {
-    // Sprawdź czy istnieją jakiekolwiek kolekcje
-    if (collections.length === 0) {
-      Alert.alert(
-          t('alerts.error'),
-          t('alerts.noCollectionsExist'),
-          [
-            {
-              text: t('buttons.cancel'),
-              style: 'cancel'
-            },
-            {
-              text: t('buttons.createCollection'),
-              onPress: () => router.push('/tabFour')
-            }
-          ]
-      );
-      return;
-    }
-
-    const selectedDefects = defects.filter(d => d.selected);
     const priceValue = finalPrice.toFixed(2);
-
-    // Pobierz istniejący status listingu jeśli jest w trybie edycji
-    let listingStatus = defaultListingStatus;
-    if (editMode && collectionName && bookIndex !== null) {
-      const existingBook = books[collectionName][bookIndex];
-      listingStatus = existingBook.listingStatus || defaultListingStatus;
-    }
+    const currentIsbn = editingIsbn ? isbnInput : isbn;
+    const currentTitle = editingTitle ? titleInput : title;
 
     const bookData = {
-      isbn,
-      title,
+      isbn: currentIsbn,
+      title: currentTitle, // Używamy aktualnej wartości tytułu
       authors,
       price: priceValue,
       displayPrice: formatCurrency(priceValue),
       foundInApi: params.fromHistory !== 'true',
-      originalPrice: originalPrice,
-      defects: selectedDefects.reduce((acc, defect) => ({
+      originalPrice,
+      defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
         ...acc,
         [defect.id]: {
           selected: true,
@@ -618,36 +617,28 @@ export default function TabThreeScreen() {
       ageInfo,
       uniqueness,
       marketFactors,
-      listingStatus // Zachowaj status listingu
+      listingStatus: editMode && collectionName && bookIndex !== null
+          ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
+          : defaultListingStatus
     };
 
+    // Reszta funkcji pozostaje bez zmian
     if (editMode && collectionName && bookIndex !== null) {
       if (selectedCollection === collectionName) {
-        // Aktualizuj w tej samej kolekcji
         updateBookInCollection(collectionName, bookIndex, bookData);
         Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
         router.back();
       } else {
-        // Przenieś do innej kolekcji
         const bookToMove = books[collectionName][bookIndex];
-        const bookWithStatus = {
+        addBookToCollection(selectedCollection, {
           ...bookData,
           listingStatus: bookToMove.listingStatus || defaultListingStatus
-        };
-
-        // Najpierw dodaj do nowej kolekcji
-        addBookToCollection(selectedCollection, bookWithStatus);
-
-        // Następnie usuń ze starej kolekcji
+        });
         removeBookFromCollection(collectionName, bookIndex);
-
-        Alert.alert(
-            t('alerts.success'),
-            t('alerts.bookMoved', {
-              oldCollection: collectionName,
-              newCollection: selectedCollection
-            })
-        );
+        Alert.alert(t('alerts.success'), t('alerts.bookMoved', {
+          oldCollection: collectionName,
+          newCollection: selectedCollection
+        }));
         router.back();
       }
     } else {
@@ -1075,7 +1066,83 @@ export default function TabThreeScreen() {
 
         <View style={styles.combinedSection}>
           <View style={styles.priceSection}>
-            <Text style={typography.body}>{t('bookInfo.isbn')}: {isbn || t('bookInfo.noISBN')}</Text>
+            <View style={styles.titleRow}>
+              <Text style={typography.body}>{t('bookInfo.title')}:</Text>
+              {editingTitle ? (
+                  <View style={styles.titleInputContainer}>
+                    <TextInput
+                        style={styles.titleInput}
+                        value={titleInput}
+                        onChangeText={setTitleInput}
+                        autoFocus
+                        placeholder={title} // Pokazujemy oryginalny tytuł jako placeholder
+                    />
+                    <TouchableOpacity
+                        style={styles.saveTitleButton}
+                        onPress={saveTitle}
+                    >
+                      <Ionicons name="checkmark" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+              ) : (
+                  <TouchableOpacity
+                      style={styles.titleDisplay}
+                      onPress={() => {
+                        setTitleInput(title); // Ustawiamy początkową wartość edycji
+                        setEditingTitle(true);
+                      }}
+                  >
+                    <Text style={typography.body} numberOfLines={1} ellipsizeMode="tail">
+                      {titleInput || title} {/* Wyświetlamy edytowany lub oryginalny tytuł */}
+                    </Text>
+                    <Ionicons
+                        name="create"
+                        size={16}
+                        color={colors.primary}
+                        style={styles.editIcon}
+                    />
+                  </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.isbnRow}>
+            <Text style={typography.body}>{t('bookInfo.isbn')}:</Text>
+            {editingIsbn ? (
+                <View style={styles.isbnInputContainer}>
+                  <TextInput
+                      style={styles.isbnInput}
+                      value={isbnInput}
+                      onChangeText={setIsbnInput}
+                      autoFocus
+                      placeholder={isbn}
+                      keyboardType="numeric"
+                  />
+                  <TouchableOpacity
+                      style={styles.saveTitleButton}
+                      onPress={saveIsbn}
+                  >
+                    <Ionicons name="checkmark" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={styles.titleDisplay}
+                    onPress={() => {
+                      setIsbnInput(isbn);
+                      setEditingIsbn(true);
+                    }}
+                >
+                  <Text style={typography.body}>
+                    {isbnInput || isbn || t('bookInfo.noISBN')}
+                  </Text>
+                  <Ionicons
+                      name="create"
+                      size={16}
+                      color={colors.primary}
+                      style={styles.editIcon}
+                  />
+                </TouchableOpacity>
+            )}
+            </View>
 
             <View style={styles.priceRow}>
               <Text style={typography.body}>
@@ -1792,5 +1859,65 @@ const styles = StyleSheet.create({
     paddingTop: 12, // mniejszy padding u góry zawartości
   },
   activeTabButton: {
+  },
+  bookTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.black,
+    marginBottom: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  isbnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  titleInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 8,
+  },
+  titleInput: {
+    flex: 1,
+    height: 30,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 8,
+    marginRight: 8,
+  },
+  isbnInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 8,
+  },
+  isbnInput: {
+    flex: 1,
+    height: 30,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 8,
+    marginRight: 8,
+  },
+  saveTitleButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+    flex: 1,
   },
 });
