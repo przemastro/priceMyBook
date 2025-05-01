@@ -37,7 +37,9 @@ export default {
         createCollection: 'Create Collection',
         importError: 'Failed to import collection',
         disabledTab: "Disabled feature",
-        enableInSettings: "This feature is currently disabled. You can enable it in the algorithm settings."
+        enableInSettings: "This feature is currently disabled. You can enable it in the algorithm settings.",
+        noCollectionsExist: "You don't have any collections yet. Do you want to create one?",
+        bookMoved: "Book has been moved from \"{oldCollection}\" to \"{newCollection}\""
     },
     bookInfo: {
         isbn: 'ISBN',

@@ -67,7 +67,6 @@ interface BookData {
     foundInApi: boolean;
     originalPrice: string;
     defects: Record<string, BookDefect>;
-    averagePrice: string;
     createdAt: string;
     rating: number;
     source?: 'google' | 'amazon' | 'manual';
@@ -192,100 +191,120 @@ export default function TabFourScreen() {
         setCurrentlyEditedCollection(collectionName);
     };
 
-    const handleImportCollection = async () => {
-        try {
-            setIsImporting(true);
-            const result = await DocumentPicker.getDocumentAsync({
-                type: 'text/csv',
-                copyToCacheDirectory: true,
-            });
+        const handleImportCollection = async () => {
+            try {
+                setIsImporting(true);
+                const result = await DocumentPicker.getDocumentAsync({
+                    type: 'text/csv',
+                    copyToCacheDirectory: true,
+                });
 
-            if (result.canceled || !result.assets?.[0]) {
+                if (result.canceled || !result.assets?.[0]) {
+                    setIsImporting(false);
+                    return;
+                }
+
+                const file = result.assets[0];
+                const csvContent = await FileSystem.readAsStringAsync(file.uri);
+
+                const parseResult = await new Promise<any[]>((resolve) => {
+                    Papa.parse(csvContent, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: (results) => resolve(results.data)
+                    });
+                });
+
+                const importedBooks = parseResult
+                    .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
+                    .map(book => {
+                        let defects = {};
+                        try {
+                            if (book.Defects) defects = JSON.parse(book.Defects);
+                        } catch (e) {
+                            console.error('Error parsing defects:', e);
+                        }
+
+                        let uniqueness = defaultUniqueness;
+                        try {
+                            if (book.Uniqueness) uniqueness = JSON.parse(book.Uniqueness);
+                            console.log('book uniqueness', book['Uniqueness'])
+                        } catch (e) {
+                            console.error('Error parsing uniqueness:', e);
+                        }
+
+                        let marketFactors = defaultMarketFactors;
+                        try {
+                            if (book['Market Factors']) marketFactors = JSON.parse(book['Market Factors']);
+                        } catch (e) {
+                            console.error('Error parsing market factors:', e);
+                        }
+
+                        let ageInfo = defaultAgeInfo;
+                        try {
+                            if (book['Age Info']) ageInfo = JSON.parse(book['Age Info']);
+                        } catch (e) {
+                            console.error('Error parsing age info:', e);
+                        }
+
+
+                        // Logowanie surowego statusu
+                        console.log('Raw Listing Status:', book.listingStatus);
+                        console.log('Type of Listing Status:', typeof book.listingStatus);
+                        let listingStatus = defaultListingStatus;
+                        console.log('default listing status:', listingStatus);
+                        try {
+                            if (book['Listing Status']) {
+                                const parsed = JSON.parse(book['Listing Status']);
+                                console.log('Parsed listing status:', parsed); // Dodaj to
+                                listingStatus = {
+                                    status: ['notListed', 'listed', 'sold'].includes(parsed.status)
+                                        ? parsed.status
+                                        : 'notListed',
+                                    platforms: Array.isArray(parsed.platforms)
+                                        ? parsed.platforms.filter((p: string) =>
+                                            ['amazon', 'allegro', 'olx'].includes(p))
+                                        : [],
+                                    listedDate: parsed.listedDate,
+                                    soldDate: parsed.soldDate
+                                };
+                                console.log('Processed listing status:', listingStatus); // Dodaj to
+                            }
+                        } catch (e) {
+                            console.error('Error parsing listing status:', e);
+                        }
+
+                        return {
+                            title: book.Title.trim(),
+                            authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
+                            isbn: book.ISBN.trim(),
+                            price: book['Price (PLN)'].trim(),
+                            displayPrice: `${book['Price (PLN)']} PLN`,
+                            foundInApi: book['Found in API'] === 'Yes',
+                            originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
+                            defects,
+                            rating: parseInt(book['Condition Rating'] || '10'),
+                            uniqueness,
+                            marketFactors,
+                            ageInfo,
+                            listingStatus
+                        };
+                    });
+
+                setValidBooks(importedBooks);
+                setImportPreview({
+                    collectionName: file.name.replace('.csv', '').slice(0, 30),
+                    books: importedBooks,
+                    showPreview: true
+                });
+
+            } catch (error) {
+                Alert.alert(t('alerts.error'), t('alerts.importError'));
+                console.error('Import failed:', error);
+            } finally {
                 setIsImporting(false);
-                return;
             }
-
-            const file = result.assets[0];
-            const csvContent = await FileSystem.readAsStringAsync(file.uri);
-
-            const parseResult = await new Promise<any[]>((resolve) => {
-                Papa.parse(csvContent, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => resolve(results.data)
-                });
-            });
-
-            const importedBooks = parseResult
-                .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
-                .map(book => {
-                    let defects = {};
-                    try {
-                        if (book.Defects) defects = JSON.parse(book.Defects);
-                    } catch (e) {
-                        console.error('Error parsing defects:', e);
-                    }
-
-                    let uniqueness = defaultUniqueness;
-                    try {
-                        if (book.Uniqueness) uniqueness = JSON.parse(book.Uniqueness);
-                    } catch (e) {
-                        console.error('Error parsing uniqueness:', e);
-                    }
-
-                    let marketFactors = defaultMarketFactors;
-                    try {
-                        if (book['Market Factors']) marketFactors = JSON.parse(book['Market Factors']);
-                    } catch (e) {
-                        console.error('Error parsing market factors:', e);
-                    }
-
-                    let ageInfo = defaultAgeInfo;
-                    try {
-                        if (book['Age Info']) ageInfo = JSON.parse(book['Age Info']);
-                    } catch (e) {
-                        console.error('Error parsing age info:', e);
-                    }
-
-                    let listingStatus = defaultListingStatus;
-                    try {
-                        if (book['Listing Status']) listingStatus = JSON.parse(book['Listing Status']);
-                    } catch (e) {
-                        console.error('Error parsing listing status:', e);
-                    }
-
-                    return {
-                        title: book.Title.trim(),
-                        authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
-                        isbn: book.ISBN.trim(),
-                        price: book['Price (PLN)'].trim(),
-                        displayPrice: `${book['Price (PLN)']} PLN`,
-                        foundInApi: book['Found in API'] === 'Yes',
-                        originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
-                        defects,
-                        rating: parseInt(book['Condition Rating'] || '10'),
-                        averagePrice: book['Average Price'] || book['Price (PLN)'].trim(),
-                        uniqueness,
-                        marketFactors,
-                        ageInfo,
-                        listingStatus
-                    };
-                });
-
-            setValidBooks(importedBooks);
-            setImportPreview({
-                collectionName: file.name.replace('.csv', '').slice(0, 30),
-                books: importedBooks,
-                showPreview: true
-            });
-
-        } catch (error) {
-            Alert.alert(t('alerts.error'), t('alerts.importError'));
-            console.error('Import failed:', error);
-        } finally {
-            setIsImporting(false);
-        }
-    };
+        };
 
     const confirmImport = async () => {
         if (!importPreview) return;
@@ -349,14 +368,22 @@ export default function TabFourScreen() {
     const handleExportCSV = async (collectionName: string) => {
         const booksToExport = books[collectionName] || [];
 
-        let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Average Price,Condition Rating,Found in API,Defects,Uniqueness,Market Factors,Age Info,Listing Status\n";
+        let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Condition Rating,Found in API,Defects,Uniqueness,Market Factors,Age Info,Listing Status\n";
 
         booksToExport.forEach(book => {
             const defectsString = JSON.stringify(book.defects || {});
             const uniquenessString = JSON.stringify(book.uniqueness || defaultUniqueness);
             const marketFactorsString = JSON.stringify(book.marketFactors || defaultMarketFactors);
             const ageInfoString = JSON.stringify(book.ageInfo || defaultAgeInfo);
-            const listingStatusString = JSON.stringify(book.listingStatus || defaultListingStatus);
+
+            // Ensure listing status has proper structure
+            const listingStatus = book.listingStatus || defaultListingStatus;
+            const listingStatusString = JSON.stringify({
+                status: listingStatus.status || 'notListed',
+                platforms: listingStatus.platforms || [],
+                listedDate: listingStatus.listedDate,
+                soldDate: listingStatus.soldDate
+            });
 
             csvContent += `"${book.title.replace(/"/g, '""')}",` +
                 `"${book.authors.replace(/"/g, '""')}",` +
@@ -481,17 +508,19 @@ export default function TabFourScreen() {
     };
 
     const formatListingStatus = (status?: ListingStatus): string => {
-        if (!status) return t('listingStatus.notListed');
+        if (!status) return t('listingStatus.notListed', 'Not listed');
 
         switch (status.status) {
             case 'listed':
-                return t('listingStatus.listed', {
-                    platforms: status.platforms?.map(p => t(`platforms.${p}`)).join(', ') ?? ''
+                return t('listingStatus.listed', 'Listed on {{platforms}}', {
+                    platforms: (status.platforms || [])
+                        .map(p => t(`platforms.${p}`, p)) // Dodaj domyślne wartości
+                        .join(', ')
                 });
             case 'sold':
-                return t('listingStatus.sold');
+                return t('listingStatus.sold', 'Sold');
             default:
-                return t('listingStatus.notListed');
+                return t('listingStatus.notListed', 'Not listed');
         }
     };
 

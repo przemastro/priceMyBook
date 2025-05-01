@@ -34,6 +34,8 @@ export default {
         enterISBN: 'Proszę wprowadzić poprawny numer ISBN',
         noCollectionsTitle: 'Brak księgozbioru',
         noCollectionsMessage: 'Musisz najpierw utworzyć księgozbiór. Czy chcesz utworzyć ją teraz?',
+        noCollectionsExist: "Nie masz jeszcze żadnych księgozbiorów. Czy chcesz utworzyć nowy?",
+        bookMoved: "Książka została przeniesiona z \"{oldCollection}\" do \"{newCollection}\""
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -165,7 +167,7 @@ export default {
         listModal: 'WYSTAW',
         listed: 'Wystawione',
         sold: 'Sprzedane',
-        manualEntry: 'Wpisz ISBN ręcznie'
+        manualEntry: 'Wpisz ISBN ręcznie',
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',

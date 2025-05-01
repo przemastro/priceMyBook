@@ -35,6 +35,13 @@ interface BookDefect {
   icon: string;
 }
 
+interface ListingStatus {
+  status: 'notListed' | 'listed' | 'sold';
+  platforms: ('amazon' | 'allegro' | 'olx')[];
+  listedDate?: string;
+  soldDate?: string;
+}
+
 interface BookAgeInfo {
   years: number;
 }
@@ -79,7 +86,6 @@ interface SearchParams {
   title?: string;
   authors?: string;
   originalPrice?: string;
-  averagePrice?: string;
   editMode?: string;
   collectionName?: string;
   bookIndex?: string;
@@ -242,13 +248,15 @@ export default function TabThreeScreen() {
 
   const isbn = Array.isArray(params.isbn) ? params.isbn[0] : params.isbn || '';
   const originalPriceParam = Array.isArray(params.originalPrice) ? params.originalPrice[0] : params.originalPrice || '0';
-  const averagePrice = Array.isArray(params.averagePrice) ? params.averagePrice[0] : params.averagePrice || originalPriceParam;
   const title = Array.isArray(params.title) ? params.title[0] : params.title || t('bookInfo.unknownTitle');
   const authors = Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown');
   const editMode = Array.isArray(params.editMode) ? params.editMode[0] === 'true' : params.editMode === 'true';
   const collectionName = Array.isArray(params.collectionName) ? params.collectionName[0] : params.collectionName;
   const bookIndex = params.bookIndex ? parseInt(Array.isArray(params.bookIndex) ? params.bookIndex[0] : params.bookIndex) : null;
-
+  const defaultListingStatus: ListingStatus = {
+    status: 'notListed',
+    platforms: []
+  };
   const slides = [
     {
       id: 'defects',
@@ -561,8 +569,35 @@ export default function TabThreeScreen() {
   };
 
   const handleSaveBook = () => {
+    // Sprawdź czy istnieją jakiekolwiek kolekcje
+    if (collections.length === 0) {
+      Alert.alert(
+          t('alerts.error'),
+          t('alerts.noCollectionsExist'),
+          [
+            {
+              text: t('buttons.cancel'),
+              style: 'cancel'
+            },
+            {
+              text: t('buttons.createCollection'),
+              onPress: () => router.push('/tabFour')
+            }
+          ]
+      );
+      return;
+    }
+
     const selectedDefects = defects.filter(d => d.selected);
     const priceValue = finalPrice.toFixed(2);
+
+    // Pobierz istniejący status listingu jeśli jest w trybie edycji
+    let listingStatus = defaultListingStatus;
+    if (editMode && collectionName && bookIndex !== null) {
+      const existingBook = books[collectionName][bookIndex];
+      listingStatus = existingBook.listingStatus || defaultListingStatus;
+    }
+
     const bookData = {
       isbn,
       title,
@@ -580,23 +615,43 @@ export default function TabThreeScreen() {
         }
       }), {}),
       rating: bookRating,
-      averagePrice: averagePrice,
-      ageInfo, // Dodaj to
-      uniqueness, // Dodaj to
-      marketFactors // Dodaj to
+      ageInfo,
+      uniqueness,
+      marketFactors,
+      listingStatus // Zachowaj status listingu
     };
 
     if (editMode && collectionName && bookIndex !== null) {
       if (selectedCollection === collectionName) {
+        // Aktualizuj w tej samej kolekcji
         updateBookInCollection(collectionName, bookIndex, bookData);
+        Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
+        router.back();
       } else {
+        // Przenieś do innej kolekcji
+        const bookToMove = books[collectionName][bookIndex];
+        const bookWithStatus = {
+          ...bookData,
+          listingStatus: bookToMove.listingStatus || defaultListingStatus
+        };
+
+        // Najpierw dodaj do nowej kolekcji
+        addBookToCollection(selectedCollection, bookWithStatus);
+
+        // Następnie usuń ze starej kolekcji
         removeBookFromCollection(collectionName, bookIndex);
-        addBookToCollection(selectedCollection, bookData);
+
+        Alert.alert(
+            t('alerts.success'),
+            t('alerts.bookMoved', {
+              oldCollection: collectionName,
+              newCollection: selectedCollection
+            })
+        );
+        router.back();
       }
-      Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
-      router.back();
     } else {
-      if (!selectedCollection && collections.length > 0) {
+      if (!selectedCollection) {
         Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
         return;
       }

@@ -11,7 +11,7 @@ interface BookDefect {
 
 interface ListingStatus {
     status: 'notListed' | 'listed' | 'sold';
-    platforms: ('amazon' | 'allegro' | 'olx')[]; // Dodaj 'olx' do union type
+    platforms: ('amazon' | 'allegro' | 'olx')[];
     listedDate?: string;
     soldDate?: string;
 }
@@ -120,7 +120,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [lastRateUpdate, setLastRateUpdate] = useState<Date | null>(null);
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
     const [updateTrigger, setUpdateTrigger] = useState(0);
-
+    const defaultListingStatus: ListingStatus = {
+        status: 'notListed',
+        platforms: []
+    };
     const forceUpdateCollections = useCallback(() => {
         setUpdateTrigger(prev => prev + 1);
     }, []);
@@ -252,7 +255,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
                 isExpanded: false,
-                listingStatus: bookData.listingStatus || defaultListingStatus // Teraz wspiera OLX
+                listingStatus: bookData.listingStatus
+                    ? {
+                        status: bookData.listingStatus.status || 'notListed',
+                        platforms: Array.isArray(bookData.listingStatus.platforms)
+                            ? bookData.listingStatus.platforms.filter(p =>
+                                ['amazon', 'allegro', 'olx'].includes(p))
+                            : [],
+                        listedDate: bookData.listingStatus.listedDate,
+                        soldDate: bookData.listingStatus.soldDate
+                    }
+                    : defaultListingStatus
             };
 
             return {
