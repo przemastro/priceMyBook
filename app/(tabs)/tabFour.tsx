@@ -22,7 +22,7 @@ import Papa from 'papaparse';
 import {useAppContext} from '@/context/AppContext';
 import {FlashList} from '@shopify/flash-list';
 import i18n from "i18next";
-
+import { Linking } from 'react-native';
 
 const {width: viewportWidth} = Dimensions.get('window');
 
@@ -541,9 +541,28 @@ export default function TabFourScreen() {
     const confirmListing = () => {
         if (!currentListingBook || selectedPlatforms.length === 0) return;
 
-        const {collection, index} = currentListingBook;
-        const updatedBooks = [...books[collection]];
+        const { collection, index } = currentListingBook;
+        const book = books[collection][index];
 
+        // 1. Otwórz platformy w przeglądarce
+        selectedPlatforms.forEach(platform => {
+            let url = '';
+            switch (platform) {
+                case 'amazon':
+                    url = `https://sellercentral.amazon.com/listing/create?title=${encodeURIComponent(book.title)}`;
+                    break;
+                case 'allegro':
+                    url = `https://allegro.pl/myaccount/offer/new?title=${encodeURIComponent(book.title)}`;
+                    break;
+                case 'olx':
+                    url = `https://www.olx.pl/dodaj-ogloszenie/?query=${encodeURIComponent(book.title)}`;
+                    break;
+            }
+            Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
+        });
+
+        // 2. Zaktualizuj status książki
+        const updatedBooks = [...books[collection]];
         updatedBooks[index] = {
             ...updatedBooks[index],
             listingStatus: {
@@ -557,6 +576,8 @@ export default function TabFourScreen() {
         setShowListingModal(false);
         setCurrentListingBook(null);
         setSelectedPlatforms([]);
+
+        Alert.alert(t('alerts.success'), t('status.listedRedirect'));
     };
 
     const changeListingStatus = (newStatus: 'notListed' | 'listed' | 'sold') => {
