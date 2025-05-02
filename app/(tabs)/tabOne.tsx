@@ -205,48 +205,40 @@ const fetchOpenLibraryData = async (isbn: string) => {
 const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Promise<AmazonApiResponse> => {
   const asin = convertIsbnToAsin(isbn);
   const country = language === 'pl' ? 'PL' : 'US';
-  const url = `https://amazon-book-api.p.rapidapi.com/v1/price?asin=${asin}`;
-
-  console.log('[Amazon API] Request:', {
-    url,
-    headers: {
-      'x-rapidapi-host': 'amazon-book-api.p.rapidapi.com',
-      'x-rapidapi-key': 'e9afae8b1amsh0201a5bdb36bea1p164ad8jsn949616e357e6',
-    }
-  });
+  const url = `https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${asin}&country=${country}&limit=5&page=1`;
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'x-rapidapi-host': 'amazon-book-api.p.rapidapi.com',
-        'x-rapidapi-key': 'e9afae8b1amsh0201a5bdb36bea1p164ad8jsn949616e357e6',
+        'x-rapidapi-host': 'real-time-amazon-data.p.rapidapi.com',
+        'x-rapidapi-key': '',
       }
     });
 
     const data = await response.json();
-    console.log('[Amazon API] Response:', data);
+    console.log('Amazon API raw response:', data); // Debug log
 
-    if (data.price && data.price.amount) {
-      const priceValue = parseFloat(data.price.amount);
-      const publicationYear = data.releaseDate ? new Date(data.releaseDate).getFullYear() : undefined;
+    if (data.status === "OK" && data.data.product_offers?.length > 0) {
+      // Parsowanie ceny - zamiana "35,32zł" na 35.32
+      const bestOffer = data.data.product_offers[0];
+      const priceValue = parseFloat(bestOffer.product_price.replace(',', '.').replace(/[^\d.-]/g, ''));
 
       return {
         prices: [{
           price: priceValue,
-          currency: data.price.currencyCode || (country === 'PL' ? 'PLN' : 'USD'),
-          condition: data.type || 'new',
-          seller: 'Amazon',
-          delivery: '0',
-          deliveryTime: '1-2 days',
-          rawOffer: data
+          currency: data.data.currency || 'PLN',
+          condition: bestOffer.product_condition,
+          seller: bestOffer.seller,
+          delivery: bestOffer.delivery_price,
+          deliveryTime: bestOffer.delivery_time,
+          rawOffer: bestOffer
         }],
-        productTitle: data.title,
-        productImage: data.image,
-        productUrl: data.url,
-        isPrime: data.isPrime || false,
-        marketplace: data.marketplace || country,
-        publicationYear, // Dodaj rok publikacji
+        productTitle: data.data.product_title,
+        productImage: data.data.product_photo,
+        productUrl: data.data.product_url,
+        isPrime: data.data.is_prime || false,
+        marketplace: data.data.country,
         rawResponse: data
       };
     }
@@ -255,7 +247,8 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Prom
       prices: [],
       rawResponse: data,
       isPrime: false,
-      marketplace: country
+      marketplace: country,
+      error: data.error || 'No offers found'
     };
   } catch (error: unknown) {
     console.error('[Amazon API] Error:', error);
@@ -690,38 +683,6 @@ export default function TabOneScreen() {
 
   const handleCancel = () => {
     resetScanner();
-  };
-
-  const showApiLogs = () => {
-    let logs = '=== API Request Details ===\n';
-
-    if (bookInfo?.source === 'google') {
-      logs += 'Source: Google Books API\n';
-      logs += `ISBN: ${isbn}\n\n`;
-    } else {
-      logs += 'Source: Amazon API\n';
-      logs += `Marketplace: ${bookInfo?.amazonData?.marketplace || 'US'}\n`;
-      logs += `ASIN: ${bookInfo?.asin}\n`;
-      logs += `URL: https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${bookInfo?.asin}&country=${bookInfo?.amazonData?.marketplace || 'US'}&limit=5&page=1\n\n`;
-    }
-
-    logs += '=== API Response ===\n';
-    if (bookInfo?.source === 'google') {
-      logs += 'Google API response data not stored\n';
-    } else {
-      logs += JSON.stringify(bookInfo?.amazonData?.rawResponse || 'No response data', null, 2);
-      logs += '\n\n';
-    }
-
-    logs += '=== Processed Book Info ===\n';
-    logs += `Title: ${bookInfo?.title || 'N/A'}\n`;
-    logs += `Authors: ${bookInfo?.authors || 'N/A'}\n`;
-    logs += `Price: ${bookInfo?.price || 'N/A'} ${bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD')}\n`;
-    logs += `Image URL: ${bookInfo?.image || 'N/A'}\n`;
-    logs += `Source: ${bookInfo?.source || 'manual'}\n`;
-
-    setApiLogs(logs);
-    setLogsVisible(true);
   };
 
   const renderAmazonPriceButtons = () => {
