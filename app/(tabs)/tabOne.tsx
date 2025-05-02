@@ -61,6 +61,15 @@ interface BookUniqueness {
   isPublisherDefunct: boolean;
 }
 
+interface MarketData {
+  demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
+  supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
+  priceRange?: [number, number];
+  lastUpdated: Date;
+  source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
+  priceHistory?: { date: string; price: number }[];
+}
+
 interface MarketFactors {
   demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
   supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
@@ -88,19 +97,120 @@ interface AmazonApiResponse {
   productUrl?: string;
   isPrime: boolean;
   marketplace: string;
+  publicationYear?: number; // Dodaj to pole
   rawResponse: any;
   error?: string;
 }
 
+const simulateMarketData = (isbn: string): MarketData => {
+  // Prosta symulacja - w rzeczywistej aplikacji można by pobierać prawdziwe dane
+  const randomFactor = isbn.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 100;
+
+  return {
+    demand: randomFactor > 80 ? 'veryHigh' :
+        randomFactor > 60 ? 'high' :
+            randomFactor > 40 ? 'medium' :
+                randomFactor > 20 ? 'low' : 'veryLow',
+    supply: randomFactor > 80 ? 'veryLow' :
+        randomFactor > 60 ? 'low' :
+            randomFactor > 40 ? 'medium' :
+                randomFactor > 20 ? 'high' : 'flooded',
+    priceRange: [randomFactor * 0.8, randomFactor * 1.2] as [number, number],
+    lastUpdated: new Date(),
+    source: 'simulated'
+  };
+};
+
+/**
+ * Oblicza popularność książki na podstawie liczby ocen i średniej oceny
+ */
+const calculatePopularity = (ratingsCount: number, averageRating: number): number => {
+  if (!ratingsCount || !averageRating) return 50; // Domyślna wartość
+
+  // Prosta formuła - można dostosować do potrzeb
+  const normalizedCount = Math.min(ratingsCount / 1000, 1); // Normalizacja do 0-1
+  const normalizedRating = (averageRating / 5) * 100; // Normalizacja do 0-100
+
+  return (normalizedCount * 50) + (normalizedRating * 0.5); // Ważone 50% ilość, 50% jakość
+};
+
+const fetchAllBookData = async (isbn: string, language: string) => {
+  const [googleData, amazonData, openLibraryData] = await Promise.all([
+    fetchGoogleBooksData(isbn),
+    fetchBookPriceFromAmazonAPI(isbn, language),
+    fetchOpenLibraryData(isbn)
+  ]);
+
+  return {
+    google: googleData,
+    amazon: amazonData,
+    openLibrary: openLibraryData,
+    simulated: simulateMarketData(isbn) // Teraz funkcja jest zdefiniowana
+  };
+};
+
+const fetchGoogleBooksData = async (isbn: string) => {
+  const API_KEY = 'YOUR_GOOGLE_API_KEY';
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.items && data.items.length > 0) {
+      const book = data.items[0].volumeInfo;
+      return {
+        title: book.title,
+        authors: book.authors?.join(', ') || 'Unknown',
+        publisher: book.publisher,
+        description: book.description,
+        price: book.saleInfo?.listPrice?.amount,
+        image: book.imageLinks?.thumbnail,
+        ratingsCount: book.ratingsCount || 0,
+        averageRating: book.averageRating || 0,
+        popularity: calculatePopularity(book.ratingsCount || 0, book.averageRating || 0) // Teraz funkcja jest zdefiniowana
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Google Books API error:', error);
+    return null;
+  }
+};
+
+const fetchOpenLibraryData = async (isbn: string) => {
+  try {
+    // Podstawowe informacje o książce
+    const bookResponse = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
+    const bookData = await bookResponse.json();
+
+    // Informacje o dostępności w bibliotekach
+    const holdingsResponse = await fetch(
+        `https://archive.org/advancedsearch.php?q=isbn:${isbn}&output=json`
+    );
+    const holdingsData = await holdingsResponse.json();
+
+    return {
+      title: bookData.title,
+      authors: bookData.authors?.map((a: any) => a.name).join(', ') || 'Unknown',
+      holdingsCount: holdingsData.response?.numFound || 0,
+      lastModified: bookData.last_modified
+    };
+  } catch (error) {
+    console.error('OpenLibrary API error:', error);
+    return null;
+  }
+};
+
 const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Promise<AmazonApiResponse> => {
   const asin = convertIsbnToAsin(isbn);
   const country = language === 'pl' ? 'PL' : 'US';
-  const url = `https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${asin}&country=${country}&limit=5&page=1`;
+  const url = `https://amazon-book-api.p.rapidapi.com/v1/price?asin=${asin}`;
 
   console.log('[Amazon API] Request:', {
     url,
     headers: {
-      'x-rapidapi-host': 'real-time-amazon-data.p.rapidapi.com',
+      'x-rapidapi-host': 'amazon-book-api.p.rapidapi.com',
       'x-rapidapi-key': 'e9afae8b1amsh0201a5bdb36bea1p164ad8jsn949616e357e6',
     }
   });
@@ -109,7 +219,7 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Prom
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'x-rapidapi-host': 'real-time-amazon-data.p.rapidapi.com',
+        'x-rapidapi-host': 'amazon-book-api.p.rapidapi.com',
         'x-rapidapi-key': 'e9afae8b1amsh0201a5bdb36bea1p164ad8jsn949616e357e6',
       }
     });
@@ -117,34 +227,26 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Prom
     const data = await response.json();
     console.log('[Amazon API] Response:', data);
 
-    if (data.status === "OK" && data.data?.product_offers?.length > 0) {
-      const offers = data.data.product_offers.slice(0, 5);
-      const prices = offers.map((offer: any): AmazonPriceOffer => {
-        const priceStr = offer.product_price || '';
-        // Dla Polski zamieniamy przecinek na kropkę przed parsowaniem
-        const normalizedPriceStr = country === 'PL'
-            ? priceStr.replace(/\./g, '').replace(',', '.')
-            : priceStr.replace(/[^0-9.]/g, '');
-
-        const priceValue = parseFloat(normalizedPriceStr);
-        return {
-          price: isNaN(priceValue) ? 0 : priceValue,
-          currency: offer.currency || (country === 'PL' ? 'PLN' : 'USD'),
-          condition: offer.product_condition,
-          seller: offer.seller,
-          delivery: offer.delivery_price,
-          deliveryTime: offer.delivery_time,
-          rawOffer: offer
-        };
-      });
+    if (data.price && data.price.amount) {
+      const priceValue = parseFloat(data.price.amount);
+      const publicationYear = data.releaseDate ? new Date(data.releaseDate).getFullYear() : undefined;
 
       return {
-        prices,
-        productTitle: data.data.product_title,
-        productImage: data.data.product_photo,
-        productUrl: data.data.product_url,
-        isPrime: data.data.is_prime || false,
-        marketplace: country,
+        prices: [{
+          price: priceValue,
+          currency: data.price.currencyCode || (country === 'PL' ? 'PLN' : 'USD'),
+          condition: data.type || 'new',
+          seller: 'Amazon',
+          delivery: '0',
+          deliveryTime: '1-2 days',
+          rawOffer: data
+        }],
+        productTitle: data.title,
+        productImage: data.image,
+        productUrl: data.url,
+        isPrime: data.isPrime || false,
+        marketplace: data.marketplace || country,
+        publicationYear, // Dodaj rok publikacji
         rawResponse: data
       };
     }
@@ -575,7 +677,13 @@ export default function TabOneScreen() {
         originalPrice: numericPrice.toFixed(2),
         title: bookInfo?.title || t('bookInfo.manualEntry'),
         authors: bookInfo?.authors || t('bookInfo.unknown'),
-        fromHistory: 'false'
+        fromHistory: 'false',
+        marketFactors: JSON.stringify({
+          demand: 'medium',
+          supply: 'medium',
+          publicationYear: bookInfo?.amazonData?.publicationYear ||
+              new Date().getFullYear() - Math.floor(Math.random() * 10)
+        })
       }
     });
   };

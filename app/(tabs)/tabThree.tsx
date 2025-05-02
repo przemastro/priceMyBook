@@ -16,6 +16,7 @@ import {
   View
 } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
+import { BarChart, LineChart } from 'react-native-chart-kit';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
@@ -33,6 +34,15 @@ interface BookDefect {
   count: number;
   confidence?: number;
   icon: string;
+}
+
+interface MarketData {
+  demand: MarketFactors['demand'];
+  supply: MarketFactors['supply'];
+  priceRange?: [number, number];
+  priceHistory?: { date: string; price: number }[];
+  lastUpdated: Date;
+  source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
 }
 
 interface ListingStatus {
@@ -95,6 +105,7 @@ interface SearchParams {
   fromHistory?: string;
   activeFactors?: string;
   updatedTitle?: string;
+  publicationYear?: string; // Dodaj to
 }
 
 const DEFECT_TYPES = [
@@ -118,6 +129,99 @@ const UNIQUENESS_TYPES = [
   { id: 'isLimitedEdition', icon: 'diamond-outline', label: 'labels.limitedEdition' },
   { id: 'isPublisherDefunct', icon: 'skull-outline', label: 'labels.defunctPublisher' }
 ] as const;
+
+const MarketChart = ({ marketData }: { marketData: MarketData | null }) => {
+  const { t } = useTranslation();
+  const chartWidth = viewportWidth - 64;
+
+  if (!marketData) {
+    return (
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+    );
+  }
+  return (
+      <View style={styles.chartContainer}>
+        <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ width: chartWidth }}>
+            <BarChart
+                data={{
+                  labels: [t('labels.demand'), t('labels.supply')],
+                  datasets: [{
+                    data: [
+                      marketData.demand === 'veryHigh' ? 100 :
+                          marketData.demand === 'high' ? 80 :
+                              marketData.demand === 'medium' ? 60 :
+                                  marketData.demand === 'low' ? 40 : 20,
+                      marketData.supply === 'veryLow' ? 20 :
+                          marketData.supply === 'low' ? 40 :
+                              marketData.supply === 'medium' ? 60 :
+                                  marketData.supply === 'high' ? 80 : 100
+                    ]
+                  }]
+                }}
+                width={chartWidth}
+                height={220}
+                yAxisLabel=""
+                yAxisSuffix=""
+                chartConfig={{
+                  backgroundColor: colors.white,
+                  backgroundGradientFrom: colors.white,
+                  backgroundGradientTo: colors.white,
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: { borderRadius: 16 },
+                  propsForDots: {
+                    r: "6",
+                    strokeWidth: "2",
+                    stroke: colors.primary
+                  }
+                }}
+                style={{
+                  marginVertical: 8,
+                  borderRadius: 16
+                }}
+            />
+
+            {marketData.priceHistory && marketData.priceHistory.length > 1 && (
+                <LineChart
+                    data={{
+                      labels: marketData.priceHistory.map(entry =>
+                          new Date(entry.date).toLocaleDateString()),
+                      datasets: [{
+                        data: marketData.priceHistory.map(entry => entry.price)
+                      }]
+                    }}
+                    width={chartWidth}
+                    height={220}
+                    yAxisLabel=""
+                    yAxisSuffix=""
+                    chartConfig={{
+                      backgroundColor: colors.white,
+                      backgroundGradientFrom: colors.white,
+                      backgroundGradientTo: colors.white,
+                      decimalPlaces: 2,
+                      color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
+                      labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                      style: { borderRadius: 16 }
+                    }}
+                    bezier
+                    style={{
+                      marginVertical: 8,
+                      borderRadius: 16
+                    }}
+                />
+            )}
+          </View>
+        </ScrollView>
+      </View>
+  );
+};
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -232,9 +336,12 @@ export default function TabThreeScreen() {
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
     supply: 'medium',
-    publicationYear: new Date().getFullYear() - Math.floor(Math.random() * 10)
+    publicationYear: parseParam<{publicationYear?: number}>(params.marketFactors)?.publicationYear ||
+        new Date().getFullYear() - Math.floor(Math.random() * 10)
   };
+
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -258,6 +365,7 @@ export default function TabThreeScreen() {
   const [titleInput, setTitleInput] = useState(title);
   const [editingIsbn, setEditingIsbn] = useState(false);
   const [isbnInput, setIsbnInput] = useState(isbn);
+
   const defaultListingStatus: ListingStatus = {
     status: 'notListed',
     platforms: []
@@ -301,6 +409,41 @@ export default function TabThreeScreen() {
     }
     setEditingIsbn(false);
   };
+
+
+  useEffect(() => {
+    const loadMarketData = async () => {
+      setIsLoading(true);
+      try {
+        // Symulacja danych rynkowych
+        const mockData: MarketData = {
+          demand: 'high',
+          supply: 'medium',
+          priceRange: [parseFloat(originalPriceParam) * 0.8, parseFloat(originalPriceParam) * 1.2],
+          priceHistory: [
+            { date: '2023-01-01', price: parseFloat(originalPriceParam) * 0.9 },
+            { date: '2023-04-01', price: parseFloat(originalPriceParam) * 1.1 },
+            { date: '2023-07-01', price: parseFloat(originalPriceParam) * 1.0 },
+            { date: '2023-10-01', price: parseFloat(originalPriceParam) * 0.95 },
+            { date: '2024-01-01', price: parseFloat(originalPriceParam) * 1.05 },
+            { date: new Date().toISOString(), price: parseFloat(originalPriceParam) }
+          ],
+          lastUpdated: new Date(),
+          source: 'simulated'
+        };
+        setMarketData(mockData);
+      } catch (error) {
+        console.error('Error loading market data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (originalPriceParam) {
+      loadMarketData();
+    }
+  }, [originalPriceParam]);
+
 
   useEffect(() => {
     const newFactors = parseActiveFactors(rawParams.activeFactors);
@@ -821,30 +964,47 @@ export default function TabThreeScreen() {
       case 'market':
         return (
             <View style={styles.slideContent}>
-              <View style={styles.dataRow}>
-                <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                <Text style={styles.dataText}>
-                  {t('labels.publicationYear')}: {marketFactors.publicationYear}
-                </Text>
-              </View>
+              {marketData && (
+                  <>
+                    <MarketChart marketData={marketData} />
 
-              <View style={styles.dataRow}>
-                <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
-                <Text style={styles.dataText}>
-                  {t('labels.demand')}: {t(`labels.${marketFactors.demand}`)}
-                </Text>
-              </View>
+                    <View style={styles.marketFactorsContainer}>
+                      <View style={styles.dataRow}>
+                        <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                        <Text style={styles.dataText}>
+                          {t('labels.publicationYear')}: {marketFactors.publicationYear}
+                        </Text>
+                      </View>
 
-              <View style={styles.dataRow}>
-                <Ionicons name="trending-down-outline" size={20} color={colors.primary} />
-                <Text style={styles.dataText}>
-                  {t('labels.supply')}: {t(`labels.${marketFactors.supply}`)}
-                </Text>
-              </View>
+                      <View style={styles.dataRow}>
+                        <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+                        <Text style={styles.dataText}>
+                          {t('labels.demand')}: {t(`labels.${marketFactors.demand}`)}
+                        </Text>
+                      </View>
 
-              <Text style={styles.noteText}>
-                {t('labels.marketDataNote')}
-              </Text>
+                      <View style={styles.dataRow}>
+                        <Ionicons name="trending-down-outline" size={20} color={colors.primary} />
+                        <Text style={styles.dataText}>
+                          {t('labels.supply')}: {t(`labels.${marketFactors.supply}`)}
+                        </Text>
+                      </View>
+
+                      {marketData.priceRange && (
+                          <View style={styles.dataRow}>
+                            <Ionicons name="pricetag-outline" size={20} color={colors.primary} />
+                            <Text style={styles.dataText}>
+                              {t('labels.priceRange')}: {formatCurrency(marketData.priceRange[0].toString())} - {formatCurrency(marketData.priceRange[1].toString())}
+                            </Text>
+                          </View>
+                      )}
+
+                      <Text style={styles.source}>
+                        {t('labels.dataSource')}: {marketData.source}
+                      </Text>
+                    </View>
+                  </>
+              )}
             </View>
         );
       case 'collection':
@@ -946,97 +1106,97 @@ export default function TabThreeScreen() {
               </TouchableOpacity>
 
               <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
-                  <View style={styles.scanFrameTopLeft} />
+                <View style={styles.scanFrameTopLeft} />
                 <View style={styles.scanFrameTopRight} />
-              <View style={styles.scanFrameBottomLeft} />
-              <View style={styles.scanFrameBottomRight} />
-            </Animated.View>
+                <View style={styles.scanFrameBottomLeft} />
+                <View style={styles.scanFrameBottomRight} />
+              </Animated.View>
 
-            <View style={styles.bottomControls}>
-              <Pressable
-                  style={styles.scanButton}
-                  onPress={takePictureAndAnalyze}
-              >
-                <Ionicons name="scan" size={24} color="white" style={styles.scanIcon} />
-                <Text style={styles.scanButtonText}>
-                  {t('labels.scanningDefects')}
-                </Text>
-              </Pressable>
+              <View style={styles.bottomControls}>
+                <Pressable
+                    style={styles.scanButton}
+                    onPress={takePictureAndAnalyze}
+                >
+                  <Ionicons name="scan" size={24} color="white" style={styles.scanIcon} />
+                  <Text style={styles.scanButtonText}>
+                    {t('labels.scanningDefects')}
+                  </Text>
+                </Pressable>
 
-              {isAnalyzing && (
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View style={{
-                        width: `${scanProgress}%`,
-                        backgroundColor: colors.primary,
-                        height: '100%'
-                      }}/>
+                {isAnalyzing && (
+                    <View style={styles.progressContainer}>
+                      <View style={styles.progressBar}>
+                        <View style={{
+                          width: `${scanProgress}%`,
+                          backgroundColor: colors.primary,
+                          height: '100%'
+                        }}/>
+                      </View>
+                      <Text style={styles.scanningText}>
+                        {scanProgress}%
+                      </Text>
                     </View>
-                    <Text style={styles.scanningText}>
-                      {scanProgress}%
+                )}
+              </View>
+            </View>
+          </CameraView>
+
+          <Modal
+              visible={showDefectModal}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={rejectDefect}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>
+                  {t('labels.defectDetected')}
+                </Text>
+
+                <View style={styles.modalContent}>
+                  <View style={styles.modalDefectInfo}>
+                    <Ionicons
+                        name={scannedDefect?.icon as any}
+                        size={32}
+                        color={colors.primary}
+                        style={styles.modalDefectIcon}
+                    />
+                    <Text style={styles.modalDefectName}>
+                      {t(`defects.${scannedDefect?.id}`)}
                     </Text>
                   </View>
-              )}
+
+                  <Text style={styles.modalText}>
+                    {t('labels.confidence')}: <Text style={styles.modalBoldText}>{scannedDefect?.confidence}%</Text>
+                  </Text>
+                  <Text style={styles.modalText}>
+                    {t('labels.priceReduction')}: <Text style={styles.modalBoldText}>{scannedDefect?.priceReduction}%</Text>
+                  </Text>
+                </View>
+
+                <View style={styles.modalButtonsContainer}>
+                  <TouchableOpacity
+                      style={[styles.modalButton, styles.rejectButton]}
+                      onPress={rejectDefect}
+                  >
+                    <Text style={styles.rejectButtonText}>
+                      {t('buttons.reject')}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                      style={[styles.modalButton, styles.acceptButton]}
+                      onPress={acceptDefect}
+                  >
+                    <Text style={styles.acceptButtonText}>
+                      {t('buttons.confirmDefect')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
+          </Modal>
         </View>
-  </CameraView>
-
-    <Modal
-        visible={showDefectModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={rejectDefect}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>
-            {t('labels.defectDetected')}
-          </Text>
-
-          <View style={styles.modalContent}>
-            <View style={styles.modalDefectInfo}>
-              <Ionicons
-                  name={scannedDefect?.icon as any}
-                  size={32}
-                  color={colors.primary}
-                  style={styles.modalDefectIcon}
-              />
-              <Text style={styles.modalDefectName}>
-                {t(`defects.${scannedDefect?.id}`)}
-              </Text>
-            </View>
-
-            <Text style={styles.modalText}>
-              {t('labels.confidence')}: <Text style={styles.modalBoldText}>{scannedDefect?.confidence}%</Text>
-            </Text>
-            <Text style={styles.modalText}>
-              {t('labels.priceReduction')}: <Text style={styles.modalBoldText}>{scannedDefect?.priceReduction}%</Text>
-            </Text>
-          </View>
-
-          <View style={styles.modalButtonsContainer}>
-            <TouchableOpacity
-                style={[styles.modalButton, styles.rejectButton]}
-                onPress={rejectDefect}
-            >
-              <Text style={styles.rejectButtonText}>
-                {t('buttons.reject')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={[styles.modalButton, styles.acceptButton]}
-                onPress={acceptDefect}
-            >
-              <Text style={styles.acceptButtonText}>
-                {t('buttons.confirmDefect')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  </View>
-  );
+    );
   }
 
   return (
@@ -1105,43 +1265,43 @@ export default function TabThreeScreen() {
               )}
             </View>
             <View style={styles.isbnRow}>
-            <Text style={typography.body}>{t('bookInfo.isbn')}:</Text>
-            {editingIsbn ? (
-                <View style={styles.isbnInputContainer}>
-                  <TextInput
-                      style={styles.isbnInput}
-                      value={isbnInput}
-                      onChangeText={setIsbnInput}
-                      autoFocus
-                      placeholder={isbn}
-                      keyboardType="numeric"
-                  />
+              <Text style={typography.body}>{t('bookInfo.isbn')}:</Text>
+              {editingIsbn ? (
+                  <View style={styles.isbnInputContainer}>
+                    <TextInput
+                        style={styles.isbnInput}
+                        value={isbnInput}
+                        onChangeText={setIsbnInput}
+                        autoFocus
+                        placeholder={isbn}
+                        keyboardType="numeric"
+                    />
+                    <TouchableOpacity
+                        style={styles.saveTitleButton}
+                        onPress={saveIsbn}
+                    >
+                      <Ionicons name="checkmark" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+              ) : (
                   <TouchableOpacity
-                      style={styles.saveTitleButton}
-                      onPress={saveIsbn}
+                      style={styles.titleDisplay}
+                      onPress={() => {
+                        setIsbnInput(isbn);
+                        setEditingIsbn(true);
+                      }}
                   >
-                    <Ionicons name="checkmark" size={20} color="white" />
+                    <Text style={typography.body}>
+                      {isbnInput || isbn || t('bookInfo.noISBN')}
+                    </Text>
+                    <Ionicons
+                        name="create"
+                        size={16}
+                        color={colors.primary}
+                        style={styles.editIcon}
+                    />
                   </TouchableOpacity>
-                </View>
-            ) : (
-                <TouchableOpacity
-                    style={styles.titleDisplay}
-                    onPress={() => {
-                      setIsbnInput(isbn);
-                      setEditingIsbn(true);
-                    }}
-                >
-                  <Text style={typography.body}>
-                    {isbnInput || isbn || t('bookInfo.noISBN')}
-                  </Text>
-                  <Ionicons
-                      name="create"
-                      size={16}
-                      color={colors.primary}
-                      style={styles.editIcon}
-                  />
-                </TouchableOpacity>
-            )}
+              )}
             </View>
 
             <View style={styles.priceRow}>
@@ -1920,4 +2080,29 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
+  chartContainer: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  marketFactorsContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: colors.black,
+  },
+  source: {
+  }
 });
