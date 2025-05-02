@@ -108,6 +108,14 @@ interface SearchParams {
   publicationYear?: string; // Dodaj to
 }
 
+interface PriceCalculation {
+  basePrice: number;
+  defectsReduction: number;
+  uniquenessBonus: number;
+  marketModifier: number;
+  finalPrice: number;
+}
+
 const DEFECT_TYPES = [
   { id: 'tornPages', icon: 'document-text-outline' },
   { id: 'brokenSpine', icon: 'book-outline' },
@@ -289,6 +297,8 @@ export default function TabThreeScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [hasScanned, setHasScanned] = useState(false);
+  const [expandedPriceDetails, setExpandedPriceDetails] = useState(false);
+
 
   const {
     collections,
@@ -578,9 +588,10 @@ export default function TabThreeScreen() {
     return Math.min(bonus, 50);
   };
 
-  const calculateMarketModifier = (marketFactors: MarketFactors): number => {
+  const calculateMarketModifier = (marketFactors: MarketFactors, ageInfo: BookAgeInfo, uniqueness: BookUniqueness): number => {
     if (!activeFactors.market) return 0;
 
+    // Modyfikator popytu
     const demandModifiers = {
       veryHigh: 20,
       high: 10,
@@ -589,6 +600,7 @@ export default function TabThreeScreen() {
       veryLow: -10
     };
 
+    // Modyfikator podaży
     const supplyModifiers = {
       veryLow: 25,
       low: 10,
@@ -597,30 +609,46 @@ export default function TabThreeScreen() {
       flooded: -10
     };
 
-    return (demandModifiers[marketFactors.demand] + supplyModifiers[marketFactors.supply]) / 2;
+    // Modyfikator wieku książki
+    const ageModifier = calculateAgeModifier(ageInfo, uniqueness.isMassMarket);
+
+    // Średni modyfikator rynkowy
+    const baseModifier = (demandModifiers[marketFactors.demand] + supplyModifiers[marketFactors.supply]) / 2;
+
+    // Łączny modyfikator (uwzględniający wiek książki)
+    const totalModifier = baseModifier + ageModifier;
+
+    // Ogranicz zakres modyfikatora (-30% do +30% dla skrajnych przypadków)
+    return Math.max(-30, Math.min(30, totalModifier));
   };
 
-  const calculateFinalPrice = (): number => {
-    let adjustedPrice = parseFloat(originalPrice) || 0;
+  const calculateFinalPrice = (): PriceCalculation => {
+    const basePrice = parseFloat(originalPrice) || 0;
 
-    if (activeFactors.defects) {
-      const defectsReduction = calculateDefectsReduction(defects);
-      const maxDefectReduction = 0.9 * adjustedPrice;
-      const priceAfterDefects = adjustedPrice * (1 - defectsReduction / 100);
-      adjustedPrice = Math.max(priceAfterDefects, adjustedPrice - maxDefectReduction);
-    }
+    // Oblicz redukcję za wady
+    const defectsReduction = activeFactors.defects ? calculateDefectsReduction(defects) : 0;
+    const priceAfterDefects = basePrice * (1 - defectsReduction / 100);
+    const maxDefectReduction = 0.9 * basePrice;
+    const priceAfterDefectsLimited = Math.max(priceAfterDefects, basePrice - maxDefectReduction);
 
-    if (activeFactors.uniqueness) {
-      const uniquenessBonus = calculateUniquenessBonus(uniqueness);
-      adjustedPrice *= (1 + uniquenessBonus / 100);
-    }
+    // Oblicz premię za unikatowość
+    const uniquenessBonus = activeFactors.uniqueness ? calculateUniquenessBonus(uniqueness) : 0;
+    const priceAfterUniqueness = priceAfterDefectsLimited * (1 + uniquenessBonus / 100);
 
-    if (activeFactors.market) {
-      const marketModifier = calculateMarketModifier(marketFactors);
-      adjustedPrice *= (1 + marketModifier / 100);
-    }
+    // Oblicz modyfikator rynkowy (teraz uwzględniający wszystkie czynniki)
+    const marketModifier = activeFactors.market ? calculateMarketModifier(marketFactors, ageInfo, uniqueness) : 0;
+    const priceAfterMarket = priceAfterUniqueness * (1 + marketModifier / 100);
 
-    return Math.max(0.01, adjustedPrice);
+    // Zabezpiecz przed wartościami ujemnymi
+    const finalPrice = Math.max(0.01, priceAfterMarket);
+
+    return {
+      basePrice,
+      defectsReduction,
+      uniquenessBonus,
+      marketModifier,
+      finalPrice
+    };
   };
 
   const calculateBookRating = (): number => {
@@ -636,8 +664,97 @@ export default function TabThreeScreen() {
     return Math.max(1, 10 - totalReduction);
   };
 
-  const finalPrice = calculateFinalPrice();
+  const priceCalculation = calculateFinalPrice();
+  const finalPrice = priceCalculation.finalPrice;
   const bookRating = calculateBookRating();
+
+  const renderPriceCalculationDetails = () => (
+      <View style={styles.calculationContainer}>
+        <TouchableOpacity
+            style={styles.calculationHeader}
+            onPress={() => setExpandedPriceDetails(!expandedPriceDetails)}
+            activeOpacity={0.7}
+        >
+          <View style={styles.priceSummary}>
+            <Ionicons name="pricetag" size={20} color={colors.primary} />
+            <Text style={styles.finalPriceText}>
+              {t('priceCalculation.finalPrice')}: {formatCurrency(priceCalculation.finalPrice.toString())}
+            </Text>
+          </View>
+          <Ionicons
+              name={expandedPriceDetails ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={colors.primary}
+          />
+        </TouchableOpacity>
+
+        {expandedPriceDetails && (
+            <View style={styles.calculationDetails}>
+              <View style={styles.calculationRow}>
+                <Text style={styles.calculationLabel}>{t('priceCalculation.basePrice')}:</Text>
+                <Text style={styles.calculationValue}>{formatCurrency(priceCalculation.basePrice.toString())}</Text>
+              </View>
+
+              {activeFactors.defects && (
+                  <>
+                    <View style={styles.calculationRow}>
+                      <Text style={styles.calculationLabel}>
+                        {t('priceCalculation.defectsReduction')} ({priceCalculation.defectsReduction.toFixed(1)}%):
+                      </Text>
+                      <Text style={styles.calculationValue}>
+                        -{formatCurrency((priceCalculation.basePrice * priceCalculation.defectsReduction / 100).toString())}
+                      </Text>
+                    </View>
+                    <View style={styles.calculationSubRow}>
+                      <Text style={styles.calculationSubText}>
+                        {t('priceCalculation.defectsDetails')}: {defects.filter(d => d.selected).map(d => `${t(`defects.${d.id}`)} (${d.count}x)`).join(', ')}
+                      </Text>
+                    </View>
+                  </>
+              )}
+
+              {activeFactors.uniqueness && (
+                  <>
+                    <View style={styles.calculationRow}>
+                      <Text style={styles.calculationLabel}>
+                        {t('priceCalculation.uniquenessBonus')} (+{priceCalculation.uniquenessBonus.toFixed(1)}%):
+                      </Text>
+                      <Text style={styles.calculationValue}>
+                        +{formatCurrency((priceCalculation.basePrice * priceCalculation.uniquenessBonus / 100).toString())}
+                      </Text>
+                    </View>
+                    <View style={styles.calculationSubRow}>
+                      <Text style={styles.calculationSubText}>
+                        {t('priceCalculation.uniquenessDetails')}: {Object.entries(uniqueness)
+                          .filter(([_, value]) => value)
+                          .map(([key]) => t(`uniqueness.${key}`))
+                          .join(', ')}
+                      </Text>
+                    </View>
+                  </>
+              )}
+
+              {activeFactors.market && (
+                  <>
+                    <View style={styles.calculationRow}>
+                      <Text style={styles.calculationLabel}>
+                        {t('priceCalculation.marketModifier')} ({priceCalculation.marketModifier > 0 ? '+' : ''}{priceCalculation.marketModifier.toFixed(1)}%):
+                      </Text>
+                      <Text style={styles.calculationValue}>
+                        {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
+                      </Text>
+                    </View>
+                    <View style={styles.calculationSubRow}>
+                      <Text style={styles.calculationSubText}>
+                        {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
+                      </Text>
+                    </View>
+                  </>
+              )}
+            </View>
+        )}
+      </View>
+  );
 
   const startScanning = async () => {
     setIsLoading(true);
@@ -1341,12 +1458,7 @@ export default function TabThreeScreen() {
                   </TouchableOpacity>
               )}
             </View>
-            <View style={styles.finalPriceContainer}>
-              <Ionicons name="pricetag" size={24} color={colors.primary} style={styles.priceIcon} />
-              <Text style={[typography.h2, { color: colors.primary }]}>
-                {t('bookInfo.finalPrice')}: {formatCurrency(finalPrice.toString())}
-              </Text>
-            </View>
+            {renderPriceCalculationDetails()}
             {exchangeRateError && (
                 <Text style={[typography.caption, { color: colors.error }]}>
                   {t('alerts.exchangeRateError')}
@@ -2104,5 +2216,81 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   source: {
-  }
+  },
+  calculationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+    marginBottom: 12,
+  },
+  finalCalculationRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.grayDark,
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  finalCalculationLabel: {
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  finalCalculationValue: {
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  calculationContainer: {
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.grayDark,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(74,108,247,0.08)'
+  },
+  calculationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  priceSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  finalPriceText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+    marginLeft: 10,
+  },
+  calculationDetails: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray,
+  },
+  calculationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  calculationLabel: {
+    fontSize: 14,
+    color: colors.grayDark,
+    flex: 1,
+  },
+  calculationValue: {
+    fontSize: 14,
+    color: colors.black,
+    fontWeight: '500',
+    textAlign: 'right',
+    flex: 1,
+  },
+  calculationSubRow: {
+    marginBottom: 12,
+    paddingLeft: 12,
+  },
+  calculationSubText: {
+    fontSize: 12,
+    color: colors.grayDark,
+    fontStyle: 'italic',
+  },
 });

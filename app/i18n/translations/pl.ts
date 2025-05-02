@@ -239,5 +239,13 @@ export default {
     },
     listingModal: {
         title: 'Wybierz sklep'
+    },
+    priceCalculation: {
+        details: "Szczegóły obliczeń ceny",
+        basePrice: "Cena bazowa",
+        defectsReduction: "Redukcja za wady",
+        uniquenessBonus: "Premia za unikatowość",
+        marketModifier: "Modyfikator rynkowy",
+        finalPrice: "Cena końcowa"
     }
 }
