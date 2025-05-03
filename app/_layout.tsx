@@ -4,7 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { View, TouchableOpacity, Text, StyleSheet, Animated, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Animated, Platform, Linking } from 'react-native';
 import i18n from './i18n/config';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "@/styles/styles";
@@ -73,14 +73,25 @@ function RootLayoutNav() {
     router.push('/settings');
   };
 
+  const handleRateApp = () => {
+    const url = Platform.select({
+      ios: 'https://apps.apple.com/app/idYOUR_APPLE_ID', // ← podmień na swój Apple ID
+      android: 'https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME', // ← podmień na swój package name
+    });
+
+    if (typeof url === "string") {
+      Linking.openURL(url).catch(err =>
+          console.error("Couldn't open store page", err)
+      );
+    }
+  };
+
   return (
       <>
         <Stack>
           <Stack.Screen
               name="index"
-              options={{
-                headerShown: false
-              }}
+              options={{ headerShown: false }}
           />
           <Stack.Screen
               name="(tabs)"
@@ -104,10 +115,10 @@ function RootLayoutNav() {
                   fontWeight: 'bold',
                 },
                 headerLeft: () => (
-                    <TouchableOpacity onPress={() => router.back()}
-                                      style={{
-                                        marginLeft: 0,
-                                        marginRight: 20}}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ marginLeft: 0, marginRight: 20 }}
+                    >
                       <Ionicons name="arrow-back" size={24} color={colors.primary} />
                     </TouchableOpacity>
                 ),
@@ -118,7 +129,7 @@ function RootLayoutNav() {
         <View style={styles.headerButtonsContainer}>
           <TouchableOpacity
               style={styles.ratingButton}
-              onPress={() => console.log('Rating pressed')}
+              onPress={handleRateApp}
               activeOpacity={0.7}
           >
             <Ionicons name="heart-outline" size={24} color={colors.black} />

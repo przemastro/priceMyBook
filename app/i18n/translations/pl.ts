@@ -125,7 +125,8 @@ export default {
         marketAnalysis: "Analiza rynku",
         dataSource: "Źródło danych",
         undefined: "Nieokreślony",
-        age: "Wiek"
+        age: "Wiek",
+        priceRange: "Przedział cenowy"
     },
     titles: {
         scan: 'Skanuj ISBN',

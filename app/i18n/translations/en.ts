@@ -127,7 +127,8 @@ export default {
         marketAnalysis: "Market Analysis",
         dataSource: "Data Source",
         undefined: "Undefined",
-        age: "Age"
+        age: "Age",
+        priceRange: "Price Range"
     },
     titles: {
         scan: 'Scan ISBN',
