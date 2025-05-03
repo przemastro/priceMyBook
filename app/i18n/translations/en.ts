@@ -123,7 +123,11 @@ export default {
         book_one: "book",
         book_other: "books",
         activeValue: 'Book collection value',
-        soldValue: 'Sold books value'
+        soldValue: 'Sold books value',
+        marketAnalysis: "Market Analysis",
+        dataSource: "Data Source",
+        undefined: "Undefined",
+        age: "Age"
     },
     titles: {
         scan: 'Scan ISBN',
@@ -246,5 +250,27 @@ export default {
     },
     listingModal: {
         title: 'Select Platform'
+    },
+    priceCalculation: {
+        details: "Price Details",
+        basePrice: "Base Price",
+        defectsReduction: "Defects Reduction",
+        uniquenessBonus: "Uniqueness Bonus",
+        marketModifier: "Market Modifier",
+        finalPrice: "Final Price",
+        defectsDetails: "Defects Details",
+        uniquenessDetails: "Uniqueness Details",
+        marketDetails: "Market Details"
+    },
+    demand: "Demand",
+    supply: "Supply",
+    publicationYear: "Publication Year",
+    uniqueness: {
+        isMassMarket: "Mass Market",
+        isFirstEdition: "First Edition",
+        isCollectorsEdition: "Collectors Edition",
+        hasAuthorSignature: "Author Signature",
+        isLimitedEdition: "Limited Edition",
+        isPublisherDefunct: "Publisher Defunct"
     }
 }

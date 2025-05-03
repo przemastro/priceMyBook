@@ -363,6 +363,7 @@ export default function TabThreeScreen() {
   const [editingOriginalPrice, setEditingOriginalPrice] = useState(false);
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
+  const bookInfo = params.bookInfo ? JSON.parse(params.bookInfo as string) : null;
 
   const isbn = Array.isArray(params.isbn) ? params.isbn[0] : params.isbn || '';
   const originalPriceParam = Array.isArray(params.originalPrice) ? params.originalPrice[0] : params.originalPrice || '0';
@@ -421,27 +422,77 @@ export default function TabThreeScreen() {
   };
 
 
+// In TabThreeScreen component, update the market data loading
   useEffect(() => {
     const loadMarketData = async () => {
+      if (!originalPriceParam) return;
+
       setIsLoading(true);
       try {
-        // Symulacja danych rynkowych
-        const mockData: MarketData = {
-          demand: 'high',
-          supply: 'medium',
-          priceRange: [parseFloat(originalPriceParam) * 0.8, parseFloat(originalPriceParam) * 1.2],
-          priceHistory: [
-            { date: '2023-01-01', price: parseFloat(originalPriceParam) * 0.9 },
-            { date: '2023-04-01', price: parseFloat(originalPriceParam) * 1.1 },
-            { date: '2023-07-01', price: parseFloat(originalPriceParam) * 1.0 },
-            { date: '2023-10-01', price: parseFloat(originalPriceParam) * 0.95 },
-            { date: '2024-01-01', price: parseFloat(originalPriceParam) * 1.05 },
-            { date: new Date().toISOString(), price: parseFloat(originalPriceParam) }
-          ],
-          lastUpdated: new Date(),
-          source: 'simulated'
-        };
-        setMarketData(mockData);
+        const amazonFactors = bookInfo?.amazonData?.data?.marketFactors;
+
+        if (amazonFactors) {
+          const factorsChanged =
+              marketFactors.demand !== amazonFactors.demand ||
+              marketFactors.supply !== amazonFactors.supply ||
+              marketFactors.publicationYear !== amazonFactors.publicationYear;
+
+          // Zaktualizuj tylko, jeśli zmieniły się dane
+          if (factorsChanged) {
+            setMarketFactors({
+              demand: amazonFactors.demand,
+              supply: amazonFactors.supply,
+              publicationYear: amazonFactors.publicationYear
+            });
+          }
+
+          const newMarketData: MarketData = {
+            demand: amazonFactors.demand,
+            supply: amazonFactors.supply,
+            priceRange: bookInfo.amazonData.data.priceRange,
+            priceHistory: [
+              { date: '2023-01-01', price: bookInfo.amazonData.data.priceRange[0] * 0.9 },
+              { date: '2023-04-01', price: bookInfo.amazonData.data.priceRange[1] * 1.1 },
+              { date: '2023-07-01', price: (bookInfo.amazonData.data.priceRange[0] + bookInfo.amazonData.data.priceRange[1]) / 2 },
+              { date: '2023-10-01', price: bookInfo.amazonData.data.priceRange[0] * 0.95 },
+              { date: '2024-01-01', price: bookInfo.amazonData.data.priceRange[1] * 1.05 },
+              { date: new Date().toISOString(), price: parseFloat(originalPriceParam) }
+            ],
+            lastUpdated: new Date(),
+            source: 'amazon'
+          };
+
+          if (
+              !marketData ||
+              JSON.stringify(marketData) !== JSON.stringify(newMarketData)
+          ) {
+            setMarketData(newMarketData);
+          }
+        } else {
+          // Fallback – dane symulowane
+          const newSimulatedData: MarketData = {
+            demand: 'high',
+            supply: 'medium',
+            priceRange: [parseFloat(originalPriceParam) * 0.8, parseFloat(originalPriceParam) * 1.2],
+            priceHistory: [
+              { date: '2023-01-01', price: parseFloat(originalPriceParam) * 0.9 },
+              { date: '2023-04-01', price: parseFloat(originalPriceParam) * 1.1 },
+              { date: '2023-07-01', price: parseFloat(originalPriceParam) * 1.0 },
+              { date: '2023-10-01', price: parseFloat(originalPriceParam) * 0.95 },
+              { date: '2024-01-01', price: parseFloat(originalPriceParam) * 1.05 },
+              { date: new Date().toISOString(), price: parseFloat(originalPriceParam) }
+            ],
+            lastUpdated: new Date(),
+            source: 'simulated'
+          };
+
+          if (
+              !marketData ||
+              JSON.stringify(marketData) !== JSON.stringify(newSimulatedData)
+          ) {
+            setMarketData(newSimulatedData);
+          }
+        }
       } catch (error) {
         console.error('Error loading market data:', error);
       } finally {
@@ -449,10 +500,13 @@ export default function TabThreeScreen() {
       }
     };
 
-    if (originalPriceParam) {
-      loadMarketData();
-    }
-  }, [originalPriceParam]);
+    loadMarketData();
+  }, [
+    originalPriceParam,
+    bookInfo?.amazonData?.data?.marketFactors?.demand,
+    bookInfo?.amazonData?.data?.marketFactors?.supply,
+    bookInfo?.amazonData?.data?.marketFactors?.publicationYear
+  ]);
 
 
   useEffect(() => {

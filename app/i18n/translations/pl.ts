@@ -114,13 +114,18 @@ export default {
         veryLow: 'Bardzo niski',
         flooded: 'Zalany rynek',
         collection: 'Dodaj do księgozbioru',
+        publicationYear: 'Rok wydania',
         totalBooksInCollections: "Książek w księgozbiorach",
         addNewCollection: 'Dodaj nowy księgozbiór',
         book_one: "książka",
         book_few: "książki",
         book_many: "książek",
         activeValue: 'Wartość księgozbiorów',
-        soldValue: 'Wartość książek sprzedanych'
+        soldValue: 'Wartość książek sprzedanych',
+        marketAnalysis: "Analiza rynku",
+        dataSource: "Źródło danych",
+        undefined: "Nieokreślony",
+        age: "Wiek"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -246,6 +251,20 @@ export default {
         defectsReduction: "Redukcja za wady",
         uniquenessBonus: "Premia za unikatowość",
         marketModifier: "Modyfikator rynkowy",
-        finalPrice: "Cena końcowa"
+        finalPrice: "Cena końcowa",
+        defectsDetails: "Szczegóły wad",
+        uniquenessDetails: "Szczegóły unikatowości",
+        marketDetails: "Szczegóły rynkowe"
+    },
+    demand: "Podaż",
+    supply: "Popyt",
+    publicationYear: "Rok wydania",
+    uniqueness: {
+        isMassMarket: "Masowa produkcja",
+        isFirstEdition: "Pierwsze wydanie",
+        isCollectorsEdition: "Wydanie kolekcjonerskie",
+        hasAuthorSignature: "Podpis autora",
+        isLimitedEdition: "Limitowana edycja",
+        isPublisherDefunct: "Niedziałający wydawca"
     }
 }

@@ -13,8 +13,7 @@ import {
   Animated,
   Easing,
   Dimensions,
-  Platform,
-  Clipboard
+  Platform
 } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useAppContext } from '@/context/AppContext';
@@ -28,7 +27,6 @@ const { width, height } = Dimensions.get('window');
 
 type BookSource = 'google' | 'amazon' | 'manual';
 
-// Funkcja konwertująca ISBN na ASIN
 const convertIsbnToAsin = (isbn: string): string => {
   const cleanIsbn = isbn.replace(/[^0-9X]/gi, '');
 
@@ -91,19 +89,66 @@ interface AmazonPriceOffer {
 }
 
 interface AmazonApiResponse {
+  status: string;
+  request_id: string;
+  parameters: {
+    asin: string;
+    country: string;
+    limit: number;
+    page: number;
+  };
+  data: {
+    asin: string;
+    product_title: string;
+    product_price: string;
+    product_original_price: string | null;
+    currency: string;
+    country: string;
+    product_byline: string;
+    product_url: string;
+    product_photo: string;
+    product_num_offers: number;
+    is_prime: boolean;
+    product_information: {
+      "ISBN-10"?: string;
+      "ISBN-13"?: string;
+      Wydawca?: string;
+      Język?: string;
+      "Miękka oprawa"?: string;
+      Wymiary?: string;
+      "Ranking najlepiej sprzedających się produktów"?: string;
+    };
+    product_offers: {
+      product_price: string;
+      product_original_price: string | null;
+      product_condition: string;
+      seller: string;
+      seller_id: string | null;
+      seller_link: string | null;
+      seller_star_rating: string | null;
+      currency: string;
+      delivery_price: string;
+      delivery_time: string;
+    }[];
+    marketFactors?: MarketFactors;
+    priceRange?: [number, number];
+    salesRank?: number;
+    isBestSeller?: boolean;
+    isAmazonChoice?: boolean;
+    numRatings?: number;
+    starRating?: string | null;
+  };
   prices: AmazonPriceOffer[];
-  productTitle?: string;
-  productImage?: string;
-  productUrl?: string;
+  productTitle: string;
+  productImage: string;
+  productUrl: string;
   isPrime: boolean;
   marketplace: string;
-  publicationYear?: number; // Dodaj to pole
   rawResponse: any;
   error?: string;
 }
 
 const simulateMarketData = (isbn: string): MarketData => {
-  // Prosta symulacja - w rzeczywistej aplikacji można by pobierać prawdziwe dane
   const randomFactor = isbn.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 100;
 
   return {
@@ -121,17 +166,13 @@ const simulateMarketData = (isbn: string): MarketData => {
   };
 };
 
-/**
- * Oblicza popularność książki na podstawie liczby ocen i średniej oceny
- */
 const calculatePopularity = (ratingsCount: number, averageRating: number): number => {
-  if (!ratingsCount || !averageRating) return 50; // Domyślna wartość
+  if (!ratingsCount || !averageRating) return 50;
 
-  // Prosta formuła - można dostosować do potrzeb
-  const normalizedCount = Math.min(ratingsCount / 1000, 1); // Normalizacja do 0-1
-  const normalizedRating = (averageRating / 5) * 100; // Normalizacja do 0-100
+  const normalizedCount = Math.min(ratingsCount / 1000, 1);
+  const normalizedRating = (averageRating / 5) * 100;
 
-  return (normalizedCount * 50) + (normalizedRating * 0.5); // Ważone 50% ilość, 50% jakość
+  return (normalizedCount * 50) + (normalizedRating * 0.5);
 };
 
 const fetchAllBookData = async (isbn: string, language: string) => {
@@ -145,7 +186,7 @@ const fetchAllBookData = async (isbn: string, language: string) => {
     google: googleData,
     amazon: amazonData,
     openLibrary: openLibraryData,
-    simulated: simulateMarketData(isbn) // Teraz funkcja jest zdefiniowana
+    simulated: simulateMarketData(isbn)
   };
 };
 
@@ -168,7 +209,7 @@ const fetchGoogleBooksData = async (isbn: string) => {
         image: book.imageLinks?.thumbnail,
         ratingsCount: book.ratingsCount || 0,
         averageRating: book.averageRating || 0,
-        popularity: calculatePopularity(book.ratingsCount || 0, book.averageRating || 0) // Teraz funkcja jest zdefiniowana
+        popularity: calculatePopularity(book.ratingsCount || 0, book.averageRating || 0)
       };
     }
     return null;
@@ -180,11 +221,9 @@ const fetchGoogleBooksData = async (isbn: string) => {
 
 const fetchOpenLibraryData = async (isbn: string) => {
   try {
-    // Podstawowe informacje o książce
     const bookResponse = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
     const bookData = await bookResponse.json();
 
-    // Informacje o dostępności w bibliotekach
     const holdingsResponse = await fetch(
         `https://archive.org/advancedsearch.php?q=isbn:${isbn}&output=json`
     );
@@ -212,28 +251,79 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Prom
       method: 'GET',
       headers: {
         'x-rapidapi-host': 'real-time-amazon-data.p.rapidapi.com',
-        'x-rapidapi-key': '',
+        'x-rapidapi-key': 'e9afae8b1amsh0201a5bdb36bea1p164ad8jsn949616e357e6',
       }
     });
 
     const data = await response.json();
-    console.log('Amazon API raw response:', data); // Debug log
+    console.log('Amazon API raw response:', data);
 
-    if (data.status === "OK" && data.data.product_offers?.length > 0) {
-      // Parsowanie ceny - zamiana "35,32zł" na 35.32
-      const bestOffer = data.data.product_offers[0];
-      const priceValue = parseFloat(bestOffer.product_price.replace(',', '.').replace(/[^\d.-]/g, ''));
+    if (data.status === "OK" && data.data?.product_offers?.length > 0) {
+      const publicationDateMatch = data.data.product_information?.Wydawca?.match(/\((\d{1,2} \w+ \d{4})\)/);
+      const publicationDate = publicationDateMatch ? new Date(publicationDateMatch[1]) : null;
+      const publicationYear = publicationDate ? publicationDate.getFullYear() : undefined;
+
+      const salesRankText = data.data.product_information?.['Ranking najlepiej sprzedających się produktów'] || '';
+      const salesRankMatch = salesRankText.match(/Pozycja (\d+)/);
+      const salesRank = salesRankMatch ? parseInt(salesRankMatch[1]) : 999999;
+
+      let demand: MarketFactors['demand'] = 'medium';
+      if (salesRank <= 10000) demand = 'veryHigh';
+      else if (salesRank <= 50000) demand = 'high';
+      else if (salesRank <= 200000) demand = 'medium';
+      else if (salesRank <= 500000) demand = 'low';
+      else demand = 'veryLow';
+
+      let supply: MarketFactors['supply'] = 'medium';
+      const numOffers = data.data.product_num_offers || 0;
+      const availability = data.data.product_availability || '';
+
+      if (numOffers <= 1) supply = 'veryLow';
+      else if (numOffers <= 3) supply = 'low';
+      else if (numOffers <= 10) supply = 'medium';
+      else if (numOffers <= 20) supply = 'high';
+      else supply = 'flooded';
+
+      if (availability.includes('Zapasy zostaną niedługo uzupełnione')) {
+        if (supply === 'medium') supply = 'low';
+        else if (supply === 'high') supply = 'medium';
+      }
+
+      const prices = data.data.product_offers.map((offer: any) =>
+          parseFloat(offer.product_price.replace(',', '.').replace(/[^\d.-]/g, ''))
+      );
+      const priceRange = [
+        Math.min(...prices),
+        Math.max(...prices)
+      ] as [number, number];
 
       return {
-        prices: [{
-          price: priceValue,
-          currency: data.data.currency || 'PLN',
-          condition: bestOffer.product_condition,
-          seller: bestOffer.seller,
-          delivery: bestOffer.delivery_price,
-          deliveryTime: bestOffer.delivery_time,
-          rawOffer: bestOffer
-        }],
+        status: "OK",
+        request_id: data.request_id,
+        parameters: data.parameters,
+        data: {
+          ...data.data,
+          marketFactors: {
+            demand,
+            supply,
+            publicationYear
+          },
+          priceRange,
+          salesRank,
+          isBestSeller: data.data.is_best_seller,
+          isAmazonChoice: data.data.is_amazon_choice,
+          numRatings: data.data.product_num_ratings || 0,
+          starRating: data.data.product_star_rating || null
+        },
+        prices: data.data.product_offers.map((offer: any) => ({
+          price: parseFloat(offer.product_price.replace(',', '.').replace(/[^\d.-]/g, '')),
+          currency: offer.currency || 'PLN',
+          condition: offer.product_condition,
+          seller: offer.seller,
+          delivery: offer.delivery_price,
+          deliveryTime: offer.delivery_time,
+          rawOffer: offer
+        })),
         productTitle: data.data.product_title,
         productImage: data.data.product_photo,
         productUrl: data.data.product_url,
@@ -244,19 +334,95 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Prom
     }
 
     return {
+      status: "OK",
+      request_id: data.request_id || "",
+      parameters: data.parameters || {
+        asin,
+        country,
+        limit: 5,
+        page: 1
+      },
+      data: {
+        ...(data.data || {
+          asin,
+          product_title: "",
+          product_price: "",
+          product_original_price: null,
+          currency: "",
+          country,
+          product_byline: "",
+          product_url: "",
+          product_photo: "",
+          product_num_offers: 0,
+          is_prime: false,
+          product_information: {},
+          product_offers: []
+        }),
+        marketFactors: {
+          demand: 'medium',
+          supply: 'medium',
+          publicationYear: undefined
+        },
+        priceRange: undefined,
+        salesRank: 999999,
+        isBestSeller: false,
+        isAmazonChoice: false,
+        numRatings: 0,
+        starRating: null
+      },
       prices: [],
-      rawResponse: data,
-      isPrime: false,
+      productTitle: data.data?.product_title || "",
+      productImage: data.data?.product_photo || "",
+      productUrl: data.data?.product_url || "",
+      isPrime: data.data?.is_prime || false,
       marketplace: country,
+      rawResponse: data,
       error: data.error || 'No offers found'
     };
   } catch (error: unknown) {
     console.error('[Amazon API] Error:', error);
     return {
+      status: "ERROR",
+      request_id: "",
+      parameters: {
+        asin,
+        country,
+        limit: 5,
+        page: 1
+      },
+      data: {
+        asin,
+        product_title: "",
+        product_price: "",
+        product_original_price: null,
+        currency: "",
+        country,
+        product_byline: "",
+        product_url: "",
+        product_photo: "",
+        product_num_offers: 0,
+        is_prime: false,
+        product_information: {},
+        product_offers: [],
+        marketFactors: {
+          demand: 'medium',
+          supply: 'medium',
+          publicationYear: undefined
+        },
+        priceRange: undefined,
+        salesRank: 999999,
+        isBestSeller: false,
+        isAmazonChoice: false,
+        numRatings: 0,
+        starRating: null
+      },
       prices: [],
-      rawResponse: null,
+      productTitle: "",
+      productImage: "",
+      productUrl: "",
       isPrime: false,
       marketplace: country,
+      rawResponse: null,
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
@@ -275,7 +441,7 @@ interface BookInfo {
 }
 
 const fetchBookInfoFromGoogleAPI = async (isbn: string): Promise<BookInfo | null> => {
-  const API_KEY = ''; // Add your Google API key here
+  const API_KEY = 'YOUR_GOOGLE_API_KEY';
   const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`;
 
   try {
@@ -308,8 +474,8 @@ const fetchBookInfoFromAmazon = async (isbn: string, language: string): Promise<
   if (amazonData.prices.length > 0) {
     return {
       title: amazonData.productTitle || `Book (ISBN: ${isbn})`,
-      authors: 'Unknown',
-      publisher: 'Unknown',
+      authors: amazonData.data.product_byline || 'Unknown',
+      publisher: amazonData.data.product_information?.Wydawca?.split('(')[0].trim() || 'Unknown',
       description: 'No description available',
       price: amazonData.prices[0].price,
       image: amazonData.productImage || null,
@@ -338,8 +504,6 @@ export default function TabOneScreen() {
   const [currentLang, setCurrentLang] = useState(i18n.language);
   const [isManualMode, setIsManualMode] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
-  const [apiLogs, setApiLogs] = useState<string>('');
-  const [logsVisible, setLogsVisible] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -674,9 +838,10 @@ export default function TabOneScreen() {
         marketFactors: JSON.stringify({
           demand: 'medium',
           supply: 'medium',
-          publicationYear: bookInfo?.amazonData?.publicationYear ||
+          publicationYear: bookInfo?.amazonData?.data?.marketFactors?.publicationYear || // Updated this line
               new Date().getFullYear() - Math.floor(Math.random() * 10)
-        })
+        }),
+        bookInfo: JSON.stringify(bookInfo)
       }
     });
   };
