@@ -266,5 +266,8 @@ export default {
         hasAuthorSignature: "Podpis autora",
         isLimitedEdition: "Limitowana edycja",
         isPublisherDefunct: "Niedziałający wydawca"
+    },
+    welcome: {
+        slogan: 'Zeskanuj • Wyceń • Zarabiaj'
     }
 }

@@ -3,8 +3,11 @@ import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '@/styles/styles';
+import { useTranslation } from 'react-i18next';
+
 
 export default function WelcomeScreen() {
+    const { t } = useTranslation();
     const [showApp, setShowApp] = useState(false);
     const fadeAnim = useState(new Animated.Value(0))[0];
     const scaleAnim = useState(new Animated.Value(0.5))[0];
@@ -42,7 +45,7 @@ export default function WelcomeScreen() {
             }]}>
                 <Ionicons name="book" size={80} color="white" />
                 <Text style={styles.appName}>PriceMyBook</Text>
-                <Text style={styles.appSlogan}>Zeskanuj • Wyceń • Zarabiaj</Text>
+                <Text style={styles.appSlogan}>{t('welcome.slogan')}</Text>
             </Animated.View>
         </View>
     );

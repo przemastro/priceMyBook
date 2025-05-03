@@ -22,7 +22,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, responsive } from '@/styles/styles';
 import { Ionicons } from '@expo/vector-icons';
-
+import { Config } from './config';
 const { width, height } = Dimensions.get('window');
 
 type BookSource = 'google' | 'amazon' | 'manual';
@@ -191,7 +191,7 @@ const fetchAllBookData = async (isbn: string, language: string) => {
 };
 
 const fetchGoogleBooksData = async (isbn: string) => {
-  const API_KEY = 'YOUR_GOOGLE_API_KEY';
+  const API_KEY = Config.GOOGLE_BOOKS_API_KEY;;
   const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${API_KEY}`;
 
   try {
@@ -251,7 +251,7 @@ const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Prom
       method: 'GET',
       headers: {
         'x-rapidapi-host': 'real-time-amazon-data.p.rapidapi.com',
-        'x-rapidapi-key': 'e9afae8b1amsh0201a5bdb36bea1p164ad8jsn949616e357e6',
+        'x-rapidapi-key': Config.AMAZON_API_KEY,
       }
     });
 

@@ -272,5 +272,9 @@ export default {
         hasAuthorSignature: "Author Signature",
         isLimitedEdition: "Limited Edition",
         isPublisherDefunct: "Publisher Defunct"
+    },
+    welcome: {
+        slogan: 'Scan • Price • Profit'
     }
+
 }
