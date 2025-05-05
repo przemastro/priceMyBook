@@ -45,6 +45,12 @@ interface MarketData {
   source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
 }
 
+interface MarketFactorToggle {
+  id: 'includePublicationYear' | 'includeDemand' | 'includeSupply';
+  icon: string;
+  label: string;
+}
+
 interface ListingStatus {
   status: 'notListed' | 'listed' | 'sold';
   platforms: ('amazon' | 'allegro' | 'olx')[];
@@ -70,6 +76,34 @@ interface MarketFactors {
   supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
   publicationYear?: number;
 }
+
+const MARKET_FACTOR_TYPES = [
+  { id: 'publicationYear', icon: 'calendar-outline', label: 'labels.publicationYear' },
+  { id: 'demand', icon: 'trending-up-outline', label: 'labels.demand' },
+  { id: 'supply', icon: 'trending-down-outline', label: 'labels.supply' }
+] as const;
+
+const MARKET_FACTOR_TOGGLES: MarketFactorToggle[] = [
+  { id: 'includePublicationYear', icon: 'calendar-outline', label: 'labels.includePublicationYear' },
+  { id: 'includeDemand', icon: 'trending-up-outline', label: 'labels.includeDemand' },
+  { id: 'includeSupply', icon: 'trending-down-outline', label: 'labels.includeSupply' }
+];
+
+const DEMAND_OPTIONS = [
+  { id: 'veryHigh', label: 'labels.veryHigh' },
+  { id: 'high', label: 'labels.high' },
+  { id: 'medium', label: 'labels.medium' },
+  { id: 'low', label: 'labels.low' },
+  { id: 'veryLow', label: 'labels.veryLow' }
+];
+
+const SUPPLY_OPTIONS = [
+  { id: 'veryLow', label: 'labels.veryLow' },
+  { id: 'low', label: 'labels.low' },
+  { id: 'medium', label: 'labels.medium' },
+  { id: 'high', label: 'labels.high' },
+  { id: 'flooded', label: 'labels.flooded' }
+];
 
 interface PriceCalculation {
   basePrice: number;
@@ -305,6 +339,15 @@ export default function TabThreeScreen() {
   const [titleInput, setTitleInput] = useState(title);
   const [editingIsbn, setEditingIsbn] = useState(false);
   const [isbnInput, setIsbnInput] = useState(isbn);
+  const [showMarketModal, setShowMarketModal] = useState(false);
+  const [editingYear, setEditingYear] = useState(false);
+  const [yearInput, setYearInput] = useState(marketFactors.publicationYear?.toString() || '');
+  const [includedMarketFactors, setIncludedMarketFactors] = useState({
+    includePublicationYear: true,
+    includeDemand: true,
+    includeSupply: true
+  });
+
   const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({
     defects: false,
     uniqueness: false,
@@ -473,22 +516,25 @@ export default function TabThreeScreen() {
 
   const calculateMarketModifier = (marketFactors: MarketFactors, ageInfo: BookAgeInfo, uniqueness: BookUniqueness): number => {
     const demandModifiers = {
-      veryHigh: 20,
-      high: 10,
+      veryHigh: includedMarketFactors.includeDemand ? 20 : 0,
+      high: includedMarketFactors.includeDemand ? 10 : 0,
       medium: 0,
-      low: -5,
-      veryLow: -10
+      low: includedMarketFactors.includeDemand ? -5 : 0,
+      veryLow: includedMarketFactors.includeDemand ? -10 : 0
     };
 
     const supplyModifiers = {
-      veryLow: 25,
-      low: 10,
+      veryLow: includedMarketFactors.includeSupply ? 25 : 0,
+      low: includedMarketFactors.includeSupply ? 10 : 0,
       medium: 0,
-      high: -5,
-      flooded: -10
+      high: includedMarketFactors.includeSupply ? -5 : 0,
+      flooded: includedMarketFactors.includeSupply ? -10 : 0
     };
 
-    const ageModifier = calculateAgeModifier(ageInfo, uniqueness.isMassMarket);
+    const ageModifier = includedMarketFactors.includePublicationYear
+        ? calculateAgeModifier(ageInfo, uniqueness.isMassMarket)
+        : 0;
+
     const baseModifier = (demandModifiers[marketFactors.demand] + supplyModifiers[marketFactors.supply]) / 2;
     const totalModifier = baseModifier + ageModifier;
     return Math.max(-30, Math.min(30, totalModifier));
@@ -515,6 +561,34 @@ export default function TabThreeScreen() {
     };
   };
 
+  const renderMarketFactorToggle = ({ item }: { item: MarketFactorToggle }) => (
+      <TouchableOpacity
+          style={[
+            styles.defectItemContainer,
+            includedMarketFactors[item.id] && styles.selectedDefect
+          ]}
+          onPress={() => setIncludedMarketFactors(prev => ({
+            ...prev,
+            [item.id]: !prev[item.id]
+          }))}
+          activeOpacity={0.7}
+      >
+        <View style={styles.defectIconContainer}>
+          <Ionicons
+              name={item.icon as any}
+              size={28}
+              color={includedMarketFactors[item.id] ? colors.primary : '#5c6b7e'}
+          />
+        </View>
+        <Text style={[
+          styles.defectName,
+          includedMarketFactors[item.id] && styles.selectedDefectName
+        ]}>
+          {t(item.label)}
+        </Text>
+      </TouchableOpacity>
+  );
+
   const calculateBookRating = (): number => {
     const selectedDefects = defects.filter(d => d.selected);
     if (selectedDefects.length === 0) return 10;
@@ -528,6 +602,154 @@ export default function TabThreeScreen() {
   const priceCalculation = calculateFinalPrice();
   const finalPrice = priceCalculation.finalPrice;
   const bookRating = calculateBookRating();
+
+  const renderMarketFactorItem = ({ item }: { item: typeof MARKET_FACTOR_TYPES[number] }) => {
+    if (item.id === 'publicationYear') {
+      return (
+          <TouchableOpacity
+              style={[
+                styles.defectItemContainer,
+                styles.yearItemContainer
+              ]}
+              activeOpacity={0.7}
+          >
+            <View style={styles.defectIconContainer}>
+              <Ionicons
+                  name={item.icon as any}
+                  size={28}
+                  color={colors.primary}
+              />
+            </View>
+            {editingYear ? (
+                <View style={styles.yearInputContainer}>
+                  <TextInput
+                      style={styles.yearInput}
+                      value={yearInput}
+                      onChangeText={setYearInput}
+                      keyboardType="numeric"
+                      maxLength={4}
+                      autoFocus
+                  />
+                  <TouchableOpacity
+                      style={styles.saveYearButton}
+                      onPress={() => {
+                        if (yearInput && !isNaN(parseInt(yearInput))) {
+                          setMarketFactors(prev => ({
+                            ...prev,
+                            publicationYear: parseInt(yearInput)
+                          }));
+                          setEditingYear(false);
+                        }
+                      }}
+                  >
+                    <Ionicons name="checkmark" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={styles.yearDisplay}
+                    onPress={() => {
+                      setYearInput(marketFactors.publicationYear?.toString() || '');
+                      setEditingYear(true);
+                    }}
+                >
+                  <Text style={styles.defectName}>
+                    {marketFactors.publicationYear || t('labels.unknownYear')}
+                  </Text>
+                  <Ionicons
+                      name="create"
+                      size={16}
+                      color={colors.primary}
+                      style={styles.editIcon}
+                  />
+                </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+      );
+    }
+
+    if (item.id === 'demand') {
+      return (
+          <View style={styles.marketFactorContainer}>
+            <View style={styles.marketFactorHeader}>
+              <Ionicons
+                  name={item.icon as any}
+                  size={28}
+                  color={colors.primary}
+                  style={styles.marketFactorIcon}
+              />
+              <Text style={styles.marketFactorLabel}>
+                {t(item.label)}
+              </Text>
+            </View>
+            <View style={styles.optionsContainer}>
+              {DEMAND_OPTIONS.map(option => (
+                  <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.optionButton,
+                        marketFactors.demand === option.id && styles.selectedOption
+                      ]}
+                      onPress={() => setMarketFactors(prev => ({
+                        ...prev,
+                        demand: option.id as any
+                      }))}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      marketFactors.demand === option.id && styles.selectedOptionText
+                    ]}>
+                      {t(option.label)}
+                    </Text>
+                  </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+      );
+    }
+
+    if (item.id === 'supply') {
+      return (
+          <View style={styles.marketFactorContainer}>
+            <View style={styles.marketFactorHeader}>
+              <Ionicons
+                  name={item.icon as any}
+                  size={28}
+                  color={colors.primary}
+                  style={styles.marketFactorIcon}
+              />
+              <Text style={styles.marketFactorLabel}>
+                {t(item.label)}
+              </Text>
+            </View>
+            <View style={styles.optionsContainer}>
+              {SUPPLY_OPTIONS.map(option => (
+                  <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.optionButton,
+                        marketFactors.supply === option.id && styles.selectedOption
+                      ]}
+                      onPress={() => setMarketFactors(prev => ({
+                        ...prev,
+                        supply: option.id as any
+                      }))}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      marketFactors.supply === option.id && styles.selectedOptionText
+                    ]}>
+                      {t(option.label)}
+                    </Text>
+                  </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+      );
+    }
+
+    return null;
+  };
 
   const renderPriceCalculationDetails = () => (
       <View style={styles.calculationContainer}>
@@ -595,6 +817,30 @@ export default function TabThreeScreen() {
                   {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
                 </Text>
               </View>
+              <View style={styles.calculationSubRow}>
+                <Text style={styles.calculationSubText}>
+                  {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
+                </Text>
+              </View>
+              <View style={styles.calculationRow}>
+                <Text style={styles.calculationLabel}>
+                  {t('priceCalculation.marketModifier')} ({priceCalculation.marketModifier > 0 ? '+' : ''}{priceCalculation.marketModifier.toFixed(1)}%):
+                </Text>
+                <Text style={styles.calculationValue}>
+                  {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                  style={styles.marketAnalysisLink}
+                  onPress={() => setShowMarketModal(true)}
+              >
+                <Text style={styles.marketAnalysisLinkText}>
+                  {t('buttons.showMarketAnalysis')}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+              </TouchableOpacity>
+
               <View style={styles.calculationSubRow}>
                 <Text style={styles.calculationSubText}>
                   {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
@@ -865,42 +1111,14 @@ export default function TabThreeScreen() {
           )}
           {expandedTabs[slides[2].id] && (
               <View style={styles.slideContent}>
-                {marketData && (
-                    <>
-                      <MarketChart marketData={marketData} />
-                      <View style={styles.marketFactorsContainer}>
-                        <View style={styles.dataRow}>
-                          <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                          <Text style={styles.dataText}>
-                            {t('labels.publicationYear')}: {marketFactors.publicationYear}
-                          </Text>
-                        </View>
-                        <View style={styles.dataRow}>
-                          <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
-                          <Text style={styles.dataText}>
-                            {t('labels.demand')}: {t(`labels.${marketFactors.demand}`)}
-                          </Text>
-                        </View>
-                        <View style={styles.dataRow}>
-                          <Ionicons name="trending-down-outline" size={20} color={colors.primary} />
-                          <Text style={styles.dataText}>
-                            {t('labels.supply')}: {t(`labels.${marketFactors.supply}`)}
-                          </Text>
-                        </View>
-                        {marketData.priceRange && (
-                            <View style={styles.dataRow}>
-                              <Ionicons name="pricetag-outline" size={20} color={colors.primary} />
-                              <Text style={styles.dataText}>
-                                {t('labels.priceRange')}: {formatCurrency(marketData.priceRange[0].toString())} - {formatCurrency(marketData.priceRange[1].toString())}
-                              </Text>
-                            </View>
-                        )}
-                        <Text style={styles.source}>
-                          {t('labels.dataSource')}: {marketData.source}
-                        </Text>
-                      </View>
-                    </>
-                )}
+                <FlatList
+                    data={MARKET_FACTOR_TOGGLES}
+                    renderItem={renderMarketFactorToggle}
+                    keyExtractor={item => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.columnWrapper}
+                    scrollEnabled={false}
+                />
               </View>
           )}
           {expandedTabs[slides[3].id] && (
@@ -1332,6 +1550,32 @@ export default function TabThreeScreen() {
           </TouchableOpacity>
         </View>
         {renderTabSection()}
+        {/* Market Analysis Modal */}
+        <Modal
+            visible={showMarketModal}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowMarketModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.marketModalContainer}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                    style={styles.closeModalButton}
+                    onPress={() => setShowMarketModal(false)}
+                >
+                  <Ionicons name="close" size={24} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              {marketData && (
+                  <>
+                    <MarketChart marketData={marketData} />
+                  </>
+              )}
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
   );
 }
@@ -1976,5 +2220,133 @@ const styles = StyleSheet.create({
   },
   slideContent: {
     paddingBottom: 16,
+  },
+  marketFactorContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  marketFactorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  marketFactorIcon: {
+    marginRight: 10,
+  },
+  marketFactorLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.black,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  optionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: colors.gray,
+    marginBottom: 8,
+    width: '48%',
+  },
+  selectedOption: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  optionText: {
+    textAlign: 'center',
+    color: colors.grayDark,
+  },
+  selectedOptionText: {
+    color: 'white',
+  },
+  yearItemContainer: {
+    height: 120,
+  },
+  yearInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  yearInput: {
+    height: 30,
+    width: 80,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 8,
+    marginRight: 8,
+    textAlign: 'center',
+  },
+  saveYearButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  yearDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  marketAnalysisButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 2,
+    marginTop: 16,
+  },
+  marketAnalysisButtonText: {
+    color: colors.primary,
+    marginRight: 8,
+    fontWeight: '500',
+  },
+  marketModalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  closeModalButton: {
+    padding: 4,
+  },
+  marketInfoBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  marketInfoText: {
+    fontSize: 14,
+    color: colors.grayDark,
+    marginBottom: 4,
+  },
+  marketAnalysisLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  marketAnalysisLinkText: {
+    color: colors.primary,
+    fontSize: 14,
+    marginRight: 4,
   },
 });
