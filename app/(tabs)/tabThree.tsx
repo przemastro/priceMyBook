@@ -71,43 +71,6 @@ interface MarketFactors {
   publicationYear?: number;
 }
 
-interface ActiveFactors {
-  defects: boolean;
-  uniqueness: boolean;
-  market: boolean;
-}
-
-interface ActiveFactorsParams {
-  defects?: string;
-  uniqueness?: string;
-  market?: string;
-}
-
-interface BookDefects {
-  [key: string]: {
-    selected: boolean;
-    reduction: number;
-    count: number;
-  };
-}
-
-interface SearchParams {
-  isbn?: string;
-  title?: string;
-  authors?: string;
-  originalPrice?: string;
-  editMode?: string;
-  collectionName?: string;
-  bookIndex?: string;
-  defects?: string;
-  uniqueness?: string;
-  marketFactors?: string;
-  fromHistory?: string;
-  activeFactors?: string;
-  updatedTitle?: string;
-  publicationYear?: string; // Dodaj to
-}
-
 interface PriceCalculation {
   basePrice: number;
   defectsReduction: number;
@@ -150,10 +113,10 @@ const MarketChart = ({ marketData }: { marketData: MarketData | null }) => {
         </View>
     );
   }
+
   return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
-
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{ width: chartWidth }}>
             <BarChart
@@ -233,7 +196,6 @@ const MarketChart = ({ marketData }: { marketData: MarketData | null }) => {
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
-
   try {
     const paramString = Array.isArray(param) ? param[0] : param;
     return JSON.parse(paramString) as T;
@@ -259,46 +221,27 @@ const getDefaultReduction = (id: string): number => {
   return reductions[id] || 10;
 };
 
-const parseActiveFactors = (param: string | string[] | undefined): ActiveFactors => {
-  const defaultFactors = {
-    defects: true,
-    uniqueness: true,
-    market: true
-  };
-
-  if (!param) return defaultFactors;
-
-  try {
-    const paramString = Array.isArray(param) ? param[0] : param;
-    const parsed = JSON.parse(paramString) as ActiveFactorsParams;
-
-    return {
-      defects: parsed.defects !== 'false',
-      uniqueness: parsed.uniqueness !== 'false',
-      market: parsed.market !== 'false'
-    };
-  } catch {
-    return defaultFactors;
+const getBookWord = (count: number, language: string) => {
+  if (language === 'pl') {
+    if (count === 1) return 'labels.book_one';
+    if (count % 100 >= 12 && count % 100 <= 14) return 'labels.book_many';
+    if ([2,3,4].includes(count % 10)) return 'labels.book_few';
+    return 'labels.book_many';
+  } else {
+    return count === 1 ? 'labels.book_one' : 'labels.book_other';
   }
 };
 
 export default function TabThreeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const rawParams = useLocalSearchParams();
-  const [activeFactors, setActiveFactors] = useState<ActiveFactors>(
-      parseActiveFactors(rawParams.activeFactors)
-  );
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const scrollViewRef = useRef<ScrollView>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [hasScanned, setHasScanned] = useState(false);
   const [expandedPriceDetails, setExpandedPriceDetails] = useState(false);
-
 
   const {
     collections,
@@ -330,26 +273,12 @@ export default function TabThreeScreen() {
   };
   const [uniqueness, setUniqueness] = useState<BookUniqueness>(initialUniqueness);
 
-  const getBookWord = (count: number, language: string) => {
-    if (language === 'pl') {
-      // Odmiana polska
-      if (count === 1) return t('labels.book_one');
-      if (count % 100 >= 12 && count % 100 <= 14) return t('labels.book_many');
-      if ([2,3,4].includes(count % 10)) return t('labels.book_few');
-      return t('labels.book_many');
-    } else {
-      // Odmiana angielska
-      return count === 1 ? t('labels.book_one') : t('labels.book_other');
-    }
-  };
-
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
     supply: 'medium',
     publicationYear: parseParam<{publicationYear?: number}>(params.marketFactors)?.publicationYear ||
         new Date().getFullYear() - Math.floor(Math.random() * 10)
   };
-
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
   const [marketData, setMarketData] = useState<MarketData | null>(null);
 
@@ -376,53 +305,20 @@ export default function TabThreeScreen() {
   const [titleInput, setTitleInput] = useState(title);
   const [editingIsbn, setEditingIsbn] = useState(false);
   const [isbnInput, setIsbnInput] = useState(isbn);
+  const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({
+    defects: false,
+    uniqueness: false,
+    market: false,
+    collection: false
+  });
 
-  const defaultListingStatus: ListingStatus = {
-    status: 'notListed',
-    platforms: []
-  };
   const slides = [
-    {
-      id: 'defects',
-      title: t('labels.selectDefects'),
-      icon: 'warning-outline'
-    },
-    {
-      id: 'uniqueness',
-      title: t('labels.uniqueness'),
-      icon: 'sparkles-outline'
-    },
-    {
-      id: 'market',
-      title: t('labels.marketFactors'),
-      icon: 'trending-up-outline'
-    },
-    {
-      id: 'collection',
-      title: t('labels.collection'),
-      icon: 'library-outline'
-    }
+    { id: 'defects', title: t('labels.selectDefects'), icon: 'warning-outline' },
+    { id: 'uniqueness', title: t('labels.uniqueness'), icon: 'sparkles-outline' },
+    { id: 'market', title: t('labels.marketFactors'), icon: 'trending-up-outline' },
+    { id: 'collection', title: t('labels.collection'), icon: 'library-outline' }
   ];
-  // Funkcja do zapisywania tytułu
-  const saveTitle = () => {
-    if (!titleInput.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterTitle'));
-      return;
-    }
-    setEditingTitle(false);
-    // Nie potrzebujemy już setTitle, ponieważ titleInput jest już używany w handleSaveBook
-  };
 
-  const saveIsbn = () => {
-    if (!isbnInput.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterISBN'));
-      return;
-    }
-    setEditingIsbn(false);
-  };
-
-
-// In TabThreeScreen component, update the market data loading
   useEffect(() => {
     const loadMarketData = async () => {
       if (!originalPriceParam) return;
@@ -432,19 +328,11 @@ export default function TabThreeScreen() {
         const amazonFactors = bookInfo?.amazonData?.data?.marketFactors;
 
         if (amazonFactors) {
-          const factorsChanged =
-              marketFactors.demand !== amazonFactors.demand ||
-              marketFactors.supply !== amazonFactors.supply ||
-              marketFactors.publicationYear !== amazonFactors.publicationYear;
-
-          // Zaktualizuj tylko, jeśli zmieniły się dane
-          if (factorsChanged) {
-            setMarketFactors({
-              demand: amazonFactors.demand,
-              supply: amazonFactors.supply,
-              publicationYear: amazonFactors.publicationYear
-            });
-          }
+          setMarketFactors({
+            demand: amazonFactors.demand,
+            supply: amazonFactors.supply,
+            publicationYear: amazonFactors.publicationYear
+          });
 
           const newMarketData: MarketData = {
             demand: amazonFactors.demand,
@@ -461,15 +349,8 @@ export default function TabThreeScreen() {
             lastUpdated: new Date(),
             source: 'amazon'
           };
-
-          if (
-              !marketData ||
-              JSON.stringify(marketData) !== JSON.stringify(newMarketData)
-          ) {
-            setMarketData(newMarketData);
-          }
+          setMarketData(newMarketData);
         } else {
-          // Fallback – dane symulowane
           const newSimulatedData: MarketData = {
             demand: 'high',
             supply: 'medium',
@@ -485,13 +366,7 @@ export default function TabThreeScreen() {
             lastUpdated: new Date(),
             source: 'simulated'
           };
-
-          if (
-              !marketData ||
-              JSON.stringify(marketData) !== JSON.stringify(newSimulatedData)
-          ) {
-            setMarketData(newSimulatedData);
-          }
+          setMarketData(newSimulatedData);
         }
       } catch (error) {
         console.error('Error loading market data:', error);
@@ -501,46 +376,11 @@ export default function TabThreeScreen() {
     };
 
     loadMarketData();
-  }, [
-    originalPriceParam,
-    bookInfo?.amazonData?.data?.marketFactors?.demand,
-    bookInfo?.amazonData?.data?.marketFactors?.supply,
-    bookInfo?.amazonData?.data?.marketFactors?.publicationYear
-  ]);
-
-
-  useEffect(() => {
-    const newFactors = parseActiveFactors(rawParams.activeFactors);
-    setActiveFactors(newFactors);
-  }, [rawParams.activeFactors]);
-
-  useEffect(() => {
-    if (!activeFactors.defects) {
-      setDefects(defects.map(d => ({ ...d, selected: false, count: 0 })));
-    }
-    if (!activeFactors.uniqueness) {
-      setUniqueness({
-        isMassMarket: false,
-        isFirstEdition: false,
-        isCollectorsEdition: false,
-        hasAuthorSignature: false,
-        isLimitedEdition: false,
-        isPublisherDefunct: false
-      });
-    }
-    if (!activeFactors.market) {
-      setMarketFactors({
-        demand: 'medium',
-        supply: 'medium',
-        publicationYear: new Date().getFullYear()
-      });
-      setAgeInfo({ years: 0 });
-    }
-  }, [activeFactors]);
+  }, [originalPriceParam, bookInfo]);
 
   useEffect(() => {
     if (editMode) {
-      const bookDefects = parseParam<BookDefects>(params.defects) || {};
+      const bookDefects = parseParam<Record<string, {selected: boolean, reduction: number, count: number}>>(params.defects) || {};
       const bookUniqueness = parseParam<BookUniqueness>(params.uniqueness) || initialUniqueness;
       const bookMarketFactors = parseParam<MarketFactors>(params.marketFactors) || initialMarketFactors;
 
@@ -558,20 +398,16 @@ export default function TabThreeScreen() {
       setDefects(updatedDefects);
       setUniqueness(bookUniqueness);
       setMarketFactors(bookMarketFactors);
-      setHasScanned(true); // Enable slides in edit mode
+      setHasScanned(true);
     }
   }, [editMode, params.defects, params.uniqueness, params.marketFactors]);
 
   useEffect(() => {
     setOriginalPrice(originalPriceParam);
     setOriginalPriceInput(originalPriceParam);
-    setTitleInput(title); // Dodaj tę linię, aby ustawić początkowy tytuł
+    setTitleInput(title);
     setIsbnInput(isbn);
   }, [originalPriceParam, title, isbn]);
-
-  const getBookCount = (collection: string) => {
-    return books[collection]?.length || 0;
-  };
 
   useEffect(() => {
     if (collections.length > 0) {
@@ -600,8 +436,6 @@ export default function TabThreeScreen() {
   }, [pulseAnim]);
 
   const calculateDefectsReduction = (defects: BookDefect[]): number => {
-    if (!activeFactors.defects) return 0;
-
     return defects
         .filter(defect => defect.selected)
         .reduce((total, defect) => {
@@ -611,8 +445,6 @@ export default function TabThreeScreen() {
   };
 
   const calculateAgeModifier = (ageInfo: BookAgeInfo, isMassMarket: boolean): number => {
-    if (!activeFactors.market) return 0;
-
     const { years } = ageInfo;
     if (isMassMarket) {
       if (years <= 2) return 0;
@@ -630,22 +462,16 @@ export default function TabThreeScreen() {
   };
 
   const calculateUniquenessBonus = (uniqueness: BookUniqueness): number => {
-    if (!activeFactors.uniqueness) return 0;
-
     let bonus = 0;
     if (uniqueness.isFirstEdition) bonus += 10;
     if (uniqueness.isCollectorsEdition) bonus += 15;
     if (uniqueness.hasAuthorSignature) bonus += 20;
     if (uniqueness.isLimitedEdition) bonus += 10;
     if (uniqueness.isPublisherDefunct) bonus += 7.5;
-
     return Math.min(bonus, 50);
   };
 
   const calculateMarketModifier = (marketFactors: MarketFactors, ageInfo: BookAgeInfo, uniqueness: BookUniqueness): number => {
-    if (!activeFactors.market) return 0;
-
-    // Modyfikator popytu
     const demandModifiers = {
       veryHigh: 20,
       high: 10,
@@ -654,7 +480,6 @@ export default function TabThreeScreen() {
       veryLow: -10
     };
 
-    // Modyfikator podaży
     const supplyModifiers = {
       veryLow: 25,
       low: 10,
@@ -663,37 +488,22 @@ export default function TabThreeScreen() {
       flooded: -10
     };
 
-    // Modyfikator wieku książki
     const ageModifier = calculateAgeModifier(ageInfo, uniqueness.isMassMarket);
-
-    // Średni modyfikator rynkowy
     const baseModifier = (demandModifiers[marketFactors.demand] + supplyModifiers[marketFactors.supply]) / 2;
-
-    // Łączny modyfikator (uwzględniający wiek książki)
     const totalModifier = baseModifier + ageModifier;
-
-    // Ogranicz zakres modyfikatora (-30% do +30% dla skrajnych przypadków)
     return Math.max(-30, Math.min(30, totalModifier));
   };
 
   const calculateFinalPrice = (): PriceCalculation => {
     const basePrice = parseFloat(originalPrice) || 0;
-
-    // Oblicz redukcję za wady
-    const defectsReduction = activeFactors.defects ? calculateDefectsReduction(defects) : 0;
+    const defectsReduction = calculateDefectsReduction(defects);
     const priceAfterDefects = basePrice * (1 - defectsReduction / 100);
     const maxDefectReduction = 0.9 * basePrice;
     const priceAfterDefectsLimited = Math.max(priceAfterDefects, basePrice - maxDefectReduction);
-
-    // Oblicz premię za unikatowość
-    const uniquenessBonus = activeFactors.uniqueness ? calculateUniquenessBonus(uniqueness) : 0;
+    const uniquenessBonus = calculateUniquenessBonus(uniqueness);
     const priceAfterUniqueness = priceAfterDefectsLimited * (1 + uniquenessBonus / 100);
-
-    // Oblicz modyfikator rynkowy (teraz uwzględniający wszystkie czynniki)
-    const marketModifier = activeFactors.market ? calculateMarketModifier(marketFactors, ageInfo, uniqueness) : 0;
+    const marketModifier = calculateMarketModifier(marketFactors, ageInfo, uniqueness);
     const priceAfterMarket = priceAfterUniqueness * (1 + marketModifier / 100);
-
-    // Zabezpiecz przed wartościami ujemnymi
     const finalPrice = Math.max(0.01, priceAfterMarket);
 
     return {
@@ -710,10 +520,7 @@ export default function TabThreeScreen() {
     if (selectedDefects.length === 0) return 10;
 
     let ratingReduction = selectedDefects.length;
-    const countReduction = selectedDefects.reduce((sum, defect) => {
-      return sum + Math.floor(defect.count / 5);
-    }, 0);
-
+    const countReduction = selectedDefects.reduce((sum, defect) => sum + Math.floor(defect.count / 5), 0);
     const totalReduction = ratingReduction + countReduction;
     return Math.max(1, 10 - totalReduction);
   };
@@ -749,62 +556,50 @@ export default function TabThreeScreen() {
                 <Text style={styles.calculationValue}>{formatCurrency(priceCalculation.basePrice.toString())}</Text>
               </View>
 
-              {activeFactors.defects && (
-                  <>
-                    <View style={styles.calculationRow}>
-                      <Text style={styles.calculationLabel}>
-                        {t('priceCalculation.defectsReduction')} ({priceCalculation.defectsReduction.toFixed(1)}%):
-                      </Text>
-                      <Text style={styles.calculationValue}>
-                        -{formatCurrency((priceCalculation.basePrice * priceCalculation.defectsReduction / 100).toString())}
-                      </Text>
-                    </View>
-                    <View style={styles.calculationSubRow}>
-                      <Text style={styles.calculationSubText}>
-                        {t('priceCalculation.defectsDetails')}: {defects.filter(d => d.selected).map(d => `${t(`defects.${d.id}`)} (${d.count}x)`).join(', ')}
-                      </Text>
-                    </View>
-                  </>
-              )}
+              <View style={styles.calculationRow}>
+                <Text style={styles.calculationLabel}>
+                  {t('priceCalculation.defectsReduction')} ({priceCalculation.defectsReduction.toFixed(1)}%):
+                </Text>
+                <Text style={styles.calculationValue}>
+                  -{formatCurrency((priceCalculation.basePrice * priceCalculation.defectsReduction / 100).toString())}
+                </Text>
+              </View>
+              <View style={styles.calculationSubRow}>
+                <Text style={styles.calculationSubText}>
+                  {t('priceCalculation.defectsDetails')}: {defects.filter(d => d.selected).map(d => `${t(`defects.${d.id}`)} (${d.count}x)`).join(', ')}
+                </Text>
+              </View>
 
-              {activeFactors.uniqueness && (
-                  <>
-                    <View style={styles.calculationRow}>
-                      <Text style={styles.calculationLabel}>
-                        {t('priceCalculation.uniquenessBonus')} (+{priceCalculation.uniquenessBonus.toFixed(1)}%):
-                      </Text>
-                      <Text style={styles.calculationValue}>
-                        +{formatCurrency((priceCalculation.basePrice * priceCalculation.uniquenessBonus / 100).toString())}
-                      </Text>
-                    </View>
-                    <View style={styles.calculationSubRow}>
-                      <Text style={styles.calculationSubText}>
-                        {t('priceCalculation.uniquenessDetails')}: {Object.entries(uniqueness)
-                          .filter(([_, value]) => value)
-                          .map(([key]) => t(`uniqueness.${key}`))
-                          .join(', ')}
-                      </Text>
-                    </View>
-                  </>
-              )}
+              <View style={styles.calculationRow}>
+                <Text style={styles.calculationLabel}>
+                  {t('priceCalculation.uniquenessBonus')} (+{priceCalculation.uniquenessBonus.toFixed(1)}%):
+                </Text>
+                <Text style={styles.calculationValue}>
+                  +{formatCurrency((priceCalculation.basePrice * priceCalculation.uniquenessBonus / 100).toString())}
+                </Text>
+              </View>
+              <View style={styles.calculationSubRow}>
+                <Text style={styles.calculationSubText}>
+                  {t('priceCalculation.uniquenessDetails')}: {Object.entries(uniqueness)
+                    .filter(([_, value]) => value)
+                    .map(([key]) => t(`uniqueness.${key}`))
+                    .join(', ')}
+                </Text>
+              </View>
 
-              {activeFactors.market && (
-                  <>
-                    <View style={styles.calculationRow}>
-                      <Text style={styles.calculationLabel}>
-                        {t('priceCalculation.marketModifier')} ({priceCalculation.marketModifier > 0 ? '+' : ''}{priceCalculation.marketModifier.toFixed(1)}%):
-                      </Text>
-                      <Text style={styles.calculationValue}>
-                        {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
-                      </Text>
-                    </View>
-                    <View style={styles.calculationSubRow}>
-                      <Text style={styles.calculationSubText}>
-                        {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
-                      </Text>
-                    </View>
-                  </>
-              )}
+              <View style={styles.calculationRow}>
+                <Text style={styles.calculationLabel}>
+                  {t('priceCalculation.marketModifier')} ({priceCalculation.marketModifier > 0 ? '+' : ''}{priceCalculation.marketModifier.toFixed(1)}%):
+                </Text>
+                <Text style={styles.calculationValue}>
+                  {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
+                </Text>
+              </View>
+              <View style={styles.calculationSubRow}>
+                <Text style={styles.calculationSubText}>
+                  {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
+                </Text>
+              </View>
             </View>
         )}
       </View>
@@ -855,7 +650,7 @@ export default function TabThreeScreen() {
               confidence: Math.floor(Math.random() * 50) + 50
             });
             setShowDefectModal(true);
-            setHasScanned(true); // Enable slides after first scan
+            setHasScanned(true);
           }
         }
         return newProgress;
@@ -906,66 +701,6 @@ export default function TabThreeScreen() {
     }));
   };
 
-  const handleSaveBook = () => {
-    const priceValue = finalPrice.toFixed(2);
-    const currentIsbn = editingIsbn ? isbnInput : isbn;
-    const currentTitle = editingTitle ? titleInput : title;
-
-    const bookData = {
-      isbn: currentIsbn,
-      title: currentTitle, // Używamy aktualnej wartości tytułu
-      authors,
-      price: priceValue,
-      displayPrice: formatCurrency(priceValue),
-      foundInApi: params.fromHistory !== 'true',
-      originalPrice,
-      defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
-        ...acc,
-        [defect.id]: {
-          selected: true,
-          reduction: defect.priceReduction,
-          count: defect.count
-        }
-      }), {}),
-      rating: bookRating,
-      ageInfo,
-      uniqueness,
-      marketFactors,
-      listingStatus: editMode && collectionName && bookIndex !== null
-          ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
-          : defaultListingStatus
-    };
-
-    // Reszta funkcji pozostaje bez zmian
-    if (editMode && collectionName && bookIndex !== null) {
-      if (selectedCollection === collectionName) {
-        updateBookInCollection(collectionName, bookIndex, bookData);
-        Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
-        router.back();
-      } else {
-        const bookToMove = books[collectionName][bookIndex];
-        addBookToCollection(selectedCollection, {
-          ...bookData,
-          listingStatus: bookToMove.listingStatus || defaultListingStatus
-        });
-        removeBookFromCollection(collectionName, bookIndex);
-        Alert.alert(t('alerts.success'), t('alerts.bookMoved', {
-          oldCollection: collectionName,
-          newCollection: selectedCollection
-        }));
-        router.back();
-      }
-    } else {
-      if (!selectedCollection) {
-        Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
-        return;
-      }
-      addBookToCollection(selectedCollection, bookData);
-      Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`);
-      router.back();
-    }
-  };
-
   const toggleEditOriginalPrice = () => {
     setEditingOriginalPrice(!editingOriginalPrice);
     if (!editingOriginalPrice) {
@@ -982,12 +717,21 @@ export default function TabThreeScreen() {
     setEditingOriginalPrice(false);
   };
 
-  const [expandedTabs, setExpandedTabs] = useState<Record<string, boolean>>({
-    defects: false,
-    uniqueness: false,
-    market: false,
-    collection: false
-  });
+  const saveTitle = () => {
+    if (!titleInput.trim()) {
+      Alert.alert(t('alerts.error'), t('alerts.enterTitle'));
+      return;
+    }
+    setEditingTitle(false);
+  };
+
+  const saveIsbn = () => {
+    if (!isbnInput.trim()) {
+      Alert.alert(t('alerts.error'), t('alerts.enterISBN'));
+      return;
+    }
+    setEditingIsbn(false);
+  };
 
   const toggleTab = (tabId: string) => {
     setExpandedTabs(prev => ({
@@ -1094,159 +838,204 @@ export default function TabThreeScreen() {
           ))}
         </View>
 
-        {/* Content container with padding */}
         <View style={styles.tabContentWrapper}>
-          {expandedTabs[slides[0].id] && renderSlide(slides[0])}
-          {expandedTabs[slides[1].id] && renderSlide(slides[1])}
-          {expandedTabs[slides[2].id] && renderSlide(slides[2])}
-          {expandedTabs[slides[3].id] && renderSlide(slides[3])}
+          {expandedTabs[slides[0].id] && (
+              <View style={styles.slideContent}>
+                <FlatList
+                    data={defects}
+                    renderItem={renderDefectItem}
+                    keyExtractor={item => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.columnWrapper}
+                    scrollEnabled={false}
+                />
+              </View>
+          )}
+          {expandedTabs[slides[1].id] && (
+              <View style={styles.slideContent}>
+                <FlatList
+                    data={UNIQUENESS_TYPES}
+                    renderItem={renderUniquenessItem}
+                    keyExtractor={item => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.columnWrapper}
+                    scrollEnabled={false}
+                />
+              </View>
+          )}
+          {expandedTabs[slides[2].id] && (
+              <View style={styles.slideContent}>
+                {marketData && (
+                    <>
+                      <MarketChart marketData={marketData} />
+                      <View style={styles.marketFactorsContainer}>
+                        <View style={styles.dataRow}>
+                          <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                          <Text style={styles.dataText}>
+                            {t('labels.publicationYear')}: {marketFactors.publicationYear}
+                          </Text>
+                        </View>
+                        <View style={styles.dataRow}>
+                          <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+                          <Text style={styles.dataText}>
+                            {t('labels.demand')}: {t(`labels.${marketFactors.demand}`)}
+                          </Text>
+                        </View>
+                        <View style={styles.dataRow}>
+                          <Ionicons name="trending-down-outline" size={20} color={colors.primary} />
+                          <Text style={styles.dataText}>
+                            {t('labels.supply')}: {t(`labels.${marketFactors.supply}`)}
+                          </Text>
+                        </View>
+                        {marketData.priceRange && (
+                            <View style={styles.dataRow}>
+                              <Ionicons name="pricetag-outline" size={20} color={colors.primary} />
+                              <Text style={styles.dataText}>
+                                {t('labels.priceRange')}: {formatCurrency(marketData.priceRange[0].toString())} - {formatCurrency(marketData.priceRange[1].toString())}
+                              </Text>
+                            </View>
+                        )}
+                        <Text style={styles.source}>
+                          {t('labels.dataSource')}: {marketData.source}
+                        </Text>
+                      </View>
+                    </>
+                )}
+              </View>
+          )}
+          {expandedTabs[slides[3].id] && (
+              <View style={styles.slideContent}>
+                <View style={styles.collectionRow}>
+                  <View style={styles.collectionPickerContainer}>
+                    {collections.length > 0 ? (
+                        <View style={styles.pickerContainer}>
+                          <Picker
+                              selectedValue={selectedCollection}
+                              style={styles.picker}
+                              onValueChange={(itemValue) => setSelectedCollection(itemValue)}
+                              dropdownIconColor={colors.primary}
+                          >
+                            {collections.map((collection) => (
+                                <Picker.Item
+                                    key={collection}
+                                    label={collection}
+                                    value={collection}
+                                />
+                            ))}
+                          </Picker>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.createCollectionButton}
+                            onPress={() => router.push('/tabFour')}
+                        >
+                          <Text style={styles.createCollectionText}>
+                            {t('buttons.createFirstCollection')}
+                          </Text>
+                        </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {collections.length > 0 && (
+                      <View style={styles.bookCountContainer}>
+                        <Ionicons name="book" size={20} color={colors.primary} />
+                        <Text style={styles.bookCountText}>
+                          {books[selectedCollection]?.length || 0} {t(getBookWord(books[selectedCollection]?.length || 0, i18n.language))}
+                        </Text>
+                      </View>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={handleSaveBook}
+                    disabled={isLoading}
+                >
+                  {isLoading ? (
+                      <ActivityIndicator color="white" />
+                  ) : (
+                      <View style={styles.saveButtonContent}>
+                        <Ionicons
+                            name={editMode ? "save-outline" : "add-circle-outline"}
+                            size={24}
+                            color="white"
+                            style={styles.saveButtonIcon}
+                        />
+                        <Text style={styles.saveButtonText}>
+                          {editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
+                        </Text>
+                      </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+          )}
         </View>
       </View>
   );
 
-  const renderSlide = (slide: typeof slides[0]) => {
-    switch (slide.id) {
-      case 'defects':
-        return (
-            <View style={styles.slideContent}>
-              <FlatList
-                  data={defects}
-                  renderItem={renderDefectItem}
-                  keyExtractor={item => item.id}
-                  numColumns={2}
-                  columnWrapperStyle={styles.columnWrapper}
-                  scrollEnabled={false}
-              />
-            </View>
-        );
-      case 'uniqueness':
-        return (
-            <View style={styles.slideContent}>
-              <FlatList
-                  data={UNIQUENESS_TYPES}
-                  renderItem={renderUniquenessItem}
-                  keyExtractor={item => item.id}
-                  numColumns={2}
-                  columnWrapperStyle={styles.columnWrapper}
-                  scrollEnabled={false}
-              />
-            </View>
-        );
-      case 'market':
-        return (
-            <View style={styles.slideContent}>
-              {marketData && (
-                  <>
-                    <MarketChart marketData={marketData} />
+  const handleSaveBook = () => {
+    const priceValue = finalPrice.toFixed(2);
+    const currentIsbn = editingIsbn ? isbnInput : isbn;
+    const currentTitle = editingTitle ? titleInput : title;
 
-                    <View style={styles.marketFactorsContainer}>
-                      <View style={styles.dataRow}>
-                        <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                        <Text style={styles.dataText}>
-                          {t('labels.publicationYear')}: {marketFactors.publicationYear}
-                        </Text>
-                      </View>
+    // Create default listing status with proper type
+    const defaultListingStatus: ListingStatus = {
+      status: 'notListed',
+      platforms: []
+    };
 
-                      <View style={styles.dataRow}>
-                        <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
-                        <Text style={styles.dataText}>
-                          {t('labels.demand')}: {t(`labels.${marketFactors.demand}`)}
-                        </Text>
-                      </View>
+    const bookData = {
+      isbn: currentIsbn,
+      title: currentTitle,
+      authors,
+      price: priceValue,
+      displayPrice: formatCurrency(priceValue),
+      foundInApi: params.fromHistory !== 'true',
+      originalPrice,
+      defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
+        ...acc,
+        [defect.id]: {
+          selected: true,
+          reduction: defect.priceReduction,
+          count: defect.count
+        }
+      }), {}),
+      rating: bookRating,
+      ageInfo,
+      uniqueness,
+      marketFactors,
+      listingStatus: editMode && collectionName && bookIndex !== null
+          ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
+          : defaultListingStatus
+    };
 
-                      <View style={styles.dataRow}>
-                        <Ionicons name="trending-down-outline" size={20} color={colors.primary} />
-                        <Text style={styles.dataText}>
-                          {t('labels.supply')}: {t(`labels.${marketFactors.supply}`)}
-                        </Text>
-                      </View>
-
-                      {marketData.priceRange && (
-                          <View style={styles.dataRow}>
-                            <Ionicons name="pricetag-outline" size={20} color={colors.primary} />
-                            <Text style={styles.dataText}>
-                              {t('labels.priceRange')}: {formatCurrency(marketData.priceRange[0].toString())} - {formatCurrency(marketData.priceRange[1].toString())}
-                            </Text>
-                          </View>
-                      )}
-
-                      <Text style={styles.source}>
-                        {t('labels.dataSource')}: {marketData.source}
-                      </Text>
-                    </View>
-                  </>
-              )}
-            </View>
-        );
-      case 'collection':
-        return (
-            <View style={styles.slideContent}>
-              <View style={styles.collectionRow}>
-                <View style={styles.collectionPickerContainer}>
-                  {collections.length > 0 ? (
-                      <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={selectedCollection}
-                            style={styles.picker}
-                            onValueChange={(itemValue) => setSelectedCollection(itemValue)}
-                            dropdownIconColor={colors.primary}
-                        >
-                          {collections.map((collection) => (
-                              <Picker.Item
-                                  key={collection}
-                                  label={collection}
-                                  value={collection}
-                              />
-                          ))}
-                        </Picker>
-                      </View>
-                  ) : (
-                      <TouchableOpacity
-                          style={styles.createCollectionButton}
-                          onPress={() => router.push('/tabFour')}
-                      >
-                        <Text style={styles.createCollectionText}>
-                          {t('buttons.createFirstCollection')}
-                        </Text>
-                      </TouchableOpacity>
-                  )}
-                </View>
-
-                {collections.length > 0 && (
-                    <View style={styles.bookCountContainer}>
-                      <Ionicons name="book" size={20} color={colors.primary} />
-                      <Text style={styles.bookCountText}>
-                        {getBookCount(selectedCollection)} {getBookWord(getBookCount(selectedCollection), i18n.language)}
-                      </Text>
-                    </View>
-                )}
-              </View>
-
-              <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={handleSaveBook}
-                  disabled={isLoading}
-              >
-                {isLoading ? (
-                    <ActivityIndicator color="white" />
-                ) : (
-                    <View style={styles.saveButtonContent}>
-                      <Ionicons
-                          name={editMode ? "save-outline" : "add-circle-outline"}
-                          size={24}
-                          color="white"
-                          style={styles.saveButtonIcon}
-                      />
-                      <Text style={styles.saveButtonText}>
-                        {editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
-                      </Text>
-                    </View>
-                )}
-              </TouchableOpacity>
-            </View>
-        );
-      default:
-        return null;
+    // Rest of the function remains the same
+    if (editMode && collectionName && bookIndex !== null) {
+      if (selectedCollection === collectionName) {
+        updateBookInCollection(collectionName, bookIndex, bookData);
+        Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
+        router.back();
+      } else {
+        const bookToMove = books[collectionName][bookIndex];
+        addBookToCollection(selectedCollection, {
+          ...bookData,
+          listingStatus: bookToMove.listingStatus || defaultListingStatus
+        });
+        removeBookFromCollection(collectionName, bookIndex);
+        Alert.alert(t('alerts.success'), t('alerts.bookMoved', {
+          oldCollection: collectionName,
+          newCollection: selectedCollection
+        }));
+        router.back();
+      }
+    } else {
+      if (!selectedCollection) {
+        Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
+        return;
+      }
+      addBookToCollection(selectedCollection, bookData);
+      Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`);
+      router.back();
     }
   };
 
@@ -1372,9 +1161,6 @@ export default function TabThreeScreen() {
 
   return (
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={[typography.h1, styles.header]}>
-        </Text>
-
         <View style={styles.ratingContainer}>
           <Text style={styles.ratingLabel}>{t('labels.bookCondition')}</Text>
           <View style={styles.ratingStars}>
@@ -1406,7 +1192,7 @@ export default function TabThreeScreen() {
                         value={titleInput}
                         onChangeText={setTitleInput}
                         autoFocus
-                        placeholder={title} // Pokazujemy oryginalny tytuł jako placeholder
+                        placeholder={title}
                     />
                     <TouchableOpacity
                         style={styles.saveTitleButton}
@@ -1419,12 +1205,12 @@ export default function TabThreeScreen() {
                   <TouchableOpacity
                       style={styles.titleDisplay}
                       onPress={() => {
-                        setTitleInput(title); // Ustawiamy początkową wartość edycji
+                        setTitleInput(title);
                         setEditingTitle(true);
                       }}
                   >
                     <Text style={typography.body} numberOfLines={1} ellipsizeMode="tail">
-                      {titleInput || title} {/* Wyświetlamy edytowany lub oryginalny tytuł */}
+                      {titleInput || title}
                     </Text>
                     <Ionicons
                         name="create"
@@ -1557,12 +1343,6 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     backgroundColor: '#f8f9fa',
   },
-  header: {
-    marginBottom: 4,
-    marginTop: responsive.largeMargin,
-    textAlign: 'left',
-    color: colors.black,
-  },
   ratingContainer: {
     backgroundColor: colors.white,
     borderRadius: 2,
@@ -1638,17 +1418,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.08)',
     marginVertical: 16,
   },
-  finalPriceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 2,
-    backgroundColor: 'rgba(74,108,247,0.08)',
-  },
-  priceIcon: {
-    marginRight: 10,
-  },
   startScanButton: {
     height: 50,
     justifyContent: 'center',
@@ -1676,12 +1445,6 @@ const styles = StyleSheet.create({
   },
   scanIcon: {
     marginRight: 10,
-  },
-  disabledSlideNavButton: {
-    opacity: 0.5,
-  },
-  disabledSlideNavText: {
-    color: colors.grayDark,
   },
   defectsGrid: {
     marginBottom: 16,
@@ -1748,12 +1511,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 0,
   },
-  slider: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 8,
-  },
   reductionText: {
     color: colors.primary,
     width: 40,
@@ -1771,12 +1528,6 @@ const styles = StyleSheet.create({
   dataText: {
     fontSize: 16,
     color: colors.black,
-  },
-  noteText: {
-    fontSize: 12,
-    color: colors.gray,
-    marginTop: 16,
-    fontStyle: 'italic',
   },
   collectionRow: {
     flexDirection: 'row',
@@ -2037,96 +1788,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
   },
-  slidesContainer: {
-    backgroundColor: 'white',
-    borderRadius: 2,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  slideContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    paddingHorizontal: 16,
-  },
-  slideHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  slideHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  slideIcon: {
-    marginRight: 12,
-  },
-  slideTitle: {
-    ...typography.h3,
-    color: colors.black,
-  },
-  slideContent: {
-    paddingBottom: 16,
-  },
-  slidesNavigation: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'white',
-    borderRadius: 2,
-    marginBottom: 0,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    borderBottomWidth: 0,
-    paddingHorizontal: 8,
-  },
-  slideNavButton: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 4,
-    position: 'relative',
-  },
-  activeSlideNavButton: {
-    // Brak zmiany tła - tylko podkreślenie
-  },
-  slideNavContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slideNavText: {
-    fontSize: 12,
-    color: colors.gray,
-    fontWeight: '500',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  activeSlideNavText: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  slideNavIcon: {
-    marginBottom: 2,
-  },
-  activeTabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 3,
-    width: '70%',
-    backgroundColor: colors.primary,
-    borderRadius: 2,
-  },
-  slide: {
-    width: viewportWidth - 32,
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    borderTopWidth: 0,
-  },
   tabSectionContainer: {
     backgroundColor: 'white',
     borderRadius: 2,
@@ -2141,16 +1802,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingHorizontal: 8,
     paddingTop: 8,
-    paddingBottom: 4, // dodajemy padding na dole
+    paddingBottom: 4,
   },
   tabContentWrapper: {
     padding: 16,
-    paddingTop: 12, // mniejszy padding u góry zawartości
+    paddingTop: 12,
   },
   tabButton: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 4, // dodajemy padding po bokach
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 4,
@@ -2173,24 +1834,7 @@ const styles = StyleSheet.create({
   tabIcon: {
     marginBottom: 2,
   },
-  tabContentContainer: {
-    backgroundColor: 'white',
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    borderTopWidth: 0, // usuwamy górną granicę
-    padding: 16,
-    paddingTop: 12, // mniejszy padding u góry zawartości
-  },
   activeTabButton: {
-  },
-  bookTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.black,
-    marginBottom: 8,
   },
   titleRow: {
     flexDirection: 'row',
@@ -2270,26 +1914,9 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   source: {
-  },
-  calculationTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: 12,
-  },
-  finalCalculationRow: {
-    borderTopWidth: 1,
-    borderTopColor: colors.grayDark,
-    paddingTop: 8,
+    fontSize: 12,
+    color: colors.gray,
     marginTop: 8,
-  },
-  finalCalculationLabel: {
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  finalCalculationValue: {
-    fontWeight: '600',
-    color: colors.primary,
   },
   calculationContainer: {
     borderRadius: 8,
@@ -2346,5 +1973,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.grayDark,
     fontStyle: 'italic',
+  },
+  slideContent: {
+    paddingBottom: 16,
   },
 });
