@@ -168,7 +168,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                             style={styles.carouselContent}
                         >
                             <MaterialIcons name="collections-bookmark" size={24} color={isSelected ? colors.primary : colors.grayDark} style={styles.collectionIcon} />
-                            <Text style={[styles.carouselCollectionName, isSelected && styles.selectedText]} numberOfLines={1}>{collection}</Text>
+                            <Text style={[styles.carouselCollectionName, isSelected && styles.selectedText]} numberOfLines={2}>{collection}</Text>
                             <Text style={[styles.carouselCollectionValue, isSelected && styles.selectedText]}>{formatCurrency(collectionTotal.toString())}</Text>
                             <Text style={[styles.carouselBookCount, isSelected && styles.selectedBadge]}>{bookCount} {getBookWord(bookCount, i18n.language)}</Text>
                         </TouchableOpacity>
@@ -1160,8 +1160,6 @@ const styles = StyleSheet.create({
     },
     previewBook: {
         padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray,
     },
     previewBookTitle: {
         fontWeight: '500',
@@ -1301,8 +1299,8 @@ const styles = StyleSheet.create({
     },
     carouselBookCount: {
         position: 'absolute',
-        top: -10,
-        right: -10,
+        top: -5,
+        right: -5,
         backgroundColor: colors.grayDark,
         color: colors.white,
         borderRadius: 12,
@@ -1749,8 +1747,6 @@ const styles = StyleSheet.create({
     carouselContainer: {
         height: 160,
         marginBottom: 0, // Usunięty margines dolny
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray,
         paddingBottom: 10,
     },
     carouselItem: {
@@ -1765,8 +1761,8 @@ const styles = StyleSheet.create({
     },
     carouselCollectionValue: {
         position: 'absolute', // Pozycjonowanie absolutne
-        top: 12, // Górny margines
-        left: 12, // Lewy margines
+        top: -5, // Górny margines
+        left: -5, // Lewy margines
         ...typography.body,
         fontWeight: '600',
     },
