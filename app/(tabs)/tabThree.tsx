@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -135,7 +135,7 @@ const UNIQUENESS_TYPES = [
   { id: 'isPublisherDefunct', icon: 'skull-outline', label: 'labels.defunctPublisher' }
 ] as const;
 
-const MarketChart = ({ marketData }: { marketData: MarketData | null }) => {
+const MarketChart = React.memo(({ marketData }: { marketData: MarketData | null }) => {
   const { t } = useTranslation();
   const chartWidth = viewportWidth - 64;
 
@@ -226,7 +226,7 @@ const MarketChart = ({ marketData }: { marketData: MarketData | null }) => {
         </ScrollView>
       </View>
   );
-};
+});
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -363,14 +363,16 @@ export default function TabThreeScreen() {
   ];
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadMarketData = async () => {
-      if (!originalPriceParam) return;
+      if (!originalPriceParam || !isMounted) return;
 
       setIsLoading(true);
       try {
         const amazonFactors = bookInfo?.amazonData?.data?.marketFactors;
 
-        if (amazonFactors) {
+        if (amazonFactors && isMounted) {
           setMarketFactors({
             demand: amazonFactors.demand,
             supply: amazonFactors.supply,
@@ -393,7 +395,7 @@ export default function TabThreeScreen() {
             source: 'amazon'
           };
           setMarketData(newMarketData);
-        } else {
+        } else if (isMounted) {
           const newSimulatedData: MarketData = {
             demand: 'high',
             supply: 'medium',
@@ -414,12 +416,18 @@ export default function TabThreeScreen() {
       } catch (error) {
         console.error('Error loading market data:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadMarketData();
-  }, [originalPriceParam, bookInfo]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [originalPriceParam]);
 
   useEffect(() => {
     if (editMode) {
@@ -443,7 +451,7 @@ export default function TabThreeScreen() {
       setMarketFactors(bookMarketFactors);
       setHasScanned(true);
     }
-  }, [editMode, params.defects, params.uniqueness, params.marketFactors]);
+  }, [editMode]);
 
   useEffect(() => {
     setOriginalPrice(originalPriceParam);
@@ -540,7 +548,7 @@ export default function TabThreeScreen() {
     return Math.max(-30, Math.min(30, totalModifier));
   };
 
-  const calculateFinalPrice = (): PriceCalculation => {
+  const priceCalculation = useMemo(() => {
     const basePrice = parseFloat(originalPrice) || 0;
     const defectsReduction = calculateDefectsReduction(defects);
     const priceAfterDefects = basePrice * (1 - defectsReduction / 100);
@@ -559,7 +567,19 @@ export default function TabThreeScreen() {
       marketModifier,
       finalPrice
     };
-  };
+  }, [originalPrice, defects, uniqueness, marketFactors, ageInfo, includedMarketFactors]);
+
+  const finalPrice = priceCalculation.finalPrice;
+
+  const bookRating = useMemo(() => {
+    const selectedDefects = defects.filter(d => d.selected);
+    if (selectedDefects.length === 0) return 10;
+
+    let ratingReduction = selectedDefects.length;
+    const countReduction = selectedDefects.reduce((sum, defect) => sum + Math.floor(defect.count / 5), 0);
+    const totalReduction = ratingReduction + countReduction;
+    return Math.max(1, 10 - totalReduction);
+  }, [defects]);
 
   const renderMarketFactorToggle = ({ item }: { item: MarketFactorToggle }) => (
       <TouchableOpacity
@@ -599,9 +619,6 @@ export default function TabThreeScreen() {
     return Math.max(1, 10 - totalReduction);
   };
 
-  const priceCalculation = calculateFinalPrice();
-  const finalPrice = priceCalculation.finalPrice;
-  const bookRating = calculateBookRating();
 
   const renderMarketFactorItem = ({ item }: { item: typeof MARKET_FACTOR_TYPES[number] }) => {
     if (item.id === 'publicationYear') {
@@ -822,15 +839,6 @@ export default function TabThreeScreen() {
                   {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
                 </Text>
               </View>
-              <View style={styles.calculationRow}>
-                <Text style={styles.calculationLabel}>
-                  {t('priceCalculation.marketModifier')} ({priceCalculation.marketModifier > 0 ? '+' : ''}{priceCalculation.marketModifier.toFixed(1)}%):
-                </Text>
-                <Text style={styles.calculationValue}>
-                  {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
-                </Text>
-              </View>
-
               <TouchableOpacity
                   style={styles.marketAnalysisLink}
                   onPress={() => setShowMarketModal(true)}
@@ -840,12 +848,6 @@ export default function TabThreeScreen() {
                 </Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.primary} />
               </TouchableOpacity>
-
-              <View style={styles.calculationSubRow}>
-                <Text style={styles.calculationSubText}>
-                  {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
-                </Text>
-              </View>
             </View>
         )}
       </View>
@@ -1584,7 +1586,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
-    paddingTop: 6,
+    paddingTop: 82,
     backgroundColor: '#f8f9fa',
   },
   ratingContainer: {
@@ -2136,7 +2138,7 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 2,
     padding: 12,
     marginBottom: 16,
     shadowColor: '#000',
@@ -2149,7 +2151,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 12,
     backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+    borderRadius: 2,
   },
   chartTitle: {
     fontSize: 16,
@@ -2312,7 +2314,7 @@ const styles = StyleSheet.create({
   marketModalContainer: {
     width: '90%',
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 2,
     padding: 20,
     maxHeight: '80%',
   },

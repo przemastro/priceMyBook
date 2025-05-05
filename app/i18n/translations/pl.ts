@@ -126,7 +126,10 @@ export default {
         dataSource: "Źródło danych",
         undefined: "Nieokreślony",
         age: "Wiek",
-        priceRange: "Przedział cenowy"
+        priceRange: "Przedział cenowy",
+        includePublicationYear: "Data wydania",
+        includeDemand: "Popyt",
+        includeSupply: "Podaż"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -174,6 +177,7 @@ export default {
         listed: 'Wystawione',
         sold: 'Sprzedane',
         manualEntry: 'Wpisz ISBN ręcznie',
+        showMarketAnalysis: "Analiza rynku"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',

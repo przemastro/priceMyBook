@@ -128,7 +128,10 @@ export default {
         dataSource: "Data Source",
         undefined: "Undefined",
         age: "Age",
-        priceRange: "Price Range"
+        priceRange: "Price Range",
+        includePublicationYear: "Publication Year",
+        includeDemand: "Demand",
+        includeSupply: "Supply"
     },
     titles: {
         scan: 'Scan ISBN',
@@ -175,7 +178,8 @@ export default {
         listModal: 'LIST',
         listed: 'Listed',
         sold: 'Sold',
-        manualEntry: 'Manually enter ISBN'
+        manualEntry: 'Manually enter ISBN',
+        showMarketAnalysis: "Market Analysis"
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
