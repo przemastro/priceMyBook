@@ -20,7 +20,9 @@ import {useRouter} from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import {useAppContext} from '@/context/AppContext';
-import {FlashList} from '@shopify/flash-list';
+import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
+import Carousel from 'react-native-reanimated-carousel';
+import { BlurView } from 'expo-blur';
 import i18n from "i18next";
 import { Linking } from 'react-native';
 
@@ -32,6 +34,18 @@ interface BookDefect {
     count: number;
 }
 
+interface CollectionCarouselProps {
+    collections: string[];
+    books: Record<string, BookData[]>;
+    selectedCollection: string | null;
+    onSelectCollection: (collection: string) => void;
+    calculateCollectionTotal: (collection: string) => number;
+    onEditCollection: (collection: string, newName: string) => Promise<void>;
+    onDeleteCollection: (collection: string) => void;
+    onExportCollection: (collection: string) => void;
+    getBookWord: (count: number, language: string) => string;
+    formatCurrency: (value: string) => string;
+}
 interface BookUniqueness {
     isMassMarket: boolean;
     isFirstEdition: boolean;
@@ -78,6 +92,230 @@ interface BookData {
     listingStatus?: ListingStatus;
 }
 
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const PAGE_WIDTH = Dimensions.get('window').width / 2;
+const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
+
+const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
+                                                                   collections,
+                                                                   books,
+                                                                   selectedCollection,
+                                                                   onSelectCollection,
+                                                                   calculateCollectionTotal,
+                                                                   onEditCollection,
+                                                                   onDeleteCollection,
+                                                                   onExportCollection,
+                                                                   getBookWord,
+                                                                   formatCurrency
+                                                               }) => {
+    const { i18n } = useTranslation();
+    const [editingCollection, setEditingCollection] = useState<string | null>(null);
+    const [newCollectionName, setNewCollectionName] = useState('');
+
+    const handleSaveEdit = async (collection: string) => {
+        if (newCollectionName.trim() && newCollectionName.trim() !== collection) {
+            await onEditCollection(collection, newCollectionName.trim());
+        }
+        setEditingCollection(null);
+        setNewCollectionName('');
+    };
+    const CustomItem = ({
+                            index,
+                            animationValue,
+                        }: {
+        index: number;
+        animationValue: Animated.SharedValue<number>;
+    }) => {
+        const collection = collections[index];
+        const bookCount = books[collection]?.length || 0;
+        const collectionTotal = calculateCollectionTotal(collection);
+        const isSelected = selectedCollection === collection;
+        const isEditing = editingCollection === collection;
+
+        const maskStyle = useAnimatedStyle(() => {
+            const opacity = interpolate(animationValue.value, [-1, 0, 1], [1, 0, 1]);
+            return { opacity };
+        }, [animationValue]);
+
+        const animatedStyle = useAnimatedStyle(() => {
+            const scale = interpolate(animationValue.value, [-1, 0, 1], [0.8, 1, 0.8]);
+            return { transform: [{ scale }] };
+        });
+
+        return (
+            <View style={{ flex: 1, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}>
+                <Animated.View style={[styles.carouselItem, isSelected && styles.selectedCarouselItem, !isSelected && styles.unselectedCarouselItem, animatedStyle]}>
+                    {isEditing ? (
+                        <View style={styles.editContainer}>
+                            <TextInput
+                                style={styles.editInput}
+                                value={newCollectionName}
+                                onChangeText={setNewCollectionName}
+                                autoFocus
+                                defaultValue={collection}
+                                onSubmitEditing={() => handleSaveEdit(collection)}
+                            />
+                            <TouchableOpacity
+                                style={styles.saveEditButton}
+                                onPress={() => handleSaveEdit(collection)}
+                            >
+                                <Ionicons name="checkmark" size={20} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={() => onSelectCollection(collection)}
+                            style={styles.carouselContent}
+                        >
+                            <MaterialIcons name="collections-bookmark" size={24} color={isSelected ? colors.primary : colors.grayDark} style={styles.collectionIcon} />
+                            <Text style={[styles.carouselCollectionName, isSelected && styles.selectedText]} numberOfLines={1}>{collection}</Text>
+                            <Text style={[styles.carouselCollectionValue, isSelected && styles.selectedText]}>{formatCurrency(collectionTotal.toString())}</Text>
+                            <Text style={[styles.carouselBookCount, isSelected && styles.selectedBadge]}>{bookCount} {getBookWord(bookCount, i18n.language)}</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {!isEditing && (
+                        <View style={styles.carouselActions}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setEditingCollection(collection);
+                                    setNewCollectionName(collection);
+                                }}
+                                style={styles.carouselActionButton}
+                            >
+                                <Ionicons name="create" size={16} color={colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => onExportCollection(collection)} style={styles.carouselActionButton}>
+                                <FontAwesome name="file-excel-o" size={16} color={colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => onDeleteCollection(collection)} style={styles.carouselActionButton}>
+                                <FontAwesome name="trash" size={16} color={colors.error} />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </Animated.View>
+                <AnimatedBlurView intensity={50} pointerEvents="none" style={[StyleSheet.absoluteFill, maskStyle]} />
+            </View>
+        );
+    };
+
+    return (
+        <View style={styles.carouselContainer}>
+            <Carousel
+                {...({
+                    panGestureHandlerProps: { activeOffsetX: [-150, 150] }
+                } as any)}
+                loop={false}
+                style={styles.carousel}
+                width={PAGE_WIDTH}
+                height={180}
+                data={collections}
+                onSnapToItem={(index) => onSelectCollection(collections[index])}
+                renderItem={({ index, animationValue }) => <CustomItem index={index} animationValue={animationValue} />}
+                scrollAnimationDuration={800}
+            />
+        </View>
+    );
+};
+
+const BooksCarousel: React.FC<{
+    books: BookData[];
+    collectionName: string;
+    onEditBook: (bookIndex: number) => void;
+    onDeleteBook: (bookIndex: number) => void;
+    onListBook: (bookIndex: number) => void;
+    formatDefectsSummary: (defects: Record<string, BookDefect> | undefined) => string;
+    formatUniquenessSummary: (uniqueness: BookUniqueness | undefined) => string;
+    formatMarketFactorsSummary: (marketFactors: MarketFactors | undefined) => string;
+    formatListingStatus: (status?: ListingStatus) => string;
+}> = ({ books, collectionName, onEditBook, onDeleteBook, onListBook, formatDefectsSummary, formatUniquenessSummary, formatMarketFactorsSummary, formatListingStatus }) => {
+    const { t } = useTranslation();
+
+    const renderListingButton = (bookIndex: number) => {
+        const book = books[bookIndex];
+        const listingStatus = book.listingStatus || { status: 'notListed', platforms: [] };
+        const buttonConfig = {
+            notListed: { icon: 'upload', color: colors.primary, text: t('buttons.list'), bgColor: 'rgba(74, 108, 247, 0.1)' },
+            listed: { icon: 'check', color: colors.success, text: t('listingStatus.listed', { platforms: listingStatus.platforms?.map(p => t(`platforms.${p}`)).join(', ') || '' }), bgColor: 'rgba(76, 175, 80, 0.1)' },
+            sold: { icon: 'check-double', color: colors.grayDark, text: t('buttons.sold'), bgColor: 'rgba(158, 158, 158, 0.1)' }
+        };
+        const {icon, color, text, bgColor} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
+        return (
+            <View style={styles.listingButtonContainer}>
+                <TouchableOpacity style={[styles.iconContainer, { backgroundColor: bgColor, borderColor: color, marginLeft: 32 }]} onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}>
+                    <FontAwesome5 name={icon} size={20} color={color}/>
+                </TouchableOpacity>
+                <Text style={[styles.listingButtonText]} numberOfLines={2} ellipsizeMode="tail">{text}</Text>
+            </View>
+        );
+    };
+
+    const BookItem = ({
+                          index,
+                          animationValue,
+                      }: {
+        index: number;
+        animationValue: Animated.SharedValue<number>;
+    }) => {
+        const book = books[index];
+        const animatedStyle = useAnimatedStyle(() => {
+            const scale = interpolate(animationValue.value, [-1, 0, 1], [0.9, 1, 0.9]);
+            return { transform: [{ scale }] };
+        });
+
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Animated.View style={[styles.bookCard, animatedStyle]}>
+                    <View style={styles.bookCardHeader}>
+                        <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
+                        <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                    </View>
+
+                    <View style={styles.bookCardContent}>
+                        <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
+                        <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
+                        <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+
+                        <View style={styles.bookCardDetails}>
+                            <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
+                            {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
+                            {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
+                            {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
+                        </View>
+                    </View>
+
+                    <View style={styles.bookCardFooter}>
+                        {renderListingButton(index)}
+                        <View style={styles.bookCardActions}>
+                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onEditBook(index); }} style={styles.editButton}>
+                                <Ionicons name="create" size={18} color={colors.primary}/>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onDeleteBook(index); }} style={styles.deleteButton}>
+                                <FontAwesome name="trash" size={18} color={colors.error}/>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Animated.View>
+            </View>
+        );
+    };
+
+    return (
+        <View style={styles.booksCarouselContainer}>
+            <Text style={styles.booksCarouselTitle}></Text>
+            <Carousel
+                loop={false}
+                style={styles.booksCarousel}
+                width={BOOK_CARD_WIDTH}
+                height={400}
+                data={books}
+                renderItem={({ index, animationValue }) => <BookItem index={index} animationValue={animationValue} />}
+                scrollAnimationDuration={800}
+            />
+        </View>
+    );
+};
+
 export default function TabFourScreen() {
     const router = useRouter();
     const {t} = useTranslation();
@@ -109,20 +347,14 @@ export default function TabFourScreen() {
         removeCollection,
         addBooksToCollection,
         removeBookFromCollection,
-        formatCurrency,
         renameCollection,
         updateBooksInCollection,
     } = useAppContext();
 
     const toggleBookExpansion = (collectionName: string, bookIndex: number) => {
         if (!books[collectionName]) return;
-
         const updatedBooks = [...books[collectionName]];
-        updatedBooks[bookIndex] = {
-            ...updatedBooks[bookIndex],
-            isExpanded: !updatedBooks[bookIndex].isExpanded
-        };
-
+        updatedBooks[bookIndex] = {...updatedBooks[bookIndex], isExpanded: !updatedBooks[bookIndex].isExpanded};
         updateBooksInCollection(collectionName, updatedBooks);
     };
 
@@ -146,19 +378,9 @@ export default function TabFourScreen() {
         isPublisherDefunct: false
     };
 
-    const defaultMarketFactors: MarketFactors = {
-        demand: 'medium',
-        supply: 'medium'
-    };
-
-    const defaultAgeInfo: BookAgeInfo = {
-        years: 0
-    };
-
-    const defaultListingStatus: ListingStatus = {
-        status: 'notListed',
-        platforms: []
-    };
+    const defaultMarketFactors: MarketFactors = { demand: 'medium', supply: 'medium' };
+    const defaultAgeInfo: BookAgeInfo = { years: 0 };
+    const defaultListingStatus: ListingStatus = { status: 'notListed', platforms: [] };
 
     const handleAddCollection = () => {
         if (!collectionName.trim()) return;
@@ -167,160 +389,120 @@ export default function TabFourScreen() {
         setShowAddModal(false);
     };
 
+    const formatCurrency = (value: string): string => {
+        try {
+            const number = parseFloat(value);
+            if (isNaN(number)) return value;
+
+            return new Intl.NumberFormat(i18n.language, {
+                style: 'currency',
+                currency: 'PLN',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(number);
+        } catch (error) {
+            console.error('Error formatting currency:', error);
+            return value;
+        }
+    };
     const handleRenameCollection = () => {
         if (!currentlyEditedCollection || !newCollectionNameInput.trim()) return;
-
         if (newCollectionNameInput.trim() === currentlyEditedCollection) {
             setEditingCollectionName(false);
             return;
         }
-
         renameCollection(currentlyEditedCollection, newCollectionNameInput.trim());
-
         if (selectedCollection === currentlyEditedCollection) {
             setSelectedCollection(newCollectionNameInput.trim());
         }
-
         setEditingCollectionName(false);
         setCurrentlyEditedCollection(null);
     };
 
+    const handleEditCollection = async (oldName: string, newName: string) => {
+        if (newName.trim() && newName.trim() !== oldName) {
+            try {
+                await renameCollection(oldName, newName.trim());
+                if (selectedCollection === oldName) {
+                    setSelectedCollection(newName.trim());
+                }
+            } catch (error) {
+                Alert.alert(t('alerts.error'), t('alerts.renameError'));
+            }
+        }
+    };
     const handleEditCollectionName = (collectionName: string) => {
         setEditingCollectionName(true);
         setNewCollectionNameInput(collectionName);
         setCurrentlyEditedCollection(collectionName);
     };
 
-        const handleImportCollection = async () => {
-            try {
-                setIsImporting(true);
-                const result = await DocumentPicker.getDocumentAsync({
-                    type: 'text/csv',
-                    copyToCacheDirectory: true,
-                });
-
-                if (result.canceled || !result.assets?.[0]) {
-                    setIsImporting(false);
-                    return;
-                }
-
-                const file = result.assets[0];
-                const csvContent = await FileSystem.readAsStringAsync(file.uri);
-
-                const parseResult = await new Promise<any[]>((resolve) => {
-                    Papa.parse(csvContent, {
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: (results) => resolve(results.data)
-                    });
-                });
-
-                const importedBooks = parseResult
-                    .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
-                    .map(book => {
-                        let defects = {};
-                        try {
-                            if (book.Defects) defects = JSON.parse(book.Defects);
-                        } catch (e) {
-                            console.error('Error parsing defects:', e);
-                        }
-
-                        let uniqueness = defaultUniqueness;
-                        try {
-                            if (book.Uniqueness) uniqueness = JSON.parse(book.Uniqueness);
-                            console.log('book uniqueness', book['Uniqueness'])
-                        } catch (e) {
-                            console.error('Error parsing uniqueness:', e);
-                        }
-
-                        let marketFactors = defaultMarketFactors;
-                        try {
-                            if (book['Market Factors']) marketFactors = JSON.parse(book['Market Factors']);
-                        } catch (e) {
-                            console.error('Error parsing market factors:', e);
-                        }
-
-                        let ageInfo = defaultAgeInfo;
-                        try {
-                            if (book['Age Info']) ageInfo = JSON.parse(book['Age Info']);
-                        } catch (e) {
-                            console.error('Error parsing age info:', e);
-                        }
-
-
-                        // Logowanie surowego statusu
-                        console.log('Raw Listing Status:', book.listingStatus);
-                        console.log('Type of Listing Status:', typeof book.listingStatus);
-                        let listingStatus = defaultListingStatus;
-                        console.log('default listing status:', listingStatus);
-                        try {
-                            if (book['Listing Status']) {
-                                const parsed = JSON.parse(book['Listing Status']);
-                                console.log('Parsed listing status:', parsed); // Dodaj to
-                                listingStatus = {
-                                    status: ['notListed', 'listed', 'sold'].includes(parsed.status)
-                                        ? parsed.status
-                                        : 'notListed',
-                                    platforms: Array.isArray(parsed.platforms)
-                                        ? parsed.platforms.filter((p: string) =>
-                                            ['amazon', 'allegro', 'olx'].includes(p))
-                                        : [],
-                                    listedDate: parsed.listedDate,
-                                    soldDate: parsed.soldDate
-                                };
-                                console.log('Processed listing status:', listingStatus); // Dodaj to
-                            }
-                        } catch (e) {
-                            console.error('Error parsing listing status:', e);
-                        }
-
-                        return {
-                            title: book.Title.trim(),
-                            authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
-                            isbn: book.ISBN.trim(),
-                            price: book['Price (PLN)'].trim(),
-                            displayPrice: `${book['Price (PLN)']} PLN`,
-                            foundInApi: book['Found in API'] === 'Yes',
-                            originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
-                            defects,
-                            rating: parseInt(book['Condition Rating'] || '10'),
-                            uniqueness,
-                            marketFactors,
-                            ageInfo,
-                            listingStatus
-                        };
-                    });
-
-                setValidBooks(importedBooks);
-                setImportPreview({
-                    collectionName: file.name.replace('.csv', '').slice(0, 30),
-                    books: importedBooks,
-                    showPreview: true
-                });
-
-            } catch (error) {
-                Alert.alert(t('alerts.error'), t('alerts.importError'));
-                console.error('Import failed:', error);
-            } finally {
+    const handleImportCollection = async () => {
+        try {
+            setIsImporting(true);
+            const result = await DocumentPicker.getDocumentAsync({ type: 'text/csv', copyToCacheDirectory: true });
+            if (result.canceled || !result.assets?.[0]) {
                 setIsImporting(false);
+                return;
             }
-        };
+            const file = result.assets[0];
+            const csvContent = await FileSystem.readAsStringAsync(file.uri);
+            const parseResult = await new Promise<any[]>((resolve) => {
+                Papa.parse(csvContent, { header: true, skipEmptyLines: true, complete: (results) => resolve(results.data) });
+            });
+            const importedBooks = parseResult.filter(book => book.Title && book.ISBN && book['Price (PLN)']).map(book => {
+                let defects = {};
+                try { if (book.Defects) defects = JSON.parse(book.Defects); } catch (e) { console.error('Error parsing defects:', e); }
+                let uniqueness = defaultUniqueness;
+                try { if (book.Uniqueness) uniqueness = JSON.parse(book.Uniqueness); } catch (e) { console.error('Error parsing uniqueness:', e); }
+                let marketFactors = defaultMarketFactors;
+                try { if (book['Market Factors']) marketFactors = JSON.parse(book['Market Factors']); } catch (e) { console.error('Error parsing market factors:', e); }
+                let ageInfo = defaultAgeInfo;
+                try { if (book['Age Info']) ageInfo = JSON.parse(book['Age Info']); } catch (e) { console.error('Error parsing age info:', e); }
+                let listingStatus = defaultListingStatus;
+                try {
+                    if (book['Listing Status']) {
+                        const parsed = JSON.parse(book['Listing Status']);
+                        listingStatus = {
+                            status: ['notListed', 'listed', 'sold'].includes(parsed.status) ? parsed.status : 'notListed',
+                            platforms: Array.isArray(parsed.platforms) ? parsed.platforms.filter((p: string) => ['amazon', 'allegro', 'olx'].includes(p)) : [],
+                            listedDate: parsed.listedDate,
+                            soldDate: parsed.soldDate
+                        };
+                    }
+                } catch (e) { console.error('Error parsing listing status:', e); }
+                return {
+                    title: book.Title.trim(),
+                    authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
+                    isbn: book.ISBN.trim(),
+                    price: book['Price (PLN)'].trim(),
+                    displayPrice: `${book['Price (PLN)']} PLN`,
+                    foundInApi: book['Found in API'] === 'Yes',
+                    originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
+                    defects,
+                    rating: parseInt(book['Condition Rating'] || '10'),
+                    uniqueness,
+                    marketFactors,
+                    ageInfo,
+                    listingStatus
+                };
+            });
+            setValidBooks(importedBooks);
+            setImportPreview({ collectionName: file.name.replace('.csv', '').slice(0, 30), books: importedBooks, showPreview: true });
+        } catch (error) {
+            Alert.alert(t('alerts.error'), t('alerts.importError'));
+            console.error('Import failed:', error);
+        } finally {
+            setIsImporting(false);
+        }
+    };
 
     const confirmImport = async () => {
         if (!importPreview) return;
-
         try {
             addCollection(importPreview.collectionName);
             await addBooksToCollection(importPreview.collectionName, validBooks);
-
-            Alert.alert(
-                t('alerts.success'),
-                t('status.importSuccess', {
-                    count: importPreview.books.length,
-                    name: importPreview.collectionName
-                })
-            );
-
+            Alert.alert(t('alerts.success'), t('status.importSuccess', { count: importPreview.books.length, name: importPreview.collectionName }));
             setImportPreview(null);
             setValidBooks([]);
         } catch (error) {
@@ -336,38 +518,23 @@ export default function TabFourScreen() {
 
     const handleDeleteCollection = (collectionName: string) => {
         const bookCount = books[collectionName]?.length || 0;
-
-        Alert.alert(
-            t('alerts.confirmDeleteTitle'),
-            bookCount > 0
-                ? t('alerts.confirmDeleteMessage', {
-                    collectionName: collectionName,
-                    bookCount: bookCount
-                })
-                : t('alerts.confirmEmptyDeleteMessage', {collectionName: collectionName}),
-            [
-                {
-                    text: t('buttons.cancel'),
-                    style: 'cancel',
+        Alert.alert(t('alerts.confirmDeleteTitle'), bookCount > 0 ?
+            t('alerts.confirmDeleteMessage', { collectionName, bookCount }) :
+            t('alerts.confirmEmptyDeleteMessage', { collectionName }), [
+            { text: t('buttons.cancel'), style: 'cancel' },
+            {
+                text: t('buttons.confirm'),
+                onPress: () => {
+                    removeCollection(collectionName);
+                    if (selectedCollection === collectionName) setSelectedCollection(null);
                 },
-                {
-                    text: t('buttons.confirm'),
-                    onPress: () => {
-                        removeCollection(collectionName);
-                        if (selectedCollection === collectionName) {
-                            setSelectedCollection(null);
-                        }
-                    },
-                    style: 'destructive',
-                },
-            ],
-            {cancelable: true}
-        );
+                style: 'destructive'
+            },
+        ], { cancelable: true });
     };
 
     const handleExportCSV = async (collectionName: string) => {
         const booksToExport = books[collectionName] || [];
-
         let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Condition Rating,Found in API,Defects,Uniqueness,Market Factors,Age Info,Listing Status\n";
 
         booksToExport.forEach(book => {
@@ -375,8 +542,6 @@ export default function TabFourScreen() {
             const uniquenessString = JSON.stringify(book.uniqueness || defaultUniqueness);
             const marketFactorsString = JSON.stringify(book.marketFactors || defaultMarketFactors);
             const ageInfoString = JSON.stringify(book.ageInfo || defaultAgeInfo);
-
-            // Ensure listing status has proper structure
             const listingStatus = book.listingStatus || defaultListingStatus;
             const listingStatusString = JSON.stringify({
                 status: listingStatus.status || 'notListed',
@@ -385,56 +550,26 @@ export default function TabFourScreen() {
                 soldDate: listingStatus.soldDate
             });
 
-            csvContent += `"${book.title.replace(/"/g, '""')}",` +
-                `"${book.authors.replace(/"/g, '""')}",` +
-                `${book.isbn},` +
-                `${book.originalPrice},` +
-                `${book.price},` +
-                `${book.rating},` +
-                `${book.foundInApi ? 'Yes' : 'No'},` +
-                `"${defectsString.replace(/"/g, '""')}",` +
-                `"${uniquenessString.replace(/"/g, '""')}",` +
-                `"${marketFactorsString.replace(/"/g, '""')}",` +
-                `"${ageInfoString.replace(/"/g, '""')}",` +
-                `"${listingStatusString.replace(/"/g, '""')}"\n`;
+            csvContent += `"${book.title.replace(/"/g, '""')}","${book.authors.replace(/"/g, '""')}",${book.isbn},${book.originalPrice},${book.price},${book.rating},${book.foundInApi ? 'Yes' : 'No'},"${defectsString.replace(/"/g, '""')}","${uniquenessString.replace(/"/g, '""')}","${marketFactorsString.replace(/"/g, '""')}","${ageInfoString.replace(/"/g, '""')}","${listingStatusString.replace(/"/g, '""')}"\n`;
         });
 
         try {
             const fileUri = FileSystem.cacheDirectory + `${collectionName}.csv`;
             await FileSystem.writeAsStringAsync(fileUri, csvContent);
-
             if (!(await Sharing.isAvailableAsync())) {
                 Alert.alert(t('alerts.error'), t('alerts.sharingNotAvailable'));
                 return;
             }
-
             await Sharing.shareAsync(fileUri, {
                 mimeType: 'text/csv',
-                dialogTitle: t('alerts.exportTitle', {collectionName}),
+                dialogTitle: t('alerts.exportTitle', { collectionName })
             });
         } catch (error) {
             Alert.alert(t('alerts.error'), t('alerts.exportError'));
         }
     };
 
-    const carouselRef = React.useRef<FlashList<string>>(null);
-    const [scrollEnabled, setScrollEnabled] = React.useState(true);
-
-    const scrollToItem = (index: number) => {
-        setScrollEnabled(false);
-        carouselRef.current?.scrollToIndex({
-            index,
-            animated: true,
-            viewPosition: 0.5
-        });
-        setTimeout(() => setScrollEnabled(true), 500);
-    };
-
     const toggleCollection = (collection: string) => {
-        const index = collections.indexOf(collection);
-        if (index !== -1) {
-            scrollToItem(index);
-        }
         setSelectedCollection(prev => prev === collection ? null : collection);
     };
 
@@ -461,61 +596,41 @@ export default function TabFourScreen() {
     };
 
     const calculateCollectionTotal = (collection: string) => {
-        return (books[collection] || []).reduce(
-            (sum, book) => sum + parseFloat(book.price || '0'),
-            0
-        );
+        return (books[collection] || []).reduce((sum, book) => sum + parseFloat(book.price || '0'), 0);
     };
 
     const calculateTotalValue = () => {
-        return collections.reduce(
-            (total, collection) => total + calculateCollectionTotal(collection),
-            0
-        );
+        return collections.reduce((total, collection) => total + calculateCollectionTotal(collection), 0);
     };
 
     const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined) => {
         if (!defects) return t('labels.noDefects');
-
-        const defectList = Object.keys(defects)
-            .filter(key => defects[key].selected)
-            .map(key => `${t(`defects.${key}`)} (${defects[key].count}x)`);
-
-        return defectList.length > 0
-            ? defectList.join(', ')
-            : t('labels.noDefects');
+        const defectList = Object.keys(defects).filter(key => defects[key].selected).map(key => `${t(`defects.${key}`)} (${defects[key].count}x)`);
+        return defectList.length > 0 ? defectList.join(', ') : t('labels.noDefects');
     };
 
     const formatUniquenessSummary = (uniqueness: BookUniqueness | undefined) => {
         if (!uniqueness) return t('labels.standardEdition');
-
         const uniqueFeatures = [];
         if (uniqueness.isFirstEdition) uniqueFeatures.push(t('labels.firstEdition'));
         if (uniqueness.isCollectorsEdition) uniqueFeatures.push(t('labels.collectorsEdition'));
         if (uniqueness.hasAuthorSignature) uniqueFeatures.push(t('labels.authorSignature'));
         if (uniqueness.isLimitedEdition) uniqueFeatures.push(t('labels.limitedEdition'));
         if (uniqueness.isPublisherDefunct) uniqueFeatures.push(t('labels.defunctPublisher'));
-
-        return uniqueFeatures.length > 0
-            ? uniqueFeatures.join(', ')
-            : t('labels.standardEdition');
+        return uniqueFeatures.length > 0 ? uniqueFeatures.join(', ') : t('labels.standardEdition');
     };
 
     const formatMarketFactorsSummary = (marketFactors: MarketFactors | undefined) => {
         if (!marketFactors) return '';
-
         return `${t(`labels.${marketFactors.demand}`)} ${t('labels.demand')}, ${t(`labels.${marketFactors.supply}`)} ${t('labels.supply')}`;
     };
 
     const formatListingStatus = (status?: ListingStatus): string => {
         if (!status) return t('listingStatus.notListed', 'Not listed');
-
         switch (status.status) {
             case 'listed':
                 return t('listingStatus.listed', 'Listed on {{platforms}}', {
-                    platforms: (status.platforms || [])
-                        .map(p => t(`platforms.${p}`, p)) // Dodaj domyślne wartości
-                        .join(', ')
+                    platforms: (status.platforms || []).map(p => t(`platforms.${p}`, p)).join(', ')
                 });
             case 'sold':
                 return t('listingStatus.sold', 'Sold');
@@ -527,7 +642,6 @@ export default function TabFourScreen() {
     const handleListBook = (collection: string, index: number) => {
         const book = books[collection][index];
         setCurrentListingBook({collection, index});
-
         if (book.listingStatus?.status === 'notListed') {
             setSelectedPlatforms([]);
             setShowListingModal(true);
@@ -540,116 +654,41 @@ export default function TabFourScreen() {
 
     const confirmListing = () => {
         if (!currentListingBook || selectedPlatforms.length === 0) return;
-
         const { collection, index } = currentListingBook;
         const book = books[collection][index];
-
-        // 1. Otwórz platformy w przeglądarce
         selectedPlatforms.forEach(platform => {
             let url = '';
             switch (platform) {
-                case 'amazon':
-                    url = `https://sellercentral.amazon.com/listing/create?title=${encodeURIComponent(book.title)}`;
-                    break;
-                case 'allegro':
-                    url = `https://allegro.pl/myaccount/offer/new?title=${encodeURIComponent(book.title)}`;
-                    break;
-                case 'olx':
-                    url = `https://www.olx.pl/dodaj-ogloszenie/?query=${encodeURIComponent(book.title)}`;
-                    break;
+                case 'amazon': url = `https://sellercentral.amazon.com/listing/create?title=${encodeURIComponent(book.title)}`; break;
+                case 'allegro': url = `https://allegro.pl/myaccount/offer/new?title=${encodeURIComponent(book.title)}`; break;
+                case 'olx': url = `https://www.olx.pl/dodaj-ogloszenie/?query=${encodeURIComponent(book.title)}`; break;
             }
             Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
         });
-
-        // 2. Zaktualizuj status książki
         const updatedBooks = [...books[collection]];
-        updatedBooks[index] = {
-            ...updatedBooks[index],
-            listingStatus: {
-                status: 'listed',
-                platforms: selectedPlatforms,
-                listedDate: new Date().toISOString()
-            }
-        };
-
+        updatedBooks[index] = {...updatedBooks[index], listingStatus: { status: 'listed', platforms: selectedPlatforms, listedDate: new Date().toISOString() }};
         updateBooksInCollection(collection, updatedBooks);
         setShowListingModal(false);
         setCurrentListingBook(null);
         setSelectedPlatforms([]);
-
         Alert.alert(t('alerts.success'), t('status.listedRedirect'));
     };
 
     const changeListingStatus = (newStatus: 'notListed' | 'listed' | 'sold') => {
         if (!currentListingBook) return;
-
         const {collection, index} = currentListingBook;
         const updatedBooks = [...books[collection]];
         const currentListingStatus = updatedBooks[index].listingStatus || defaultListingStatus;
-
-        updatedBooks[index] = {
-            ...updatedBooks[index],
-            listingStatus: {
-                ...currentListingStatus,
-                status: newStatus,
-                ...(newStatus === 'sold' ? {soldDate: new Date().toISOString()} : {})
-            }
-        };
-
+        updatedBooks[index] = {...updatedBooks[index], listingStatus: {...currentListingStatus, status: newStatus, ...(newStatus === 'sold' ? {soldDate: new Date().toISOString()} : {})}};
         updateBooksInCollection(collection, updatedBooks);
         setShowStatusChangeModal(false);
         setCurrentListingBook(null);
     };
 
     const togglePlatform = (platform: 'amazon' | 'allegro' | 'olx') => {
-        setSelectedPlatforms(prev =>
-            prev.includes(platform)
-                ? prev.filter(p => p !== platform)
-                : [...prev, platform]
-        );
+        setSelectedPlatforms(prev => prev.includes(platform) ? prev.filter(p => p !== platform) : [...prev, platform]);
     };
 
-    const renderCarouselItem = ({item, index}: { item: string; index: number }) => {
-        const bookCount = books[item]?.length || 0;
-        const collectionTotal = calculateCollectionTotal(item);
-        const isSelected = selectedCollection === item;
-
-        return (
-            <TouchableOpacity
-                style={[
-                    styles.carouselItem,
-                    isSelected && styles.selectedCarouselItem,
-                    !isSelected && styles.unselectedCarouselItem
-                ]}
-                onPress={() => toggleCollection(item)}
-                activeOpacity={0.8}
-                key={item}
-            >
-                <View style={styles.carouselContent}>
-                    <Text style={[
-                        styles.carouselCollectionName,
-                        isSelected && styles.selectedText
-                    ]} numberOfLines={1}>
-                        {item}
-                    </Text>
-                    <Text style={[
-                        styles.carouselCollectionValue,
-                        isSelected && styles.selectedText
-                    ]}>
-                        {formatCurrency(collectionTotal.toString())}
-                    </Text>
-                    <Text style={[
-                        styles.carouselBookCount,
-                        isSelected && styles.selectedBadge
-                    ]}>
-                        {bookCount} {getBookWord(bookCount, i18n.language)}
-                    </Text>
-                </View>
-            </TouchableOpacity>
-        );
-    };
-
-    // W sekcji z innymi funkcjami pomocniczymi
     const calculateActiveValue = () => {
         return collections.reduce((total, collection) => {
             return total + (books[collection] || []).reduce((sum, book) => {
@@ -668,57 +707,25 @@ export default function TabFourScreen() {
         }, 0);
     };
 
-    React.useEffect(() => {
-        if (collections.length > 0 && selectedCollection) {
-            const index = collections.indexOf(selectedCollection);
-            if (index !== -1) {
-                setTimeout(() => scrollToItem(index), 100);
-            }
-        }
-    }, [collections, selectedCollection]);
-
     const AddCollectionModal = () => {
         const [localCollectionName, setLocalCollectionName] = useState('');
-
         const handleConfirm = () => {
             if (!localCollectionName.trim()) return;
             addCollection(localCollectionName);
             setLocalCollectionName('');
             setShowAddModal(false);
         };
-
         return (
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={showAddModal}
-                onRequestClose={() => setShowAddModal(false)}
-            >
+            <Modal animationType="fade" transparent={true} visible={showAddModal} onRequestClose={() => setShowAddModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>{t('labels.addNewCollection')}</Text>
-                        <TextInput
-                            style={styles.modalInput}
-                            placeholder={t('placeholders.enterCollectionName')}
-                            placeholderTextColor="#888"
-                            value={localCollectionName}
-                            onChangeText={setLocalCollectionName}
-                            autoFocus
-                            onSubmitEditing={handleConfirm}
-                            returnKeyType="done"
-                        />
+                        <TextInput style={styles.modalInput} placeholder={t('placeholders.enterCollectionName')} placeholderTextColor="#888" value={localCollectionName} onChangeText={setLocalCollectionName} autoFocus onSubmitEditing={handleConfirm} returnKeyType="done" />
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setShowAddModal(false)}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowAddModal(false)}>
                                 <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={handleConfirm}
-                                disabled={!localCollectionName.trim()}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={handleConfirm} disabled={!localCollectionName.trim()}>
                                 <Text style={styles.confirmButtonText}>{t('buttons.add')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -730,37 +737,16 @@ export default function TabFourScreen() {
 
     const EditCollectionModal = () => {
         return (
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={showEditModal}
-                onRequestClose={() => setShowEditModal(false)}
-            >
+            <Modal animationType="fade" transparent={true} visible={showEditModal} onRequestClose={() => setShowEditModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>{t('labels.editCollectionName')}</Text>
-                        <TextInput
-                            style={styles.modalInput}
-                            placeholder={t('placeholders.enterNewCollectionName')}
-                            placeholderTextColor="#888"
-                            value={newCollectionName}
-                            onChangeText={setNewCollectionName}
-                            autoFocus
-                            onSubmitEditing={handleRenameCollection}
-                            returnKeyType="done"
-                        />
+                        <TextInput style={styles.modalInput} placeholder={t('placeholders.enterNewCollectionName')} placeholderTextColor="#888" value={newCollectionName} onChangeText={setNewCollectionName} autoFocus onSubmitEditing={handleRenameCollection} returnKeyType="done" />
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setShowEditModal(false)}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowEditModal(false)}>
                                 <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={handleRenameCollection}
-                                disabled={!newCollectionName.trim() || newCollectionName.trim() === editingCollection}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={handleRenameCollection} disabled={!newCollectionName.trim() || newCollectionName.trim() === editingCollection}>
                                 <Text style={styles.confirmButtonText}>{t('buttons.save')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -772,74 +758,32 @@ export default function TabFourScreen() {
 
     const ImportPreviewModal = () => {
         if (!importPreview) return null;
-
         return (
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={!!importPreview}
-                onRequestClose={cancelImport}
-            >
+            <Modal animationType="slide" transparent={true} visible={!!importPreview} onRequestClose={cancelImport}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>
-                            {t('labels.importPreview')} ({importPreview.books.length} {t('labels.books')})
-                        </Text>
-                        <Text style={styles.modalText}>
-                            {t('labels.collectionName')}: {importPreview.collectionName}
-                        </Text>
-
+                        <Text style={styles.modalTitle}>{t('labels.importPreview')} ({importPreview.books.length} {t('labels.books')})</Text>
+                        <Text style={styles.modalText}>{t('labels.collectionName')}: {importPreview.collectionName}</Text>
                         <ScrollView style={styles.previewScroll}>
                             {importPreview.books.slice(0, 5).map((book, index) => (
                                 <View key={index} style={styles.previewBook}>
                                     <Text style={styles.previewBookTitle}>{book.title}</Text>
                                     <Text style={styles.previewBookIsbn}>ISBN: {book.isbn}</Text>
-                                    <Text style={styles.previewBookRating}>
-                                        {t('labels.condition')}: {book.rating}/10
-                                    </Text>
-                                    <Text style={styles.previewBookDefects}>
-                                        {t('labels.defects')}: {formatDefectsSummary(book.defects)}
-                                    </Text>
-                                    {book.uniqueness && (
-                                        <Text style={styles.previewBookUniqueness}>
-                                            {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
-                                        </Text>
-                                    )}
-                                    {book.marketFactors && (
-                                        <Text style={styles.previewBookMarket}>
-                                            {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
-                                        </Text>
-                                    )}
-                                    {book.ageInfo && (
-                                        <Text style={styles.previewBookAge}>
-                                            {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
-                                        </Text>
-                                    )}
-                                    {book.listingStatus && (
-                                        <Text style={styles.previewBookListing}>
-                                            {t('labels.listingStatus')}: {formatListingStatus(book.listingStatus)}
-                                        </Text>
-                                    )}
+                                    <Text style={styles.previewBookRating}>{t('labels.condition')}: {book.rating}/10</Text>
+                                    <Text style={styles.previewBookDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
+                                    {book.uniqueness && <Text style={styles.previewBookUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
+                                    {book.marketFactors && <Text style={styles.previewBookMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
+                                    {book.ageInfo && <Text style={styles.previewBookAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
+                                    {book.listingStatus && <Text style={styles.previewBookListing}>{t('labels.listingStatus')}: {formatListingStatus(book.listingStatus)}</Text>}
                                 </View>
                             ))}
-                            {importPreview.books.length > 5 && (
-                                <Text style={styles.previewMore}>
-                                    + {importPreview.books.length - 5} {t('labels.moreBooks')}...
-                                </Text>
-                            )}
+                            {importPreview.books.length > 5 && <Text style={styles.previewMore}>+ {importPreview.books.length - 5} {t('labels.moreBooks')}...</Text>}
                         </ScrollView>
-
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={cancelImport}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={cancelImport}>
                                 <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={confirmImport}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={confirmImport}>
                                 <Text style={styles.confirmButtonText}>{t('buttons.confirmImport')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -851,87 +795,27 @@ export default function TabFourScreen() {
 
     const ListingModal = () => {
         return (
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={showListingModal}
-                onRequestClose={() => setShowListingModal(false)}
-            >
+            <Modal animationType="fade" transparent={true} visible={showListingModal} onRequestClose={() => setShowListingModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>{t('listingModal.title')}</Text>
-
-                        {/* Amazon */}
-                        <TouchableOpacity
-                            style={[
-                                styles.platformButton,
-                                selectedPlatforms.includes('amazon') && styles.platformButtonSelected
-                            ]}
-                            onPress={() => togglePlatform('amazon')}
-                        >
-                            <FontAwesome5 name="amazon" size={20}
-                                          color={selectedPlatforms.includes('amazon') ? colors.white : colors.primary}/>
-                            <Text style={[
-                                styles.platformButtonText,
-                                selectedPlatforms.includes('amazon') && styles.platformButtonTextSelected
-                            ]}>
-                                {t('platforms.amazon')}
-                            </Text>
+                        <TouchableOpacity style={[styles.platformButton, selectedPlatforms.includes('amazon') && styles.platformButtonSelected]} onPress={() => togglePlatform('amazon')}>
+                            <FontAwesome5 name="amazon" size={20} color={selectedPlatforms.includes('amazon') ? colors.white : colors.primary}/>
+                            <Text style={[styles.platformButtonText, selectedPlatforms.includes('amazon') && styles.platformButtonTextSelected]}>{t('platforms.amazon')}</Text>
                         </TouchableOpacity>
-
-                        {/* Allegro */}
-                        <TouchableOpacity
-                            style={[
-                                styles.platformButton,
-                                selectedPlatforms.includes('allegro') && styles.platformButtonSelected
-                            ]}
-                            onPress={() => togglePlatform('allegro')}
-                        >
-                            <FontAwesome5 name="shopping-bag" size={20}
-                                          color={selectedPlatforms.includes('allegro') ? colors.white : colors.primary}/>
-                            <Text style={[
-                                styles.platformButtonText,
-                                selectedPlatforms.includes('allegro') && styles.platformButtonTextSelected
-                            ]}>
-                                {t('platforms.allegro')}
-                            </Text>
+                        <TouchableOpacity style={[styles.platformButton, selectedPlatforms.includes('allegro') && styles.platformButtonSelected]} onPress={() => togglePlatform('allegro')}>
+                            <FontAwesome5 name="shopping-bag" size={20} color={selectedPlatforms.includes('allegro') ? colors.white : colors.primary}/>
+                            <Text style={[styles.platformButtonText, selectedPlatforms.includes('allegro') && styles.platformButtonTextSelected]}>{t('platforms.allegro')}</Text>
                         </TouchableOpacity>
-
-                        {/* OLX - nowy przycisk */}
-                        <TouchableOpacity
-                            style={[
-                                styles.platformButton,
-                                selectedPlatforms.includes('olx') && styles.platformButtonSelected
-                            ]}
-                            onPress={() => togglePlatform('olx')}
-                        >
-                            <Text style={{
-                                color: selectedPlatforms.includes('olx') ? colors.white : colors.primary,
-                                fontWeight: 'bold',
-                                fontSize: 14
-                            }}>
-                                Olx
-                            </Text>
-                            <Text style={[
-                                styles.platformButtonText,
-                                selectedPlatforms.includes('olx') && styles.platformButtonTextSelected
-                            ]}>
-                                {t('platforms.olx')}
-                            </Text>
+                        <TouchableOpacity style={[styles.platformButton, selectedPlatforms.includes('olx') && styles.platformButtonSelected]} onPress={() => togglePlatform('olx')}>
+                            <Text style={{color: selectedPlatforms.includes('olx') ? colors.white : colors.primary, fontWeight: 'bold', fontSize: 14}}>Olx</Text>
+                            <Text style={[styles.platformButtonText, selectedPlatforms.includes('olx') && styles.platformButtonTextSelected]}>{t('platforms.olx')}</Text>
                         </TouchableOpacity>
-
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setShowListingModal(false)}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowListingModal(false)}>
                                 <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={confirmListing}
-                                disabled={selectedPlatforms.length === 0}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={confirmListing} disabled={selectedPlatforms.length === 0}>
                                 <Text style={styles.confirmButtonText}>{t('buttons.listModal')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -943,55 +827,33 @@ export default function TabFourScreen() {
 
     const StatusChangeModal = () => {
         if (!currentListingBook) return null;
-
         const book = books[currentListingBook.collection][currentListingBook.index];
         const currentStatus = book.listingStatus?.status || 'notListed';
-
         return (
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={showStatusChangeModal}
-                onRequestClose={() => setShowStatusChangeModal(false)}
-            >
+            <Modal animationType="fade" transparent={true} visible={showStatusChangeModal} onRequestClose={() => setShowStatusChangeModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>{t('statusChangeModal.title')}</Text>
-
                         {currentStatus === 'listed' && (
                             <>
-                                <TouchableOpacity
-                                    style={styles.statusButton}
-                                    onPress={() => changeListingStatus('sold')}
-                                >
+                                <TouchableOpacity style={styles.statusButton} onPress={() => changeListingStatus('sold')}>
                                     <FontAwesome5 name="check-circle" size={20} color={colors.success}/>
                                     <Text style={styles.statusButtonText}>{t('statusChangeModal.markAsSold')}</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.statusButton}
-                                    onPress={() => changeListingStatus('notListed')}
-                                >
+                                <TouchableOpacity style={styles.statusButton} onPress={() => changeListingStatus('notListed')}>
                                     <FontAwesome5 name="times-circle" size={20} color={colors.error}/>
                                     <Text style={styles.statusButtonText}>{t('statusChangeModal.cancelListing')}</Text>
                                 </TouchableOpacity>
                             </>
                         )}
-
                         {currentStatus === 'sold' && (
-                            <TouchableOpacity
-                                style={styles.statusButton}
-                                onPress={() => changeListingStatus('notListed')}
-                            >
+                            <TouchableOpacity style={styles.statusButton} onPress={() => changeListingStatus('notListed')}>
                                 <FontAwesome5 name="undo" size={20} color={colors.primary}/>
                                 <Text style={styles.statusButtonText}>{t('statusChangeModal.relist')}</Text>
                             </TouchableOpacity>
                         )}
-
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setShowStatusChangeModal(false)}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowStatusChangeModal(false)}>
                                 <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -1001,341 +863,102 @@ export default function TabFourScreen() {
         );
     };
 
-
-    const renderListingButton = (collection: string, index: number) => {
-        const book = books[collection][index];
-        const listingStatus = book.listingStatus || defaultListingStatus;
-
-        const buttonConfig = {
-            notListed: {
-                icon: 'upload',
-                color: colors.primary,
-                text: t('buttons.list'),
-                bgColor: 'rgba(74, 108, 247, 0.1)',
-            },
-            listed: {
-                icon: 'check',
-                color: colors.success,
-                text: t('listingStatus.listed', {
-                    platforms: listingStatus.platforms?.map(p => t(`platforms.${p}`)).join(', ') || ''
-                }),
-                bgColor: 'rgba(76, 175, 80, 0.1)',
-            },
-            sold: {
-                icon: 'check-double',
-                color: colors.grayDark,
-                text: t('buttons.sold'),
-                bgColor: 'rgba(158, 158, 158, 0.1)',
-            }
-        };
-
-        const {icon, color, text, bgColor} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
-
-        return (
-            <View style={styles.listingButtonContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.iconContainer,
-                        {
-                            backgroundColor: bgColor,
-                            borderColor: color,
-                            marginLeft: 32
-                        }
-                    ]}
-                    onPress={(e) => {
-                        e.stopPropagation();
-                        handleListBook(collection, index);
-                    }}
-                >
-                    <FontAwesome5 name={icon} size={20} color={color}/>
-                </TouchableOpacity>
-                <Text
-                    style={[styles.listingButtonText]}
-                    numberOfLines={2} // Maksymalnie 2 linie
-                    ellipsizeMode="tail" // Działa jako zabezpieczenie
-                >
-                    {text}
-                </Text>
-            </View>
-        );
-    };
-
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={[typography.h1, styles.header]}>
-            </Text>
-
+            <Text style={[typography.h1, styles.header]}></Text>
             <View style={styles.totalValueContainer}>
                 <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
                 <View style={styles.valueRow}>
-                    <TouchableOpacity
-                        style={styles.coinIconContainer}
-                        onPress={() => router.push({
-                            pathname: '/settings',
-                            params: {initialTab: 'algorithm'} as SettingsScreenParams
-                        })}
-                        activeOpacity={0.7}
-                    >
-                        <FontAwesome5
-                            name="coins"
-                            size={20}
-                            color={colors.primary}
-                        />
+                    <TouchableOpacity style={styles.coinIconContainer} onPress={() => router.push({ pathname: '/settings', params: {initialTab: 'algorithm'} })} activeOpacity={0.7}>
+                        <FontAwesome5 name="coins" size={20} color={colors.primary}/>
                     </TouchableOpacity>
                     <View style={styles.priceContainer}>
-                        <Text style={styles.totalValueAmount}>
-                            {formatCurrency(calculateTotalValue().toString())}
-                        </Text>
+                        <Text style={styles.totalValueAmount}>{formatCurrency(calculateTotalValue().toString())}</Text>
                     </View>
                 </View>
-
-                {/* Dodane nowe wiersze z wartościami aktywnymi i sprzedanymi */}
                 <View style={styles.valueBreakdownContainer}>
                     <View style={styles.valueBreakdownRow}>
                         <Text style={styles.valueBreakdownLabel}>{t('labels.activeValue')}:</Text>
-                        <Text style={[styles.valueBreakdownAmount, styles.activeValue]}>
-                            {formatCurrency(calculateActiveValue().toString())}
-                        </Text>
+                        <Text style={[styles.valueBreakdownAmount, styles.activeValue]}>{formatCurrency(calculateActiveValue().toString())}</Text>
                     </View>
                     <View style={styles.valueBreakdownRow}>
                         <Text style={styles.valueBreakdownLabel}>{t('labels.soldValue')}:</Text>
-                        <Text style={[styles.valueBreakdownAmount, styles.soldValue]}>
-                            {formatCurrency(calculateSoldValue().toString())}
-                        </Text>
+                        <Text style={[styles.valueBreakdownAmount, styles.soldValue]}>{formatCurrency(calculateSoldValue().toString())}</Text>
                     </View>
                 </View>
             </View>
-
             <View style={styles.sectionContainer}>
-                <View style={styles.topActionsContainer}>
+                <View style={styles.topActionsRow}>
                     <TouchableOpacity
                         style={styles.addCollectionButton}
                         onPress={() => setShowAddModal(true)}
                         activeOpacity={0.6}
                     >
-                        <Ionicons
-                            name="add-circle"
-                            size={24}
-                            color={colors.primary}
-                        />
-                        <Text style={styles.addCollectionText}>
-                            {t('buttons.addCollection')}
-                        </Text>
+                        <Ionicons name="add-circle" size={24} color={colors.primary}/>
+                        <Text style={styles.addCollectionText}>{t('buttons.addCollection')}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.importButton}
+                        onPress={handleImportCollection}
+                        disabled={isImporting}
+                        activeOpacity={0.6}
+                    >
+                        {isImporting ? (
+                            <ActivityIndicator size="small" color={colors.primary}/>
+                        ) : (
+                            <Ionicons name="cloud-upload" size={18} color={colors.primary}/>
+                        )}
+                        <Text style={styles.importButtonText}>{t('buttons.importCollection')}</Text>
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.divider}/>
-
-                <TouchableOpacity
-                    style={[
-                        styles.importButton,
-                        collections.length === 0 && {marginBottom: 0}
-                    ]}
-                    onPress={handleImportCollection}
-                    disabled={isImporting}
-                    activeOpacity={0.6}
-                >
-                    {isImporting ? (
-                        <ActivityIndicator
-                            size="small"
-                            color={colors.primary}
-                        />
-                    ) : (
-                        <Ionicons
-                            name="cloud-upload"
-                            size={18}
-                            color={colors.primary}
-                        />
-                    )}
-                    <Text style={styles.importButtonText}>
-                        {t('buttons.importCollection')}
-                    </Text>
-                </TouchableOpacity>
-
-                {collections.length > 0 && (
+                {collections.length > 0 ? (
                     <>
+                        <View style={styles.divider}/>
                         <View style={styles.titleContainer}>
                             <Text style={styles.collectionsTitle}>{t('labels.yourCollections')}</Text>
                         </View>
-
-                        <View style={styles.carouselContainer}>
-                            <FlashList
-                                ref={carouselRef}
-                                data={collections}
-                                renderItem={renderCarouselItem}
-                                horizontal
-                                estimatedItemSize={viewportWidth * 0.6}
-                                showsHorizontalScrollIndicator={false}
-                                keyExtractor={(item) => item}
-                                contentContainerStyle={styles.carouselContentContainer}
-                                extraData={[collections, selectedCollection]}
-                                snapToAlignment="center"
-                                snapToInterval={viewportWidth * 0.6 + 8}
-                                decelerationRate="fast"
-                                scrollEnabled={scrollEnabled}
-                            />
-                        </View>
-
+                        <CollectionCarousel
+                            collections={collections}
+                            books={books}
+                            selectedCollection={selectedCollection}
+                            onSelectCollection={toggleCollection}
+                            calculateCollectionTotal={calculateCollectionTotal}
+                            onEditCollection={handleEditCollection}
+                            onDeleteCollection={handleDeleteCollection}
+                            onExportCollection={handleExportCSV}
+                            getBookWord={getBookWord}
+                            formatCurrency={formatCurrency}
+                        />
                         {selectedCollection && (
                             <View style={styles.collectionDetails}>
-                                <View style={styles.collectionHeader}>
-                                    {editingCollectionName && currentlyEditedCollection === selectedCollection ? (
-                                        <View style={styles.nameEditContainer}>
-                                            <TextInput
-                                                style={styles.nameInput}
-                                                value={newCollectionNameInput}
-                                                onChangeText={setNewCollectionNameInput}
-                                                autoFocus
-                                                onSubmitEditing={handleRenameCollection}
-                                            />
-                                            <TouchableOpacity
-                                                style={styles.confirmEditButton}
-                                                onPress={handleRenameCollection}
-                                            >
-                                                <Ionicons name="checkmark" size={20} color="white"/>
-                                            </TouchableOpacity>
-                                        </View>
-                                    ) : (
-                                        <TouchableOpacity
-                                            onPress={() => handleEditCollectionName(selectedCollection)}
-                                            style={styles.nameDisplayContainer}
-                                        >
-                                            <Text style={styles.collectionName} numberOfLines={1} ellipsizeMode="tail">
-                                                {selectedCollection}
-                                            </Text>
-                                            <Ionicons
-                                                name="create"
-                                                size={16}
-                                                color={colors.primary}
-                                                style={styles.editIcon}
-                                            />
-                                        </TouchableOpacity>
-                                    )}
-                                    <View style={styles.collectionActions}>
-                                        <TouchableOpacity
-                                            onPress={() => handleExportCSV(selectedCollection)}
-                                            style={styles.exportButton}
-                                        >
-                                            <FontAwesome name="file-excel-o" size={18} color={colors.primary}/>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => handleDeleteCollection(selectedCollection)}
-                                            style={styles.deleteCollectionButton}
-                                        >
-                                            <FontAwesome name="trash" size={18} color={colors.error}/>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
                                 {books[selectedCollection]?.length === 0 ? (
                                     <View style={styles.emptyBookContainer}>
                                         <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
                                     </View>
                                 ) : (
-                                    books[selectedCollection]?.map((book, index) => (
-                                        <View key={`${selectedCollection}-${index}`}>
-                                            <TouchableOpacity
-                                                style={styles.bookContainer}
-                                                onPress={() => toggleBookExpansion(selectedCollection, index)}
-                                            >
-                                                <View style={styles.bookHeader}>
-                                                    <View style={styles.bookTitleRow}>
-                                                        <Ionicons
-                                                            name={book.isExpanded ? "chevron-down" : "chevron-forward"}
-                                                            size={16}
-                                                            color={colors.primary}
-                                                            style={styles.bookArrowIcon}
-                                                        />
-                                                        <Text style={styles.bookTitle} numberOfLines={1}>
-                                                            {book.title}
-                                                        </Text>
-                                                    </View>
-
-                                                    <View style={styles.topButtonsContainer}>
-                                                        <TouchableOpacity
-                                                            onPress={(e) => {
-                                                                e.stopPropagation();
-                                                                handleEditBook(selectedCollection, index);
-                                                            }}
-                                                            style={styles.editButton}
-                                                        >
-                                                            <Ionicons name="create" size={18} color={colors.primary}/>
-                                                        </TouchableOpacity>
-                                                        <TouchableOpacity
-                                                            onPress={(e) => {
-                                                                e.stopPropagation();
-                                                                removeBookFromCollection(selectedCollection, index);
-                                                            }}
-                                                            style={styles.deleteButton}
-                                                        >
-                                                            <FontAwesome name="trash" size={18} color={colors.error}/>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-
-                                                <View style={styles.bookContentWrapper}>
-                                                    <View style={styles.bookDetails}>
-                                                        <Text style={styles.bookAuthors} numberOfLines={1}>
-                                                            {book.authors}
-                                                        </Text>
-                                                        <Text style={styles.bookIsbn}>ISBN: {book.isbn}</Text>
-                                                        <Text style={styles.bookPrice}>
-                                                            {t('bookInfo.finalPrice')}: {book.displayPrice}
-                                                        </Text>
-                                                        <Text style={styles.bookCondition}>
-                                                            {t('labels.condition')}: {book.rating}/10
-                                                        </Text>
-                                                    </View>
-
-                                                    <View style={styles.listingButtonFixedContainer}>
-                                                        {renderListingButton(selectedCollection, index)}
-                                                    </View>
-                                                </View>
-
-                                                {book.isExpanded && (
-                                                    <View style={styles.bookAdditionalDetails}>
-                                                        <Text style={styles.bookDefects}>
-                                                            {t('labels.defects')}: {formatDefectsSummary(book.defects)}
-                                                        </Text>
-                                                        {book.uniqueness && (
-                                                            <Text style={styles.bookUniqueness}>
-                                                                {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
-                                                            </Text>
-                                                        )}
-                                                        {book.marketFactors && (
-                                                            <Text style={styles.bookMarket}>
-                                                                {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
-                                                            </Text>
-                                                        )}
-                                                        {book.ageInfo && (
-                                                            <Text style={styles.bookAge}>
-                                                                {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
-                                                            </Text>
-                                                        )}
-                                                        <Text style={[
-                                                            styles.bookStatus,
-                                                            {color: book.foundInApi ? colors.success : colors.error}
-                                                        ]}>
-                                                            {book.foundInApi ? t('status.found') : t('status.notFound')}
-                                                        </Text>
-                                                    </View>
-                                                )}
-                                            </TouchableOpacity>
-                                        </View>
-                                    ))
+                                    <BooksCarousel
+                                        books={books[selectedCollection]}
+                                        collectionName={selectedCollection}
+                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
+                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
+                                        onListBook={(index) => handleListBook(selectedCollection, index)}
+                                        formatDefectsSummary={formatDefectsSummary}
+                                        formatUniquenessSummary={formatUniquenessSummary}
+                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                        formatListingStatus={formatListingStatus}
+                                    />
                                 )}
                             </View>
                         )}
                     </>
-                )}
-
-                {collections.length === 0 && (
+                ) : (
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
                     </View>
                 )}
             </View>
-
             <AddCollectionModal/>
             <EditCollectionModal/>
             <ImportPreviewModal/>
@@ -1382,19 +1005,24 @@ const styles = StyleSheet.create({
         backgroundColor: colors.white,
         borderRadius: 2,
         padding: 16,
-        marginBottom: 20,
+        marginBottom: 0,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
     },
     collectionsTitle: {
         ...typography.body,
         color: colors.black,
-        marginTop: 10,
-        marginBottom: 16,
+        marginTop: 0,
+        marginBottom: 0,
     },
-    carouselContentContainer: {
-        paddingLeft: 16,
-        paddingRight: 8,
+    carouselContainer: {
+        height: 160,
+        marginBottom: 10,
+    },
+    carousel: {
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     collectionDetails: {
         marginTop: 10,
@@ -1641,41 +1269,64 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
-    addCollectionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-    },
-    addCollectionText: {
-        marginLeft: 8,
-        color: colors.primary,
-        fontSize: 16,
-        fontWeight: '500',
-    },
     divider: {
         height: 1,
         backgroundColor: colors.gray,
         marginBottom: 12,
-    },
-    importButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        marginBottom: 16,
-    },
-    importButtonText: {
-        marginLeft: 8,
-        color: colors.primary,
-        fontSize: 16,
     },
     titleContainer: {
         height: 50,
         marginBottom: 10,
         alignItems: 'center'
     },
-    carouselContainer: {
-        height: 140,
-        marginBottom: 10,
+    selectedCarouselItem: {
+        borderColor: colors.primary,
+        backgroundColor: 'rgba(74,108,247,0.05)',
+    },
+    unselectedCarouselItem: {
+        borderColor: colors.gray,
+    },
+    carouselContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    collectionIcon: {
+        marginBottom: 8,
+    },
+    carouselCollectionName: {
+        ...typography.body,
+        textAlign: 'center',
+        marginBottom: 0,
+        color: colors.black,
+        fontWeight: '500',
+    },
+    carouselCollectionValue: {
+        ...typography.body,
+        textAlign: 'center',
+        marginBottom: -20,
+        color: colors.black,
+        fontWeight: '600',
+    },
+    selectedText: {
+        color: colors.primary,
+    },
+    carouselBookCount: {
+        position: 'absolute',
+        top: -10,
+        right: -10,
+        backgroundColor: colors.grayDark,
+        color: colors.white,
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        textAlign: 'center',
+        fontSize: 12,
+        overflow: 'hidden',
+        minWidth: 24,
+    },
+    selectedBadge: {
+        backgroundColor: colors.primary,
     },
     collectionCounterContainer: {
         alignItems: 'center',
@@ -1816,59 +1467,103 @@ const styles = StyleSheet.create({
     deleteButton: {
         padding: 8,
     },
-    carouselItem: {
-        width: viewportWidth * 0.4 - 16,
-        backgroundColor: colors.white,
-        borderRadius: 8,
-        padding: 10,
-        height: 120,
-        marginRight: 8,
-        borderWidth: 1,
+    topButtonsContainer: {
+        flexDirection: 'row',
+        marginLeft: 'auto',
     },
-    selectedCarouselItem: {
-        borderColor: colors.primary,
-        backgroundColor: 'rgba(74,108,247,0.05)',
-    },
-    unselectedCarouselItem: {
-        borderColor: colors.gray,
-    },
-    carouselContent: {
+    bookMainInfo: {
         flex: 1,
+    },
+    bookHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    bookTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    listingButtonTallContainer: {
+        justifyContent: 'center',
+        height: '80%',
+        marginLeft: 10,
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        marginBottom: 4,
+    },
+    bookContainer: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    bookContentWrapper: {
+        flexDirection: 'row',
+        minHeight: 80,
+    },
+    bookDetails: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    listingButtonFixedContainer: {
+        width: 100,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    carouselCollectionName: {
-        ...typography.body,
-        textAlign: 'center',
-        marginBottom: 5,
-        color: colors.black,
+    bookAdditionalDetails: {
+        paddingTop: 12,
+        marginTop: 8,
+        borderTopWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
-    carouselCollectionValue: {
-        ...typography.body,
-        textAlign: 'center',
-        marginBottom: 0,
-        color: colors.black,
+    listingButtonContainer: {
+        width: 100,
+        minHeight: 80,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    selectedText: {
-        color: colors.primary,
-        fontWeight: 'bold',
-    },
-    carouselBookCount: {
-        position: 'absolute',
-        top: -5,
-        right: -5,
-        backgroundColor: colors.grayDark,
-        color: colors.white,
-        borderRadius: 12,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        textAlign: 'center',
+    listingButtonText: {
         fontSize: 12,
-        overflow: 'hidden',
-        minWidth: 24,
+        textAlign: 'center',
+        width: '100%',
+        paddingHorizontal: 2,
+        lineHeight: 16,
+        flexWrap: 'wrap',
+        marginLeft: 32,
+        color: colors.primary
     },
-    selectedBadge: {
-        backgroundColor: colors.primary,
+    valueBreakdownContainer: {
+        width: '100%',
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    valueBreakdownRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+    },
+    valueBreakdownLabel: {
+        ...typography.caption,
+        color: colors.grayDark,
+    },
+    valueBreakdownAmount: {
+        ...typography.caption,
+        fontWeight: '500',
+    },
+    activeValue: {
+        color: colors.primary,
+    },
+    soldValue: {
+        color: colors.success,
     },
     platformButton: {
         flexDirection: 'row',
@@ -1902,106 +1597,175 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         color: colors.black,
     },
-    topButtonsContainer: {
-        flexDirection: 'row',
-        marginLeft: 'auto',
+    // New styles for books carousel
+    booksCarouselContainer: {
+        marginTop: 20,
+        paddingBottom: 20,
     },
-    bookMainInfo: {
-        flex: 1,
-    },
-    bookHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    bookTitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    listingButtonTallContainer: {
-        justifyContent: 'center',
-        height: '80%',
-        marginLeft: 10,
-    },
-    iconContainer: {
-        width: 40, // Stała szerokość
-        height: 40, // Stała wysokość
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        marginBottom: 4,
-    },
-    bookContainer: {
-        padding: 16,
-        borderBottomWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-
-    bookContentWrapper: {
-        flexDirection: 'row',
-        minHeight: 80, // Stała wysokość niezależnie od zawartości
-    },
-
-    bookDetails: {
-        flex: 1,
-        justifyContent: 'center', // Wyśrodkowanie zawartości w pionie
-    },
-
-    listingButtonFixedContainer: {
-        width: 100, // Stała szerokość
-        justifyContent: 'center', // Wyśrodkowanie przycisku
-        alignItems: 'center',
-    },
-
-    bookAdditionalDetails: {
-        paddingTop: 12, // Mniejszy odstęp od góry
-        marginTop: 8, // Mniejszy margines
-        borderTopWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-    listingButtonContainer: {
-        width: 100, // Stała szerokość
-        minHeight: 80, // Minimalna wysokość
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    listingButtonText: {
-        fontSize: 12,
+    booksCarouselTitle: {
+        ...typography.h3,
+        color: colors.black,
+        marginBottom: 10,
         textAlign: 'center',
-        width: '100%', // Zajmuje całą szerokość kontenera
-        paddingHorizontal: 2, // Mały padding po bokach
-        lineHeight: 16, // Lepsz czytelność wielolinijkowego tekstu
-        flexWrap: 'wrap', // Zawijanie tekstu
-        marginLeft: 32,
-        color: colors.primary
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray
     },
-    valueBreakdownContainer: {
+    booksCarousel: {
         width: '100%',
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
+    },
+    bookCard: {
+        width: BOOK_CARD_WIDTH - 40,
+        backgroundColor: colors.white,
+        borderRadius: 8,
+        padding: 16,
+        marginHorizontal: 10,
+        borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    valueBreakdownRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 6,
+    bookCardHeader: {
+        marginBottom: 12,
     },
-    valueBreakdownLabel: {
+    bookCardTitle: {
+        ...typography.h4,
+        color: colors.black,
+        marginBottom: 4,
+        fontWeight: '600',
+    },
+    bookCardAuthors: {
         ...typography.caption,
         color: colors.grayDark,
     },
-    valueBreakdownAmount: {
+    bookCardContent: {
+        marginBottom: 12,
+    },
+    bookCardIsbn: {
         ...typography.caption,
+        color: colors.grayDark,
+        marginBottom: 4,
+    },
+    bookCardPrice: {
+        ...typography.caption,
+        color: colors.primary,
+        fontWeight: '500',
+        marginBottom: 4,
+    },
+    bookCardCondition: {
+        ...typography.caption,
+        color: colors.primary,
+        marginBottom: 8,
+    },
+    bookCardDetails: {
+        marginTop: 8,
+    },
+    bookCardDefects: {
+        fontSize: 12,
+        color: colors.grayDark,
+        marginBottom: 4,
+        fontStyle: 'italic',
+    },
+    bookCardUniqueness: {
+        fontSize: 12,
+        color: colors.grayDark,
+        marginBottom: 4,
+        fontStyle: 'italic',
+    },
+    bookCardMarket: {
+        fontSize: 12,
+        color: colors.grayDark,
+        marginBottom: 4,
+        fontStyle: 'italic',
+    },
+    bookCardAge: {
+        fontSize: 12,
+        color: colors.grayDark,
+        marginBottom: 4,
+        fontStyle: 'italic',
+    },
+    bookCardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 12,
+    },
+    bookCardActions: {
+        flexDirection: 'row',
+    },
+    carouselItem: {
+        width: PAGE_WIDTH - 20,
+        backgroundColor: colors.white,
+        borderRadius: 5,
+        padding: 16,
+        height: 160, // Więcej miejsca na przyciski
+        marginRight: 8,
+        borderWidth: 1,
+    },
+    editContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    editInput: {
+        flex: 1,
+        borderBottomWidth: 1,
+        borderColor: colors.primary,
+        paddingVertical: 4,
+        marginRight: 8,
+        color: colors.black,
+    },
+    saveEditButton: {
+        backgroundColor: colors.primary,
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    carouselActions: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderColor: 'rgba(0,0,0,0.1)',
+    },
+    carouselActionButton: {
+        padding: 6,
+        marginHorizontal: 4,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+    },
+    topActionsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    addCollectionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingRight: 16,
+    },
+    addCollectionText: {
+        marginLeft: 8,
+        color: colors.primary,
+        fontSize: 16,
         fontWeight: '500',
     },
-    activeValue: {
-        color: colors.primary,
+    importButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingLeft: 16,
     },
-    soldValue: {
-        color: colors.success,
+    importButtonText: {
+        marginLeft: 8,
+        color: colors.primary,
+        fontSize: 16,
     },
 });
