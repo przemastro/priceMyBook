@@ -889,28 +889,32 @@ export default function TabFourScreen() {
             </View>
             <View style={styles.sectionContainer}>
                 <View style={styles.topActionsRow}>
-                    <TouchableOpacity
-                        style={styles.addCollectionButton}
-                        onPress={() => setShowAddModal(true)}
-                        activeOpacity={0.6}
-                    >
-                        <Ionicons name="add-circle" size={24} color={colors.primary}/>
-                        <Text style={styles.addCollectionText}>{t('buttons.addCollection')}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionButtonContainer}>
+                        <TouchableOpacity
+                            style={styles.addCollectionButton}
+                            onPress={() => setShowAddModal(true)}
+                            activeOpacity={0.6}
+                        >
+                            <Ionicons name="add-circle" size={24} color={colors.primary}/>
+                            <Text style={styles.addCollectionText}>{t('buttons.addCollection')}</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                    <TouchableOpacity
-                        style={styles.importButton}
-                        onPress={handleImportCollection}
-                        disabled={isImporting}
-                        activeOpacity={0.6}
-                    >
-                        {isImporting ? (
-                            <ActivityIndicator size="small" color={colors.primary}/>
-                        ) : (
-                            <Ionicons name="cloud-upload" size={18} color={colors.primary}/>
-                        )}
-                        <Text style={styles.importButtonText}>{t('buttons.importCollection')}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionButtonContainer}>
+                        <TouchableOpacity
+                            style={styles.importButton}
+                            onPress={handleImportCollection}
+                            disabled={isImporting}
+                            activeOpacity={0.6}
+                        >
+                            {isImporting ? (
+                                <ActivityIndicator size="small" color={colors.primary}/>
+                            ) : (
+                                <Ionicons name="cloud-upload" size={24} color={colors.primary}/>
+                            )}
+                            <Text style={styles.importButtonText}>{t('buttons.importCollection')}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {collections.length > 0 ? (
@@ -1014,10 +1018,6 @@ const styles = StyleSheet.create({
         color: colors.black,
         marginTop: 0,
         marginBottom: 0,
-    },
-    carouselContainer: {
-        height: 160,
-        marginBottom: 10,
     },
     carousel: {
         width: '100%',
@@ -1286,11 +1286,6 @@ const styles = StyleSheet.create({
     unselectedCarouselItem: {
         borderColor: colors.gray,
     },
-    carouselContent: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     collectionIcon: {
         marginBottom: 8,
     },
@@ -1300,13 +1295,6 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         color: colors.black,
         fontWeight: '500',
-    },
-    carouselCollectionValue: {
-        ...typography.body,
-        textAlign: 'center',
-        marginBottom: -20,
-        color: colors.black,
-        fontWeight: '600',
     },
     selectedText: {
         color: colors.primary,
@@ -1597,11 +1585,6 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         color: colors.black,
     },
-    // New styles for books carousel
-    booksCarouselContainer: {
-        marginTop: 20,
-        paddingBottom: 20,
-    },
     booksCarouselTitle: {
         ...typography.h3,
         color: colors.black,
@@ -1695,15 +1678,6 @@ const styles = StyleSheet.create({
     bookCardActions: {
         flexDirection: 'row',
     },
-    carouselItem: {
-        width: PAGE_WIDTH - 20,
-        backgroundColor: colors.white,
-        borderRadius: 5,
-        padding: 16,
-        height: 160, // Więcej miejsca na przyciski
-        marginRight: 8,
-        borderWidth: 1,
-    },
     editContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1742,30 +1716,72 @@ const styles = StyleSheet.create({
     topActionsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start', // Zmienione z 'center' na 'flex-start'
         marginBottom: 12,
     },
-    addCollectionButton: {
-        flexDirection: 'row',
+    actionButtonContainer: {
         alignItems: 'center',
-        paddingVertical: 8,
-        paddingRight: 16,
+        justifyContent: 'center',
+    },
+    addCollectionButton: {
+        alignItems: 'center',
+        padding: 8,
     },
     addCollectionText: {
-        marginLeft: 8,
+        marginTop: 4, // Dodany margines górny zamiast lewego
         color: colors.primary,
-        fontSize: 16,
+        fontSize: 14, // Zmniejszona czcionka
         fontWeight: '500',
+        textAlign: 'center',
     },
     importButton: {
-        flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
-        paddingLeft: 16,
+        padding: 8,
     },
     importButtonText: {
-        marginLeft: 8,
+        marginTop: 4, // Dodany margines górny zamiast lewego
         color: colors.primary,
-        fontSize: 16,
+        fontSize: 14, // Zmniejszona czcionka
+        textAlign: 'center',
+    },
+
+    // Zmiany w karuzeli księgozbiorów
+    carouselContainer: {
+        height: 160,
+        marginBottom: 0, // Usunięty margines dolny
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray,
+        paddingBottom: 10,
+    },
+    carouselItem: {
+        width: PAGE_WIDTH - 20,
+        backgroundColor: colors.white,
+        borderRadius: 5,
+        padding: 12, // Zmniejszony padding
+        height: 140, // Zmniejszona wysokość
+        marginRight: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.1)',
+    },
+    carouselCollectionValue: {
+        position: 'absolute', // Pozycjonowanie absolutne
+        top: 12, // Górny margines
+        left: 12, // Lewy margines
+        ...typography.body,
+        fontWeight: '600',
+    },
+    carouselContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 20, // Dodany padding górny dla zrobienia miejsca na cenę
+    },
+
+    // Lepsze połączenie z karuzelą książek
+    booksCarouselContainer: {
+        marginTop: 0, // Usunięty margines górny
+        paddingTop: 10, // Dodany padding górny
+        paddingBottom: 20,
+        backgroundColor: colors.white,
     },
 });
