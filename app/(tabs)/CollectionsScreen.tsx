@@ -316,7 +316,7 @@ const BooksCarousel: React.FC<{
     );
 };
 
-export default function TabFourScreen() {
+export default function CollectionsScreen() {
     const router = useRouter();
     const {t} = useTranslation();
     const [collectionName, setCollectionName] = useState('');
@@ -576,7 +576,7 @@ export default function TabFourScreen() {
     const handleEditBook = (collectionName: string, bookIndex: number) => {
         const book = books[collectionName][bookIndex];
         router.push({
-            pathname: '/tabThree',
+            pathname: '/AnalysisScreen',
             params: {
                 isbn: book.isbn,
                 title: book.title,

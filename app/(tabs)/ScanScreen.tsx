@@ -488,7 +488,7 @@ const fetchBookInfoFromAmazon = async (isbn: string, language: string): Promise<
   return null;
 };
 
-export default function TabOneScreen() {
+export default function ScanScreen() {
   const { t, i18n } = useTranslation();
   const { isbn, setISBN, addToScanHistory, exchangeRate } = useAppContext();
   const router = useRouter();
@@ -827,7 +827,7 @@ export default function TabOneScreen() {
     });
 
     router.push({
-      pathname: '/tabThree',
+      pathname: '/AnalysisScreen',
       params: {
         isbn,
         averagePrice: numericPrice.toFixed(2),

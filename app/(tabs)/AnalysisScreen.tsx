@@ -266,7 +266,7 @@ const getBookWord = (count: number, language: string) => {
   }
 };
 
-export default function TabThreeScreen() {
+export default function AnalysisScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, string | string[]>>();
@@ -1147,7 +1147,7 @@ export default function TabThreeScreen() {
                     ) : (
                         <TouchableOpacity
                             style={styles.createCollectionButton}
-                            onPress={() => router.push('/tabFour')}
+                            onPress={() => router.push('/CollectionsScreen')}
                         >
                           <Text style={styles.createCollectionText}>
                             {t('buttons.createFirstCollection')}

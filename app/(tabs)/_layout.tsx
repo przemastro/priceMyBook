@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-import { useColorScheme } from '@/components/useColorScheme';
-import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/app/components/useColorScheme';
 import { AppProvider } from '@/context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet } from 'react-native';
@@ -51,7 +50,7 @@ export default function TabLayout() {
                 }}
             >
                 <Tabs.Screen
-                    name="tabOne"
+                    name="ScanScreen"
                     options={{
                         title: t('titlesShort.scan'),
                         tabBarIcon: ({ color, focused }) => (
@@ -63,7 +62,7 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="tabTwo"
+                    name="HistoryScreen"
                     options={{
                         title: t('titlesShort.history'),
                         tabBarIcon: ({ color, focused }) => (
@@ -75,7 +74,7 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="tabThree"
+                    name="AnalysisScreen"
                     options={{
                         title: t('titlesShort.analyzeCondition'),
                         tabBarIcon: ({ color, focused }) => (
@@ -87,7 +86,7 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="tabFour"
+                    name="CollectionsScreen"
                     options={{
                         title: t('titlesShort.manageCollections'),
                         tabBarIcon: ({ color, focused }) => (
