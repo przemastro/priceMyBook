@@ -16,7 +16,6 @@ import {
   View
 } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
-import { BarChart, LineChart } from 'react-native-chart-kit';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
@@ -24,209 +23,30 @@ import {colors, responsive, typography} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
 import {Ionicons} from '@expo/vector-icons';
 import i18n from "i18next";
+import 'react-native-svg';
+
+
+// Import komponentów
+import MarketChart from '../components/analysisScreen/MarketChart';
+import PriceCalculationDetails from '../components/analysisScreen/PriceCalculationDetails';
+import ScanDefectModal from '../components/analysisScreen/ScanDefectModal';
+import TabSection from '../components/analysisScreen/TabSection';
+import {
+  BookDefect,
+  MarketData,
+  MarketFactorToggle,
+  ListingStatus,
+  BookAgeInfo,
+  BookUniqueness,
+  MarketFactors,
+  PriceCalculation,
+  DEFECT_TYPES,
+  UNIQUENESS_TYPES,
+  MARKET_FACTOR_TOGGLES, IncludedMarketFactors
+} from '../components/analysisScreen/types';
+import { formatCurrency } from '../utils/currency';
 
 const { width: viewportWidth } = Dimensions.get('window');
-
-interface BookDefect {
-  id: string;
-  selected: boolean;
-  priceReduction: number;
-  count: number;
-  confidence?: number;
-  icon: string;
-}
-
-interface MarketData {
-  demand: MarketFactors['demand'];
-  supply: MarketFactors['supply'];
-  priceRange?: [number, number];
-  priceHistory?: { date: string; price: number }[];
-  lastUpdated: Date;
-  source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
-}
-
-interface MarketFactorToggle {
-  id: 'includePublicationYear' | 'includeDemand' | 'includeSupply';
-  icon: string;
-  label: string;
-}
-
-interface ListingStatus {
-  status: 'notListed' | 'listed' | 'sold';
-  platforms: ('amazon' | 'allegro' | 'olx')[];
-  listedDate?: string;
-  soldDate?: string;
-}
-
-interface BookAgeInfo {
-  years: number;
-}
-
-interface BookUniqueness {
-  isMassMarket: boolean;
-  isFirstEdition: boolean;
-  isCollectorsEdition: boolean;
-  hasAuthorSignature: boolean;
-  isLimitedEdition: boolean;
-  isPublisherDefunct: boolean;
-}
-
-interface MarketFactors {
-  demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
-  supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
-  publicationYear?: number;
-}
-
-const MARKET_FACTOR_TYPES = [
-  { id: 'publicationYear', icon: 'calendar-outline', label: 'labels.publicationYear' },
-  { id: 'demand', icon: 'trending-up-outline', label: 'labels.demand' },
-  { id: 'supply', icon: 'trending-down-outline', label: 'labels.supply' }
-] as const;
-
-const MARKET_FACTOR_TOGGLES: MarketFactorToggle[] = [
-  { id: 'includePublicationYear', icon: 'calendar-outline', label: 'labels.includePublicationYear' },
-  { id: 'includeDemand', icon: 'trending-up-outline', label: 'labels.includeDemand' },
-  { id: 'includeSupply', icon: 'trending-down-outline', label: 'labels.includeSupply' }
-];
-
-const DEMAND_OPTIONS = [
-  { id: 'veryHigh', label: 'labels.veryHigh' },
-  { id: 'high', label: 'labels.high' },
-  { id: 'medium', label: 'labels.medium' },
-  { id: 'low', label: 'labels.low' },
-  { id: 'veryLow', label: 'labels.veryLow' }
-];
-
-const SUPPLY_OPTIONS = [
-  { id: 'veryLow', label: 'labels.veryLow' },
-  { id: 'low', label: 'labels.low' },
-  { id: 'medium', label: 'labels.medium' },
-  { id: 'high', label: 'labels.high' },
-  { id: 'flooded', label: 'labels.flooded' }
-];
-
-interface PriceCalculation {
-  basePrice: number;
-  defectsReduction: number;
-  uniquenessBonus: number;
-  marketModifier: number;
-  finalPrice: number;
-}
-
-const DEFECT_TYPES = [
-  { id: 'tornPages', icon: 'document-text-outline' },
-  { id: 'brokenSpine', icon: 'book-outline' },
-  { id: 'waterDamage', icon: 'water-outline' },
-  { id: 'missingPages', icon: 'remove-outline' },
-  { id: 'heavyWear', icon: 'alert-circle-outline' },
-  { id: 'stainedPages', icon: 'color-filter-outline' },
-  { id: 'looseBinding', icon: 'unlink-outline' },
-  { id: 'writtingMarks', icon: 'pencil-outline' },
-  { id: 'foldedCorners', icon: 'copy-outline' },
-  { id: 'fadedCover', icon: 'sunny-outline' }
-] as const;
-
-const UNIQUENESS_TYPES = [
-  { id: 'isMassMarket', icon: 'copy-outline', label: 'labels.massMarket' },
-  { id: 'isFirstEdition', icon: 'book-outline', label: 'labels.firstEdition' },
-  { id: 'isCollectorsEdition', icon: 'ribbon-outline', label: 'labels.collectorsEdition' },
-  { id: 'hasAuthorSignature', icon: 'create-outline', label: 'labels.authorSignature' },
-  { id: 'isLimitedEdition', icon: 'diamond-outline', label: 'labels.limitedEdition' },
-  { id: 'isPublisherDefunct', icon: 'skull-outline', label: 'labels.defunctPublisher' }
-] as const;
-
-const MarketChart = React.memo(({ marketData }: { marketData: MarketData | null }) => {
-  const { t } = useTranslation();
-  const chartWidth = viewportWidth - 64;
-
-  if (!marketData) {
-    return (
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
-          <ActivityIndicator size="small" color={colors.primary} />
-        </View>
-    );
-  }
-
-  return (
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{ width: chartWidth }}>
-            <BarChart
-                data={{
-                  labels: [t('labels.demand'), t('labels.supply')],
-                  datasets: [{
-                    data: [
-                      marketData.demand === 'veryHigh' ? 100 :
-                          marketData.demand === 'high' ? 80 :
-                              marketData.demand === 'medium' ? 60 :
-                                  marketData.demand === 'low' ? 40 : 20,
-                      marketData.supply === 'veryLow' ? 20 :
-                          marketData.supply === 'low' ? 40 :
-                              marketData.supply === 'medium' ? 60 :
-                                  marketData.supply === 'high' ? 80 : 100
-                    ]
-                  }]
-                }}
-                width={chartWidth}
-                height={220}
-                yAxisLabel=""
-                yAxisSuffix=""
-                chartConfig={{
-                  backgroundColor: colors.white,
-                  backgroundGradientFrom: colors.white,
-                  backgroundGradientTo: colors.white,
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                  style: { borderRadius: 16 },
-                  propsForDots: {
-                    r: "6",
-                    strokeWidth: "2",
-                    stroke: colors.primary
-                  }
-                }}
-                style={{
-                  marginVertical: 8,
-                  borderRadius: 16
-                }}
-            />
-
-            {marketData.priceHistory && marketData.priceHistory.length > 1 && (
-                <LineChart
-                    data={{
-                      labels: marketData.priceHistory.map(entry =>
-                          new Date(entry.date).toLocaleDateString()),
-                      datasets: [{
-                        data: marketData.priceHistory.map(entry => entry.price)
-                      }]
-                    }}
-                    width={chartWidth}
-                    height={220}
-                    yAxisLabel=""
-                    yAxisSuffix=""
-                    chartConfig={{
-                      backgroundColor: colors.white,
-                      backgroundGradientFrom: colors.white,
-                      backgroundGradientTo: colors.white,
-                      decimalPlaces: 2,
-                      color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                      style: { borderRadius: 16 }
-                    }}
-                    bezier
-                    style={{
-                      marginVertical: 8,
-                      borderRadius: 16
-                    }}
-                />
-            )}
-          </View>
-        </ScrollView>
-      </View>
-  );
-});
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -275,15 +95,14 @@ export default function AnalysisScreen() {
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [hasScanned, setHasScanned] = useState(false);
-  const [expandedPriceDetails, setExpandedPriceDetails] = useState(false);
 
   const {
     collections,
     addBookToCollection,
     removeBookFromCollection,
     updateBookInCollection,
+    exchangeRate,
     exchangeRateError,
-    formatCurrency,
     books
   } = useAppContext();
 
@@ -342,7 +161,7 @@ export default function AnalysisScreen() {
   const [showMarketModal, setShowMarketModal] = useState(false);
   const [editingYear, setEditingYear] = useState(false);
   const [yearInput, setYearInput] = useState(marketFactors.publicationYear?.toString() || '');
-  const [includedMarketFactors, setIncludedMarketFactors] = useState({
+  const [includedMarketFactors, setIncludedMarketFactors] = useState<IncludedMarketFactors>({
     includePublicationYear: true,
     includeDemand: true,
     includeSupply: true
@@ -354,13 +173,6 @@ export default function AnalysisScreen() {
     market: false,
     collection: false
   });
-
-  const slides = [
-    { id: 'defects', title: t('labels.selectDefects'), icon: 'warning-outline' },
-    { id: 'uniqueness', title: t('labels.uniqueness'), icon: 'sparkles-outline' },
-    { id: 'market', title: t('labels.marketFactors'), icon: 'trending-up-outline' },
-    { id: 'collection', title: t('labels.collection'), icon: 'library-outline' }
-  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -581,278 +393,6 @@ export default function AnalysisScreen() {
     return Math.max(1, 10 - totalReduction);
   }, [defects]);
 
-  const renderMarketFactorToggle = ({ item }: { item: MarketFactorToggle }) => (
-      <TouchableOpacity
-          style={[
-            styles.defectItemContainer,
-            includedMarketFactors[item.id] && styles.selectedDefect
-          ]}
-          onPress={() => setIncludedMarketFactors(prev => ({
-            ...prev,
-            [item.id]: !prev[item.id]
-          }))}
-          activeOpacity={0.7}
-      >
-        <View style={styles.defectIconContainer}>
-          <Ionicons
-              name={item.icon as any}
-              size={28}
-              color={includedMarketFactors[item.id] ? colors.primary : '#5c6b7e'}
-          />
-        </View>
-        <Text style={[
-          styles.defectName,
-          includedMarketFactors[item.id] && styles.selectedDefectName
-        ]}>
-          {t(item.label)}
-        </Text>
-      </TouchableOpacity>
-  );
-
-  const calculateBookRating = (): number => {
-    const selectedDefects = defects.filter(d => d.selected);
-    if (selectedDefects.length === 0) return 10;
-
-    let ratingReduction = selectedDefects.length;
-    const countReduction = selectedDefects.reduce((sum, defect) => sum + Math.floor(defect.count / 5), 0);
-    const totalReduction = ratingReduction + countReduction;
-    return Math.max(1, 10 - totalReduction);
-  };
-
-
-  const renderMarketFactorItem = ({ item }: { item: typeof MARKET_FACTOR_TYPES[number] }) => {
-    if (item.id === 'publicationYear') {
-      return (
-          <TouchableOpacity
-              style={[
-                styles.defectItemContainer,
-                styles.yearItemContainer
-              ]}
-              activeOpacity={0.7}
-          >
-            <View style={styles.defectIconContainer}>
-              <Ionicons
-                  name={item.icon as any}
-                  size={28}
-                  color={colors.primary}
-              />
-            </View>
-            {editingYear ? (
-                <View style={styles.yearInputContainer}>
-                  <TextInput
-                      style={styles.yearInput}
-                      value={yearInput}
-                      onChangeText={setYearInput}
-                      keyboardType="numeric"
-                      maxLength={4}
-                      autoFocus
-                  />
-                  <TouchableOpacity
-                      style={styles.saveYearButton}
-                      onPress={() => {
-                        if (yearInput && !isNaN(parseInt(yearInput))) {
-                          setMarketFactors(prev => ({
-                            ...prev,
-                            publicationYear: parseInt(yearInput)
-                          }));
-                          setEditingYear(false);
-                        }
-                      }}
-                  >
-                    <Ionicons name="checkmark" size={20} color="white" />
-                  </TouchableOpacity>
-                </View>
-            ) : (
-                <TouchableOpacity
-                    style={styles.yearDisplay}
-                    onPress={() => {
-                      setYearInput(marketFactors.publicationYear?.toString() || '');
-                      setEditingYear(true);
-                    }}
-                >
-                  <Text style={styles.defectName}>
-                    {marketFactors.publicationYear || t('labels.unknownYear')}
-                  </Text>
-                  <Ionicons
-                      name="create"
-                      size={16}
-                      color={colors.primary}
-                      style={styles.editIcon}
-                  />
-                </TouchableOpacity>
-            )}
-          </TouchableOpacity>
-      );
-    }
-
-    if (item.id === 'demand') {
-      return (
-          <View style={styles.marketFactorContainer}>
-            <View style={styles.marketFactorHeader}>
-              <Ionicons
-                  name={item.icon as any}
-                  size={28}
-                  color={colors.primary}
-                  style={styles.marketFactorIcon}
-              />
-              <Text style={styles.marketFactorLabel}>
-                {t(item.label)}
-              </Text>
-            </View>
-            <View style={styles.optionsContainer}>
-              {DEMAND_OPTIONS.map(option => (
-                  <TouchableOpacity
-                      key={option.id}
-                      style={[
-                        styles.optionButton,
-                        marketFactors.demand === option.id && styles.selectedOption
-                      ]}
-                      onPress={() => setMarketFactors(prev => ({
-                        ...prev,
-                        demand: option.id as any
-                      }))}
-                  >
-                    <Text style={[
-                      styles.optionText,
-                      marketFactors.demand === option.id && styles.selectedOptionText
-                    ]}>
-                      {t(option.label)}
-                    </Text>
-                  </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-      );
-    }
-
-    if (item.id === 'supply') {
-      return (
-          <View style={styles.marketFactorContainer}>
-            <View style={styles.marketFactorHeader}>
-              <Ionicons
-                  name={item.icon as any}
-                  size={28}
-                  color={colors.primary}
-                  style={styles.marketFactorIcon}
-              />
-              <Text style={styles.marketFactorLabel}>
-                {t(item.label)}
-              </Text>
-            </View>
-            <View style={styles.optionsContainer}>
-              {SUPPLY_OPTIONS.map(option => (
-                  <TouchableOpacity
-                      key={option.id}
-                      style={[
-                        styles.optionButton,
-                        marketFactors.supply === option.id && styles.selectedOption
-                      ]}
-                      onPress={() => setMarketFactors(prev => ({
-                        ...prev,
-                        supply: option.id as any
-                      }))}
-                  >
-                    <Text style={[
-                      styles.optionText,
-                      marketFactors.supply === option.id && styles.selectedOptionText
-                    ]}>
-                      {t(option.label)}
-                    </Text>
-                  </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-      );
-    }
-
-    return null;
-  };
-
-  const renderPriceCalculationDetails = () => (
-      <View style={styles.calculationContainer}>
-        <TouchableOpacity
-            style={styles.calculationHeader}
-            onPress={() => setExpandedPriceDetails(!expandedPriceDetails)}
-            activeOpacity={0.7}
-        >
-          <View style={styles.priceSummary}>
-            <Ionicons name="pricetag" size={20} color={colors.primary} />
-            <Text style={styles.finalPriceText}>
-              {t('priceCalculation.finalPrice')}: {formatCurrency(priceCalculation.finalPrice.toString())}
-            </Text>
-          </View>
-          <Ionicons
-              name={expandedPriceDetails ? "chevron-up" : "chevron-down"}
-              size={20}
-              color={colors.primary}
-          />
-        </TouchableOpacity>
-
-        {expandedPriceDetails && (
-            <View style={styles.calculationDetails}>
-              <View style={styles.calculationRow}>
-                <Text style={styles.calculationLabel}>{t('priceCalculation.basePrice')}:</Text>
-                <Text style={styles.calculationValue}>{formatCurrency(priceCalculation.basePrice.toString())}</Text>
-              </View>
-
-              <View style={styles.calculationRow}>
-                <Text style={styles.calculationLabel}>
-                  {t('priceCalculation.defectsReduction')} ({priceCalculation.defectsReduction.toFixed(1)}%):
-                </Text>
-                <Text style={styles.calculationValue}>
-                  -{formatCurrency((priceCalculation.basePrice * priceCalculation.defectsReduction / 100).toString())}
-                </Text>
-              </View>
-              <View style={styles.calculationSubRow}>
-                <Text style={styles.calculationSubText}>
-                  {t('priceCalculation.defectsDetails')}: {defects.filter(d => d.selected).map(d => `${t(`defects.${d.id}`)} (${d.count}x)`).join(', ')}
-                </Text>
-              </View>
-
-              <View style={styles.calculationRow}>
-                <Text style={styles.calculationLabel}>
-                  {t('priceCalculation.uniquenessBonus')} (+{priceCalculation.uniquenessBonus.toFixed(1)}%):
-                </Text>
-                <Text style={styles.calculationValue}>
-                  +{formatCurrency((priceCalculation.basePrice * priceCalculation.uniquenessBonus / 100).toString())}
-                </Text>
-              </View>
-              <View style={styles.calculationSubRow}>
-                <Text style={styles.calculationSubText}>
-                  {t('priceCalculation.uniquenessDetails')}: {Object.entries(uniqueness)
-                    .filter(([_, value]) => value)
-                    .map(([key]) => t(`uniqueness.${key}`))
-                    .join(', ')}
-                </Text>
-              </View>
-
-              <View style={styles.calculationRow}>
-                <Text style={styles.calculationLabel}>
-                  {t('priceCalculation.marketModifier')} ({priceCalculation.marketModifier > 0 ? '+' : ''}{priceCalculation.marketModifier.toFixed(1)}%):
-                </Text>
-                <Text style={styles.calculationValue}>
-                  {priceCalculation.marketModifier > 0 ? '+' : ''}{formatCurrency((priceCalculation.basePrice * priceCalculation.marketModifier / 100).toString())}
-                </Text>
-              </View>
-              <View style={styles.calculationSubRow}>
-                <Text style={styles.calculationSubText}>
-                  {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
-                </Text>
-              </View>
-              <TouchableOpacity
-                  style={styles.marketAnalysisLink}
-                  onPress={() => setShowMarketModal(true)}
-              >
-                <Text style={styles.marketAnalysisLinkText}>
-                  {t('buttons.showMarketAnalysis')}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-        )}
-      </View>
-  );
-
   const startScanning = async () => {
     setIsLoading(true);
     try {
@@ -990,215 +530,11 @@ export default function AnalysisScreen() {
     }));
   };
 
-  const renderDefectItem = ({ item }: { item: BookDefect }) => (
-      <TouchableOpacity
-          style={[
-            styles.defectItemContainer,
-            item.selected && styles.selectedDefect
-          ]}
-          onPress={() => toggleDefectSelection(item.id)}
-          activeOpacity={0.7}
-      >
-        {item.selected && (
-            <>
-              <View style={styles.sliderRow}>
-                <Text style={styles.reductionText}>
-                  {item.priceReduction.toFixed(0)}%
-                </Text>
-              </View>
-            </>
-        )}
-        {item.selected && item.count > 0 && (
-            <View style={styles.defectCountBadge}>
-              <Text style={styles.defectCountBadgeText}>{item.count}</Text>
-            </View>
-        )}
-
-        <View style={styles.defectIconContainer}>
-          <Ionicons
-              name={item.icon as any}
-              size={28}
-              color={item.selected ? colors.primary : '#5c6b7e'}
-          />
-        </View>
-        <Text style={[
-          styles.defectName,
-          item.selected && styles.selectedDefectName
-        ]}>
-          {t(`defects.${item.id}`)}
-        </Text>
-      </TouchableOpacity>
-  );
-
-  const renderUniquenessItem = ({ item }: { item: typeof UNIQUENESS_TYPES[number] }) => (
-      <TouchableOpacity
-          style={[
-            styles.defectItemContainer,
-            uniqueness[item.id] && styles.selectedDefect
-          ]}
-          onPress={() => toggleUniquenessSelection(item.id)}
-          activeOpacity={0.7}
-      >
-        <View style={styles.defectIconContainer}>
-          <Ionicons
-              name={item.icon as any}
-              size={28}
-              color={uniqueness[item.id] ? colors.primary : '#5c6b7e'}
-          />
-        </View>
-        <Text style={[
-          styles.defectName,
-          uniqueness[item.id] && styles.selectedDefectName
-        ]}>
-          {t(item.label)}
-        </Text>
-      </TouchableOpacity>
-  );
-
-  const renderTabSection = () => (
-      <View style={styles.tabSectionContainer}>
-        <View style={styles.tabsContainer}>
-          {slides.map((slide) => (
-              <TouchableOpacity
-                  key={slide.id}
-                  style={[
-                    styles.tabButton,
-                    expandedTabs[slide.id] && styles.activeTabButton
-                  ]}
-                  onPress={() => toggleTab(slide.id)}
-                  activeOpacity={0.7}
-              >
-                <View style={styles.tabContent}>
-                  <Ionicons
-                      name={slide.icon as any}
-                      size={20}
-                      color={expandedTabs[slide.id] ? colors.primary : colors.grayDark}
-                      style={styles.tabIcon}
-                  />
-                  <Text style={[
-                    styles.tabText,
-                    expandedTabs[slide.id] && styles.activeTabText
-                  ]}>
-                    {slide.title}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.tabContentWrapper}>
-          {expandedTabs[slides[0].id] && (
-              <View style={styles.slideContent}>
-                <FlatList
-                    data={defects}
-                    renderItem={renderDefectItem}
-                    keyExtractor={item => item.id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                />
-              </View>
-          )}
-          {expandedTabs[slides[1].id] && (
-              <View style={styles.slideContent}>
-                <FlatList
-                    data={UNIQUENESS_TYPES}
-                    renderItem={renderUniquenessItem}
-                    keyExtractor={item => item.id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                />
-              </View>
-          )}
-          {expandedTabs[slides[2].id] && (
-              <View style={styles.slideContent}>
-                <FlatList
-                    data={MARKET_FACTOR_TOGGLES}
-                    renderItem={renderMarketFactorToggle}
-                    keyExtractor={item => item.id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                />
-              </View>
-          )}
-          {expandedTabs[slides[3].id] && (
-              <View style={styles.slideContent}>
-                <View style={styles.collectionRow}>
-                  <View style={styles.collectionPickerContainer}>
-                    {collections.length > 0 ? (
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                              selectedValue={selectedCollection}
-                              style={styles.picker}
-                              onValueChange={(itemValue) => setSelectedCollection(itemValue)}
-                              dropdownIconColor={colors.primary}
-                          >
-                            {collections.map((collection) => (
-                                <Picker.Item
-                                    key={collection}
-                                    label={collection}
-                                    value={collection}
-                                />
-                            ))}
-                          </Picker>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.createCollectionButton}
-                            onPress={() => router.push('/CollectionsScreen')}
-                        >
-                          <Text style={styles.createCollectionText}>
-                            {t('buttons.createFirstCollection')}
-                          </Text>
-                        </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {collections.length > 0 && (
-                      <View style={styles.bookCountContainer}>
-                        <Ionicons name="book" size={20} color={colors.primary} />
-                        <Text style={styles.bookCountText}>
-                          {books[selectedCollection]?.length || 0} {t(getBookWord(books[selectedCollection]?.length || 0, i18n.language))}
-                        </Text>
-                      </View>
-                  )}
-                </View>
-
-                <TouchableOpacity
-                    style={styles.saveButton}
-                    onPress={handleSaveBook}
-                    disabled={isLoading}
-                >
-                  {isLoading ? (
-                      <ActivityIndicator color="white" />
-                  ) : (
-                      <View style={styles.saveButtonContent}>
-                        <Ionicons
-                            name={editMode ? "save-outline" : "add-circle-outline"}
-                            size={24}
-                            color="white"
-                            style={styles.saveButtonIcon}
-                        />
-                        <Text style={styles.saveButtonText}>
-                          {editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
-                        </Text>
-                      </View>
-                  )}
-                </TouchableOpacity>
-              </View>
-          )}
-        </View>
-      </View>
-  );
-
   const handleSaveBook = () => {
     const priceValue = finalPrice.toFixed(2);
     const currentIsbn = editingIsbn ? isbnInput : isbn;
     const currentTitle = editingTitle ? titleInput : title;
 
-    // Create default listing status with proper type
     const defaultListingStatus: ListingStatus = {
       status: 'notListed',
       platforms: []
@@ -1209,7 +545,7 @@ export default function AnalysisScreen() {
       title: currentTitle,
       authors,
       price: priceValue,
-      displayPrice: formatCurrency(priceValue),
+      displayPrice: formatCurrency({ price: priceValue, exchangeRate }),
       foundInApi: params.fromHistory !== 'true',
       originalPrice,
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
@@ -1229,7 +565,6 @@ export default function AnalysisScreen() {
           : defaultListingStatus
     };
 
-    // Rest of the function remains the same
     if (editMode && collectionName && bookIndex !== null) {
       if (selectedCollection === collectionName) {
         updateBookInCollection(collectionName, bookIndex, bookData);
@@ -1286,97 +621,49 @@ export default function AnalysisScreen() {
               </TouchableOpacity>
 
               <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
-                <View style={styles.scanFrameTopLeft} />
+                  <View style={styles.scanFrameTopLeft} />
                 <View style={styles.scanFrameTopRight} />
-                <View style={styles.scanFrameBottomLeft} />
-                <View style={styles.scanFrameBottomRight} />
-              </Animated.View>
+              <View style={styles.scanFrameBottomLeft} />
+              <View style={styles.scanFrameBottomRight} />
+            </Animated.View>
 
-              <View style={styles.bottomControls}>
-                <Pressable
-                    style={styles.scanButton}
-                    onPress={takePictureAndAnalyze}
-                >
-                  <Ionicons name="scan" size={24} color="white" style={styles.scanIcon} />
-                  <Text style={styles.scanButtonText}>
-                    {t('labels.scanningDefects')}
-                  </Text>
-                </Pressable>
-
-                {isAnalyzing && (
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressBar}>
-                        <View style={{
-                          width: `${scanProgress}%`,
-                          backgroundColor: colors.primary,
-                          height: '100%'
-                        }}/>
-                      </View>
-                      <Text style={styles.scanningText}>
-                        {scanProgress}%
-                      </Text>
-                    </View>
-                )}
-              </View>
-            </View>
-          </CameraView>
-
-          <Modal
-              visible={showDefectModal}
-              transparent={true}
-              animationType="fade"
-              onRequestClose={rejectDefect}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContainer}>
-                <Text style={styles.modalTitle}>
-                  {t('labels.defectDetected')}
+            <View style={styles.bottomControls}>
+              <Pressable
+                  style={styles.scanButton}
+                  onPress={takePictureAndAnalyze}
+              >
+                <Ionicons name="scan" size={24} color="white" style={styles.scanIcon} />
+                <Text style={styles.scanButtonText}>
+                  {t('labels.scanningDefects')}
                 </Text>
+              </Pressable>
 
-                <View style={styles.modalContent}>
-                  <View style={styles.modalDefectInfo}>
-                    <Ionicons
-                        name={scannedDefect?.icon as any}
-                        size={32}
-                        color={colors.primary}
-                        style={styles.modalDefectIcon}
-                    />
-                    <Text style={styles.modalDefectName}>
-                      {t(`defects.${scannedDefect?.id}`)}
+              {isAnalyzing && (
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <View style={{
+                        width: `${scanProgress}%`,
+                        backgroundColor: colors.primary,
+                        height: '100%'
+                      }}/>
+                    </View>
+                    <Text style={styles.scanningText}>
+                      {scanProgress}%
                     </Text>
                   </View>
-
-                  <Text style={styles.modalText}>
-                    {t('labels.confidence')}: <Text style={styles.modalBoldText}>{scannedDefect?.confidence}%</Text>
-                  </Text>
-                  <Text style={styles.modalText}>
-                    {t('labels.priceReduction')}: <Text style={styles.modalBoldText}>{scannedDefect?.priceReduction}%</Text>
-                  </Text>
-                </View>
-
-                <View style={styles.modalButtonsContainer}>
-                  <TouchableOpacity
-                      style={[styles.modalButton, styles.rejectButton]}
-                      onPress={rejectDefect}
-                  >
-                    <Text style={styles.rejectButtonText}>
-                      {t('buttons.reject')}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                      style={[styles.modalButton, styles.acceptButton]}
-                      onPress={acceptDefect}
-                  >
-                    <Text style={styles.acceptButtonText}>
-                      {t('buttons.confirmDefect')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              )}
             </View>
-          </Modal>
         </View>
-    );
+  </CameraView>
+
+    <ScanDefectModal
+        visible={showDefectModal}
+        defect={scannedDefect}
+        onAccept={acceptDefect}
+        onReject={rejectDefect}
+    />
+  </View>
+  );
   }
 
   return (
@@ -1507,7 +794,7 @@ export default function AnalysisScreen() {
                       onPress={toggleEditOriginalPrice}
                   >
                     <Text style={typography.body}>
-                      {formatCurrency(originalPrice)}
+                      {formatCurrency({ price: originalPrice, exchangeRate })}
                     </Text>
                     <Ionicons
                         name="create"
@@ -1518,7 +805,13 @@ export default function AnalysisScreen() {
                   </TouchableOpacity>
               )}
             </View>
-            {renderPriceCalculationDetails()}
+            <PriceCalculationDetails
+                calculation={priceCalculation}
+                defects={defects}
+                uniqueness={uniqueness}
+                marketFactors={marketFactors}
+                onShowMarketAnalysis={() => setShowMarketModal(true)}
+            />
             {exchangeRateError && (
                 <Text style={[typography.caption, { color: colors.error }]}>
                   {t('alerts.exchangeRateError')}
@@ -1551,8 +844,30 @@ export default function AnalysisScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        {renderTabSection()}
-        {/* Market Analysis Modal */}
+
+        <TabSection
+            expandedTabs={expandedTabs}
+            defects={defects}
+            uniqueness={uniqueness}
+            includedMarketFactors={includedMarketFactors} // Dodajemy nowy prop
+            collections={collections}
+            selectedCollection={selectedCollection}
+            books={books}
+            editMode={editMode}
+            isLoading={isLoading}
+            onToggleTab={toggleTab}
+            onToggleDefect={toggleDefectSelection}
+            onToggleUniqueness={toggleUniquenessSelection}
+            onToggleMarketFactor={(id) => { // Uproszczona wersja
+              setIncludedMarketFactors(prev => ({
+                ...prev,
+                [id]: !prev[id]
+              }));
+            }}
+            onSelectCollection={setSelectedCollection} // Zmieniamy nazwę propa
+            onSaveBook={handleSaveBook}
+        />
+
         <Modal
             visible={showMarketModal}
             transparent={true}
@@ -1692,156 +1007,65 @@ const styles = StyleSheet.create({
   scanIcon: {
     marginRight: 10,
   },
-  defectsGrid: {
-    marginBottom: 16,
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  defectItemContainer: {
-    width: '48%',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.gray,
-    borderRadius: 2,
-    backgroundColor: 'white',
-    marginBottom: 12,
+  titleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    height: 130,
-    position: 'relative'
-  },
-  selectedDefect: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(74,108,247,0.05)',
-  },
-  defectIconContainer: {
-    marginBottom: 8,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 20,
-    padding: 12,
-    marginTop: 10,
-  },
-  defectName: {
-    color: '#2c3e50',
-    textAlign: 'center',
     marginBottom: 8,
   },
-  selectedDefectName: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  defectCountBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  defectCountBadgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  sliderRow: {
-    position: 'absolute',
-    top: 8,
-    left: -5,
-    width: 20,
-    height: 20,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 0,
-  },
-  reductionText: {
-    color: colors.primary,
-    width: 40,
-    textAlign: 'right',
-    fontWeight: '500',
-  },
-  dataRow: {
+  isbnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.grayDark,
+    marginBottom: 8,
   },
-  dataText: {
-    fontSize: 16,
-    color: colors.black,
-  },
-  collectionRow: {
+  titleInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  collectionPickerContainer: {
     flex: 1,
-    marginRight: 12,
+    marginLeft: 8,
   },
-  picker: {
-    height: 50,
-    width: '100%',
-  },
-  pickerContainer: {
-    borderWidth: 0,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  bookCountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 15,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  bookCountText: {
-    marginLeft: 5,
-    color: colors.primary,
-  },
-  createCollectionButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 2,
+  titleInput: {
+    flex: 1,
+    height: 30,
+    borderColor: colors.primary,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  createCollectionText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  saveButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
     borderRadius: 2,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-    marginTop: 16,
+    paddingHorizontal: 8,
+    marginRight: 8,
   },
-  saveButtonContent: {
+  isbnInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginLeft: 8,
   },
-  saveButtonIcon: {
-    marginRight: 10,
+  isbnInput: {
+    flex: 1,
+    height: 30,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 8,
+    marginRight: 8,
   },
-  saveButtonText: {
-    color: 'white',
-    fontWeight: '600',
+  saveTitleButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
   },
   fullScreenContainer: {
     flex: 1,
@@ -1956,361 +1180,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContainer: {
-    width: '85%',
-    backgroundColor: 'white',
-    borderRadius: 2,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 15,
-    color: colors.black,
-    textAlign: 'left',
-  },
-  modalContent: {
-    marginBottom: 20,
-  },
-  modalDefectInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  modalDefectIcon: {
-    marginRight: 10,
-  },
-  modalDefectName: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: colors.black,
-  },
-  modalText: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 8,
-    textAlign: 'left',
-  },
-  modalBoldText: {
-    fontWeight: '600',
-    color: colors.black,
-  },
-  modalButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 20,
-  },
-  modalButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 2,
-    marginLeft: 10,
-  },
-  acceptButton: {
-    backgroundColor: 'transparent',
-  },
-  rejectButton: {
-    backgroundColor: 'transparent',
-  },
-  acceptButtonText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  rejectButtonText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  tabSectionContainer: {
-    backgroundColor: 'white',
-    borderRadius: 2,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    overflow: 'hidden',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'white',
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  tabContentWrapper: {
-    padding: 16,
-    paddingTop: 12,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 4,
-  },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabText: {
-    fontSize: 12,
-    color: colors.grayDark,
-    fontWeight: '500',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  activeTabText: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  tabIcon: {
-    marginBottom: 2,
-  },
-  activeTabButton: {
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  isbnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  titleInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 8,
-  },
-  titleInput: {
-    flex: 1,
-    height: 30,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 8,
-    marginRight: 8,
-  },
-  isbnInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 8,
-  },
-  isbnInput: {
-    flex: 1,
-    height: 30,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 8,
-    marginRight: 8,
-  },
-  saveTitleButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
-    flex: 1,
-  },
-  chartContainer: {
-    backgroundColor: 'white',
-    borderRadius: 2,
-    padding: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  marketFactorsContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 2,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: colors.black,
-  },
-  source: {
-    fontSize: 12,
-    color: colors.gray,
-    marginTop: 8,
-  },
-  calculationContainer: {
-    borderRadius: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.grayDark,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(74,108,247,0.08)'
-  },
-  calculationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-  },
-  priceSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  finalPriceText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginLeft: 10,
-  },
-  calculationDetails: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray,
-  },
-  calculationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  calculationLabel: {
-    fontSize: 14,
-    color: colors.grayDark,
-    flex: 1,
-  },
-  calculationValue: {
-    fontSize: 14,
-    color: colors.black,
-    fontWeight: '500',
-    textAlign: 'right',
-    flex: 1,
-  },
-  calculationSubRow: {
-    marginBottom: 12,
-    paddingLeft: 12,
-  },
-  calculationSubText: {
-    fontSize: 12,
-    color: colors.grayDark,
-    fontStyle: 'italic',
-  },
-  slideContent: {
-    paddingBottom: 16,
-  },
-  marketFactorContainer: {
-    width: '100%',
-    marginBottom: 16,
-  },
-  marketFactorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  marketFactorIcon: {
-    marginRight: 10,
-  },
-  marketFactorLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.black,
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  optionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: colors.gray,
-    marginBottom: 8,
-    width: '48%',
-  },
-  selectedOption: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  optionText: {
-    textAlign: 'center',
-    color: colors.grayDark,
-  },
-  selectedOptionText: {
-    color: 'white',
-  },
-  yearItemContainer: {
-    height: 120,
-  },
-  yearInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  yearInput: {
-    height: 30,
-    width: 80,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 8,
-    marginRight: 8,
-    textAlign: 'center',
-  },
-  saveYearButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  yearDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  marketAnalysisButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 2,
-    marginTop: 16,
-  },
-  marketAnalysisButtonText: {
-    color: colors.primary,
-    marginRight: 8,
-    fontWeight: '500',
-  },
   marketModalContainer: {
     width: '90%',
     backgroundColor: 'white',
@@ -2326,29 +1195,5 @@ const styles = StyleSheet.create({
   },
   closeModalButton: {
     padding: 4,
-  },
-  marketInfoBox: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-  },
-  marketInfoText: {
-    fontSize: 14,
-    color: colors.grayDark,
-    marginBottom: 4,
-  },
-  marketAnalysisLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-    marginBottom: 12,
-    paddingVertical: 4,
-  },
-  marketAnalysisLinkText: {
-    color: colors.primary,
-    fontSize: 14,
-    marginRight: 4,
   },
 });
