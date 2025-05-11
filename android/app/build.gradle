@@ -113,9 +113,12 @@ android {
 dependencies {
     implementation("com.facebook.react:react-android")
 
+
     // Dodane: Wymagane zależności Expo
     implementation project(':expo-modules-core')
     implementation project(':expo-constants')
+    implementation project(':react-native-gesture-handler')
+
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

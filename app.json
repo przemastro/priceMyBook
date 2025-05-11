@@ -12,7 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["assets/model/*"],
+    "assetBundlePatterns": [
+      "assets/model/*",
+      "assets/images/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.priceMyBook",
@@ -32,9 +35,7 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.RECORD_AUDIO"
       ],
       "softwareKeyboardLayoutMode": "pan"
     },
@@ -67,7 +68,7 @@
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
             "buildToolsVersion": "34.0.0",
-            "javaVersion": "17",
+            "kotlinVersion": "1.9.23",
             "enableProguardInReleaseBuilds": true,
             "extraMavenRepos": [
               "$rootDir/../node_modules/@tensorflow/tfjs-react-native/dist/tfjs-react-native.aar"
@@ -98,22 +99,6 @@
       },
       "eas": {
         "projectId": "475267f1-a846-4802-a6e9-a58d2db082af"
-      }
-    },
-    "packagerOpts": {
-      "config": "metro.config.js",
-      "sourceExts": [
-        "js",
-        "jsx",
-        "json",
-        "ts",
-        "tsx",
-        "bin",
-        "cjs"
-      ],
-      "transformer": {
-        "experimentalImportSupport": false,
-        "inlineRequires": true
       }
     },
     "owner": "jagodzip"

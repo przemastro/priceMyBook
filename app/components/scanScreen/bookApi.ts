@@ -1,5 +1,5 @@
 import {BookInfo, AmazonApiResponse, AmazonPriceOffer, MarketData, MarketFactors} from './types';
-import { Config } from '../../(tabs)/config';
+import { Config } from '../../config';
 
 export const convertIsbnToAsin = (isbn: string): string => {
     const cleanIsbn = isbn.replace(/[^0-9X]/gi, '');
