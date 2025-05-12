@@ -44,68 +44,37 @@ export default function SettingsScreen() {
                     <View style={styles.tabContent}>
                         <Text style={styles.settingsTitle}>{t('settings.about')}</Text>
                         <Text style={styles.aboutText}>
-                            {t('settings.appName')}: {t('settings.name')}
+                            {t('settings.appDescription')}
                         </Text>
-                        <Text style={styles.aboutText}>
-                            {t('settings.version')}: 1.0.0
-                        </Text>
-                        <Text style={styles.aboutText}>
-                            {t('settings.changelog')}:
-                        </Text>
-                        <Text style={styles.changelogText}>
-                            - {t('settings.changelog1')} {'\n'}
-                            - {t('settings.changelog2')} {'\n'}
-                            - {t('settings.changelog3')}
-                        </Text>
+                        <Text style={styles.featuresTitle}>{t('settings.features')}:</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature1')}</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature2')}</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature3')}</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature4')}</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature5')}</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature6')}</Text>
+                        <Text style={styles.featureItem}>• {t('settings.feature7')}</Text>
                     </View>
                 );
             case 'algorithm':
                 return (
                     <View style={styles.tabContent}>
-                        <Text style={styles.settingsTitle}>{t('settings.activeFactors')}</Text>
-                        <View style={styles.factorsContainer}>
-                            <TouchableOpacity
-                                style={styles.factorItem}
-                                onPress={() => setActiveFactors({...activeFactors, defects: !activeFactors.defects})}
-                            >
-                                <Ionicons
-                                    name={activeFactors.defects ? "checkbox-outline" : "square-outline"}
-                                    size={24}
-                                    color={activeFactors.defects ? colors.primary : colors.gray}
-                                />
-                                <Text style={styles.factorText}>{t('settings.defectsFactor')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.factorItem}
-                                onPress={() => setActiveFactors({...activeFactors, uniqueness: !activeFactors.uniqueness})}
-                            >
-                                <Ionicons
-                                    name={activeFactors.uniqueness ? "checkbox-outline" : "square-outline"}
-                                    size={24}
-                                    color={activeFactors.uniqueness ? colors.primary : colors.gray}
-                                />
-                                <Text style={styles.factorText}>{t('settings.uniquenessFactor')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.factorItem}
-                                onPress={() => setActiveFactors({...activeFactors, market: !activeFactors.market})}
-                            >
-                                <Ionicons
-                                    name={activeFactors.market ? "checkbox-outline" : "square-outline"}
-                                    size={24}
-                                    color={activeFactors.market ? colors.primary : colors.gray}
-                                />
-                                <Text style={styles.factorText}>{t('settings.marketFactor')}</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <Text style={styles.algorithmStepTitle}>{t('settings.steps')}:</Text>
-                        <Text style={styles.algorithmStep}>
-                            1. {t('settings.basePrice')}{'\n'}
-                            2. {activeFactors.defects && t('settings.defectReduction')}{'\n'}
-                            3. {activeFactors.uniqueness && t('settings.uniquenessBonus')}{'\n'}
-                            4. {activeFactors.market && t('settings.marketAdjustment')}{'\n'}
-                            5. {t('settings.maxReduction')} (90%){'\n'}
-                            6. {t('settings.finalPriceCalculation')}
+                        <Text style={styles.settingsTitle}>{t('settings.algorithmTitle')}</Text>
+                        <Text style={styles.algorithmDescription}>
+                            {t('settings.algorithmDescription')}
+                        </Text>
+
+                        <Text style={styles.algorithmSectionTitle}>{t('settings.algorithmSteps')}:</Text>
+                        <Text style={styles.algorithmStep}>1. {t('settings.algorithmStep1')}</Text>
+                        <Text style={styles.algorithmStep}>2. {t('settings.algorithmStep2')}</Text>
+                        <Text style={styles.algorithmStep}>3. {t('settings.algorithmStep3')}</Text>
+                        <Text style={styles.algorithmStep}>4. {t('settings.algorithmStep4')}</Text>
+                        <Text style={styles.algorithmStep}>5. {t('settings.algorithmStep5')}</Text>
+                        <Text style={styles.algorithmStep}>6. {t('settings.algorithmStep6')}</Text>
+
+                        <Text style={styles.formulaTitle}>{t('settings.formulaTitle')}:</Text>
+                        <Text style={styles.formula}>
+                            {t('settings.formula')}
                         </Text>
                     </View>
                 );
@@ -221,6 +190,63 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         color: colors.primary,
     },
+    aboutText: {
+        fontSize: 16,
+        marginBottom: 15,
+        color: colors.black,
+        lineHeight: 24,
+    },
+    featuresTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 10,
+        marginBottom: 5,
+        color: colors.primary,
+    },
+    featureItem: {
+        fontSize: 14,
+        color: colors.grayDark,
+        lineHeight: 22,
+        marginBottom: 5,
+        marginLeft: 10,
+    },
+    algorithmDescription: {
+        fontSize: 16,
+        marginBottom: 15,
+        color: colors.black,
+        lineHeight: 24,
+    },
+    algorithmSectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 10,
+        marginBottom: 5,
+        color: colors.primary,
+    },
+    algorithmStep: {
+        fontSize: 14,
+        color: colors.grayDark,
+        lineHeight: 22,
+        marginBottom: 5,
+        marginLeft: 10,
+    },
+    formulaTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 15,
+        marginBottom: 5,
+        color: colors.primary,
+    },
+    formula: {
+        fontSize: 14,
+        fontStyle: 'italic',
+        color: colors.grayDark,
+        lineHeight: 22,
+        marginLeft: 10,
+        backgroundColor: 'rgba(74,108,247,0.05)',
+        padding: 10,
+        borderRadius: 5,
+    },
     languageButton: {
         backgroundColor: 'rgba(74,108,247,0.1)',
         padding: 15,
@@ -232,45 +258,5 @@ const styles = StyleSheet.create({
         color: colors.primary,
         fontSize: 16,
         fontWeight: '500',
-    },
-    aboutText: {
-        fontSize: 16,
-        marginBottom: 10,
-        color: colors.black,
-    },
-    changelogText: {
-        fontSize: 14,
-        color: colors.grayDark,
-        lineHeight: 20,
-        marginLeft: 10,
-    },
-    algorithmStepTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 5,
-        color: colors.primary,
-    },
-    algorithmStep: {
-        fontSize: 14,
-        color: colors.grayDark,
-        lineHeight: 22,
-        marginBottom: 15,
-        marginLeft: 10,
-    },
-    factorsContainer: {
-        marginBottom: 20,
-    },
-    factorItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.grayDark,
-    },
-    factorText: {
-        marginLeft: 10,
-        fontSize: 16,
-        color: colors.black,
     },
 });

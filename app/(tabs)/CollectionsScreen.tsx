@@ -143,7 +143,7 @@ const CollectionsScreen = () => {
                     marketFactors: book['Market Factors'] ? JSON.parse(book['Market Factors']) : defaultMarketFactors,
                     ageInfo: book['Age Info'] ? JSON.parse(book['Age Info']) : defaultAgeInfo,
                     listingStatus: book['Listing Status'] ? JSON.parse(book['Listing Status']) : defaultListingStatus,
-                    createdAt: new Date().toISOString() // Wymagane pole
+                    createdAt: new Date().toISOString() // Dodaj to pole
                 }));
 
             setImportPreview({
@@ -162,10 +162,9 @@ const CollectionsScreen = () => {
         if (!importPreview) return;
         try {
             addCollection(importPreview.collectionName);
-            await addBooksToCollection(importPreview.collectionName, validBooks);
+            await addBooksToCollection(importPreview.collectionName, importPreview.books); // Użyj importPreview.books zamiast validBooks
             Alert.alert(t('alerts.success'), t('status.importSuccess', { count: importPreview.books.length, name: importPreview.collectionName }));
             setImportPreview(null);
-            setValidBooks([]);
         } catch (error) {
             Alert.alert(t('alerts.error'), t('alerts.importSaveError'));
             console.error('Failed to save import:', error);
