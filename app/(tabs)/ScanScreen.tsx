@@ -28,6 +28,8 @@ import { BookInfo, BookUniqueness, MarketFactors, BookAgeInfo } from '../compone
 import { CameraOverlay } from '../components/scanScreen/CameraOverlay';
 import { ManualEntryModal } from '../components/scanScreen/ManualEntryModal';
 import { ScanResultModal } from '../components/scanScreen/ScanResultModal';
+import { RateLimitStatus } from '../components/scanScreen/RateLimitStatus';
+
 
 const { width, height } = Dimensions.get('window');
 

@@ -13,6 +13,8 @@ import { BookInfo } from './types';
 import { colors, typography } from '@/styles/styles';
 import { BookInfoDisplay } from './BookInfoDisplay';
 import { AmazonPriceButtons } from './AmazonPriceButtons';
+import { RateLimitStatus } from './RateLimitStatus';
+
 
 interface ScanResultModalProps {
     visible: boolean;
@@ -48,6 +50,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
     return (
         <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
+                <RateLimitStatus style={styles.rateLimitContainer} />
                 <ScrollView
                     contentContainerStyle={styles.modalScrollContent}
                     showsVerticalScrollIndicator={false}
@@ -177,5 +180,15 @@ const styles = StyleSheet.create({
     cancelButtonText: {
         color: colors.primary,
         fontWeight: '500',
+    },
+    rateLimitContainer: {
+        position: 'absolute',
+        top: 1, // lub safeAreaInsets.top + 10 jeśli używasz SafeAreaView
+        right: 10,
+        zIndex: 100,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 5,
+        padding: 5,
+        width: 320
     },
 });

@@ -1,5 +1,6 @@
 import {BookInfo, AmazonApiResponse, AmazonPriceOffer, MarketData, MarketFactors} from './types';
 import { Config } from '../../config';
+import {checkRateLimit} from "@/app/utils/rateLimiter";
 
 export const convertIsbnToAsin = (isbn: string): string => {
     const cleanIsbn = isbn.replace(/[^0-9X]/gi, '');
@@ -118,6 +119,55 @@ export const fetchOpenLibraryData = async (isbn: string) => {
 };
 
 export const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string): Promise<AmazonApiResponse> => {
+    // Sprawdź limit przed wykonaniem requestu
+    const isAllowed = await checkRateLimit('AMAZON');
+    if (!isAllowed) {
+        return {
+            status: "RATE_LIMIT_EXCEEDED",
+            request_id: "",
+            parameters: {
+                asin: convertIsbnToAsin(isbn),
+                country: language === 'pl' ? 'PL' : 'US',
+                limit: 5,
+                page: 1
+            },
+            data: {
+                asin: convertIsbnToAsin(isbn),
+                product_title: "",
+                product_price: "",
+                product_original_price: null,
+                currency: "",
+                country: language === 'pl' ? 'PL' : 'US',
+                product_byline: "",
+                product_url: "",
+                product_photo: "",
+                product_num_offers: 0,
+                is_prime: false,
+                product_information: {},
+                product_offers: [],
+                marketFactors: {
+                    demand: 'medium',
+                    supply: 'medium',
+                    publicationYear: undefined
+                },
+                priceRange: undefined,
+                salesRank: 999999,
+                isBestSeller: false,
+                isAmazonChoice: false,
+                numRatings: 0,
+                starRating: null
+            },
+            prices: [],
+            productTitle: "",
+            productImage: "",
+            productUrl: "",
+            isPrime: false,
+            marketplace: language === 'pl' ? 'PL' : 'US',
+            rawResponse: null,
+            error: 'Weekly API rate limit exceeded'
+        };
+    }
+
     const asin = convertIsbnToAsin(isbn);
     const country = language === 'pl' ? 'PL' : 'US';
     const url = `https://real-time-amazon-data.p.rapidapi.com/product-offers?asin=${asin}&country=${country}&limit=5&page=1`;
@@ -200,13 +250,13 @@ export const fetchBookPriceFromAmazonAPI = async (isbn: string, language: string
                     deliveryTime: offer.delivery_time,
                     rawOffer: offer
                 })),
-                productTitle: data.data.product_title,
+            productTitle: data.data.product_title,
                 productImage: data.data.product_photo,
                 productUrl: data.data.product_url,
                 isPrime: data.data.is_prime || false,
                 marketplace: data.data.country,
                 rawResponse: data
-            };
+        };
         }
 
         return {

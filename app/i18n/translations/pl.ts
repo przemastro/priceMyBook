@@ -35,7 +35,9 @@ export default {
         noCollectionsTitle: 'Brak księgozbioru',
         noCollectionsMessage: 'Musisz najpierw utworzyć księgozbiór. Czy chcesz utworzyć ją teraz?',
         noCollectionsExist: "Nie masz jeszcze żadnych księgozbiorów. Czy chcesz utworzyć nowy?",
-        bookMoved: "Książka została przeniesiona z \"{oldCollection}\" do \"{newCollection}\""
+        bookMoved: "Książka została przeniesiona z \"{oldCollection}\" do \"{newCollection}\"",
+        rateLimitTitle: "Limit requestów",
+        rateLimitMessage: "Osiągnięto limit {limit} requestów tygodniowo do Amazon API. Limit zostanie zresetowany w poniedziałek."
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -274,5 +276,10 @@ export default {
     },
     welcome: {
         slogan: 'Zeskanuj • Wyceń • Zarabiaj'
+    },
+    rateLimit: {
+        noData: "Brak danych o limitach",
+        status: "Użyto {{used}} z {{limit}} requestów. Pozostało: {{remaining}}. Reset: {{resetDate}}",
+        error: "Błąd podczas sprawdzania limitu"
     }
 }

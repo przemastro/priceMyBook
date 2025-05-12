@@ -39,7 +39,10 @@ export default {
         disabledTab: "Disabled feature",
         enableInSettings: "This feature is currently disabled. You can enable it in the algorithm settings.",
         noCollectionsExist: "You don't have any collections yet. Do you want to create one?",
-        bookMoved: "Book has been moved from \"{oldCollection}\" to \"{newCollection}\""
+        bookMoved: "Book has been moved from \"{oldCollection}\" to \"{newCollection}\"",
+        rateLimitTitle: "Request Limit",
+        rateLimitMessage: "The weekly limit of {limit} requests to the Amazon API has been reached. The limit will reset on Monday."
+
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -280,6 +283,11 @@ export default {
     },
     welcome: {
         slogan: 'Scan • Price • Profit'
+    },
+    rateLimit: {
+        noData: "No rate limit data available",
+        status: "Used {{used}} out of {{limit}} requests. Remaining: {{remaining}}. Reset: {{resetDate}}",
+        error: "Error while checking the rate limit"
     }
 
 }
