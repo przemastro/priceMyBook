@@ -21,7 +21,7 @@ import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {colors, responsive, typography} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons, MaterialIcons} from '@expo/vector-icons';
 import i18n from "i18next";
 import 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
@@ -47,6 +47,7 @@ import {
   IncludedMarketFactors
 } from '../components/analysisScreen/types';
 import { formatCurrency } from '../utils/currency';
+import Carousel from "react-native-reanimated-carousel";
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -857,7 +858,7 @@ export default function AnalysisScreen() {
                               <Ionicons
                                   name={item.icon as any}
                                   size={28}
-                                  color={item.selected ? colors.primary : '#5c6b7e'}
+                                  color={item.selected ? colors.primary : colors.secondary}
                               />
                             </View>
                             <Text style={[
@@ -978,68 +979,74 @@ export default function AnalysisScreen() {
             <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[4]}</Text>
-                <View style={styles.collectionRow}>
-                  <View style={styles.collectionPickerContainer}>
-                    {collections.length > 0 ? (
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                              selectedValue={selectedCollection}
-                              onValueChange={setSelectedCollection}
-                              style={styles.picker}
-                              dropdownIconColor={colors.primary}
-                          >
-                            {collections.map((collection) => (
-                                <Picker.Item
-                                    key={collection}
-                                    label={collection}
-                                    value={collection}
+
+                <View style={styles.carouselContainer}>
+                  <Carousel
+                      loop={false}
+                      style={styles.carousel}
+                      width={viewportWidth / 2}
+                      height={180}
+                      data={[...collections, 'create_new']} // Dodajemy specjalny element na końcu
+                      onSnapToItem={(index) => {
+                        if (index < collections.length) {
+                          setSelectedCollection(collections[index]);
+                        }
+                      }}
+                      renderItem={({ index }) => {
+                        // Specjalny przypadek dla przycisku tworzenia nowego księgozbioru
+                        if (index >= collections.length) {
+                          return (
+                              <TouchableOpacity
+                                  style={styles.createCollectionCarouselItem}
+                                  onPress={() => setShowAddCollectionModal(true)}
+                              >
+                                <View style={styles.carouselContent}>
+                                  <Ionicons
+                                      name="add-circle"
+                                      size={24}
+                                      color={colors.primary}
+                                  />
+                                  <Text style={styles.createCollectionCarouselText}>
+                                    {t('buttons.createNewCollection')}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                          );
+                        }
+
+                        const collection = collections[index];
+                        const bookCount = books[collection]?.length || 0;
+                        const isSelected = selectedCollection === collection;
+
+                        return (
+                            <View style={[
+                              styles.carouselItem,
+                              isSelected && styles.selectedCarouselItem
+                            ]}>
+                              <TouchableOpacity
+                                  onPress={() => setSelectedCollection(collection)}
+                                  style={styles.carouselContent}
+                              >
+                                <MaterialIcons
+                                    name="collections-bookmark"
+                                    size={24}
+                                    color={isSelected ? colors.primary : colors.secondary}
                                 />
-                            ))}
-                          </Picker>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.createCollectionButton}
-                            onPress={() => setShowAddCollectionModal(true)}
-                        >
-                          <Text style={styles.createCollectionText}>
-                            {t('buttons.createFirstCollection')}
-                          </Text>
-                        </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {collections.length > 0 && (
-                      <View style={styles.bookCountContainer}>
-                        <Ionicons name="book" size={20} color={colors.primary} />
-                        <Text style={styles.bookCountText}>
-                          {books[selectedCollection]?.length || 0} {t(getBookWord(books[selectedCollection]?.length || 0, i18n.language))}
-                        </Text>
-                      </View>
-                  )}
+                                <Text style={[
+                                  styles.carouselCollectionName,
+                                  isSelected && styles.selectedText
+                                ]} numberOfLines={2}>
+                                  {collection}
+                                </Text>
+                                <Text style={styles.carouselBookCount}>
+                                  {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                        );
+                      }}
+                  />
                 </View>
-
-                <TouchableOpacity
-                    style={styles.saveButton}
-                    onPress={handleSaveBook}
-                    disabled={isLoading}
-                >
-                  {isLoading ? (
-                      <ActivityIndicator color="white" />
-                  ) : (
-                      <View style={styles.saveButtonContent}>
-                        <Ionicons
-                            name={editMode ? "save-outline" : "add-circle-outline"}
-                            size={24}
-                            color="white"
-                            style={styles.saveButtonIcon}
-                        />
-                        <Text style={styles.saveButtonText}>
-                          {editMode ? t('buttons.saveChanges') : t('buttons.addToCollection')}
-                        </Text>
-                      </View>
-                  )}
-                </TouchableOpacity>
               </View>
             </Animated.View>
         );
@@ -1280,10 +1287,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '100%',
   },
-  disabledButton: {
-    opacity: 0.5,
-    borderColor: colors.gray,
-  },
   disabledButtonText: {
     color: colors.gray,
   },
@@ -1313,7 +1316,7 @@ const styles = StyleSheet.create({
     height: 100, // Zmniejszamy wysokość
     position: 'relative',
     marginHorizontal: '1.66%', // Dodajemy marginesy po bokach
-    shadowColor: colors.black,
+    shadowColor: 'rgba(74,108,247,0.05)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -1321,12 +1324,7 @@ const styles = StyleSheet.create({
   },
   selectedDefect: {
     borderColor: colors.primary,
-    backgroundColor: 'rgba(74,108,247,0.05)',
-    shadowColor: 'rgba(74,108,247,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: 'rgba(74,108,247,0.15)',
   },
   defectIconContainer: {
     marginBottom: 4,
@@ -1336,7 +1334,7 @@ const styles = StyleSheet.create({
     marginTop: 4, // Zmniejszamy margines
   },
   defectName: {
-    color: '#2c3e50',
+    color: colors.secondary,
     textAlign: 'center',
     fontSize: 12, // Zmniejszamy rozmiar czcionki
     lineHeight: 14, // Ustawiamy odpowiedni interlinia
@@ -1349,8 +1347,8 @@ const styles = StyleSheet.create({
   },
   defectCountBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 4,
+    right: 4,
     backgroundColor: colors.primary,
     borderRadius: 10,
     width: 20,
@@ -1375,7 +1373,7 @@ const styles = StyleSheet.create({
   },
   reductionText: {
     color: colors.primary,
-    width: 40,
+    width: 0,
     textAlign: 'right',
     fontWeight: '500',
   },
@@ -1422,42 +1420,12 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     color: colors.primary,
   },
-  createCollectionButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  createCollectionText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  saveButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 2,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-    marginTop: 16,
-  },
   saveButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   saveButtonIcon: {
     marginRight: 10,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontWeight: '600',
   },
   fullScreenContainer: {
     flex: 1,
@@ -1885,5 +1853,105 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  carouselContainer: {
+    height: 280,
+    marginBottom: 0,
+  },
+  carousel: {
+    width: '100%',
+    height: '120%'
+  },
+  carouselItem: {
+    width: viewportWidth / 2 - 30,
+    backgroundColor: 'rgba(74,108,247,0.05)',
+    borderRadius: 22,
+    padding: 16,
+    marginHorizontal: 8,
+    borderWidth: 1,
+    borderColor: colors.grayLight,
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'rgba(74,108,247,0.05)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  selectedCarouselItem: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(74,108,247,0.2)',
+    shadowColor: 'rgba(74,108,247,0.05)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  carouselContent: {
+    alignItems: 'center',
+  },
+  carouselCollectionName: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 8,
+    color: colors.secondary,
+  },
+  selectedText: {
+    color: colors.primary,
+  },
+  carouselBookCount: {
+    marginTop: 8,
+    fontSize: 14,
+    color: colors.secondary,
+  },
+  createCollectionButton: {
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    marginBottom: 20,
+  },
+  createCollectionText: {
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  saveButton: {
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: colors.white,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  createCollectionCarouselItem: {
+    width: viewportWidth / 2 - 30,
+    backgroundColor: 'rgba(74,108,247,0.05)',
+    borderRadius: 22,
+    padding: 16,
+    marginHorizontal: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createCollectionCarouselText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 8,
+    color: colors.primary,
   },
 });
