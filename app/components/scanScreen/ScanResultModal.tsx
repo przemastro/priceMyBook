@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     },
     rateLimitContainer: {
         position: 'absolute',
-        top: 1, // lub safeAreaInsets.top + 10 jeśli używasz SafeAreaView
+        top: 1,
         right: 10,
         zIndex: 100,
         backgroundColor: 'rgba(0,0,0,0.5)',

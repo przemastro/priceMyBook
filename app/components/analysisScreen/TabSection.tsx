@@ -1,26 +1,37 @@
-import React from 'react';
-import { View, FlatList, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useRef } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    Animated,
+    Dimensions,
+    FlatList,
+    ActivityIndicator
+} from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { styles } from './styles';
+import { useAppContext } from '@/context/AppContext';
+import { colors, typography } from '@/styles/styles';
 import {
     BookDefect,
     BookUniqueness,
+    MARKET_FACTOR_TOGGLES,
     MarketFactorToggle,
-    DEFECT_TYPES,
-    UNIQUENESS_TYPES,
-    MARKET_FACTOR_TOGGLES, MarketFactors
+    PriceCalculation,
+    UNIQUENESS_TYPES
 } from './types';
-import { colors, typography } from '@/styles/styles';
+import { formatCurrency } from '../../utils/currency';
+import {useRouter} from "expo-router";
+import {Picker} from "@react-native-picker/picker";
 
+const { width: viewportWidth } = Dimensions.get('window');
 
 interface TabSectionProps {
     expandedTabs: Record<string, boolean>;
     defects: BookDefect[];
     uniqueness: BookUniqueness;
-    includedMarketFactors: { // Dodajemy nowy prop
+    includedMarketFactors: {
         includePublicationYear: boolean;
         includeDemand: boolean;
         includeSupply: boolean;
@@ -30,12 +41,16 @@ interface TabSectionProps {
     books: Record<string, any[]>;
     editMode: boolean;
     isLoading: boolean;
+    currentStep: number;
+    totalSteps: number;
     onToggleTab: (tabId: string) => void;
     onToggleDefect: (id: string) => void;
     onToggleUniqueness: (id: keyof BookUniqueness) => void;
-    onToggleMarketFactor: (id: 'includePublicationYear' | 'includeDemand' | 'includeSupply') => void; // Poprawiamy typ
-    onSelectCollection: (collection: string) => void; // Zmieniamy nazwę z onSetSelectedCollection dla spójności
+    onToggleMarketFactor: (id: 'includePublicationYear' | 'includeDemand' | 'includeSupply') => void;
+    onSelectCollection: (collection: string) => void;
     onSaveBook: () => void;
+    onNextStep: () => void;
+    onPrevStep: () => void;
 }
 
 const TabSection: React.FC<TabSectionProps> = ({
@@ -48,12 +63,16 @@ const TabSection: React.FC<TabSectionProps> = ({
                                                    books,
                                                    isLoading,
                                                    editMode,
+                                                   currentStep,
+                                                   totalSteps,
                                                    onToggleTab,
                                                    onToggleDefect,
                                                    onToggleUniqueness,
                                                    onToggleMarketFactor,
                                                    onSelectCollection,
-                                                   onSaveBook
+                                                   onSaveBook,
+                                                   onNextStep,
+                                                   onPrevStep
                                                }) => {
     const { t } = useTranslation();
     const router = useRouter();
@@ -68,6 +87,231 @@ const TabSection: React.FC<TabSectionProps> = ({
     const getBookWord = (count: number) => {
         return count === 1 ? t('labels.book_one') : t('labels.book_other');
     };
+
+    const styles = StyleSheet.create({
+        tabSectionContainer: {
+            marginTop: 16,
+        },
+        progressContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 16,
+            paddingHorizontal: 8,
+        },
+        progressText: {
+            fontSize: 14,
+            color: colors.grayDark,
+        },
+        progressBarContainer: {
+            flex: 1,
+            height: 4,
+            backgroundColor: colors.grayLight,
+            borderRadius: 2,
+            marginHorizontal: 8,
+            overflow: 'hidden',
+        },
+        progressBar: {
+            height: '100%',
+            backgroundColor: colors.primary,
+            width: `${(currentStep / totalSteps) * 100}%`,
+        },
+        tabsContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+        },
+        tabButton: {
+            flex: 1,
+            paddingVertical: 12,
+            alignItems: 'center',
+            borderBottomWidth: 2,
+            borderBottomColor: 'transparent',
+        },
+        activeTabButton: {
+            borderBottomColor: colors.primary,
+        },
+        tabContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        tabIcon: {
+            marginRight: 8,
+        },
+        tabText: {
+            fontSize: 14,
+            color: colors.grayDark,
+        },
+        activeTabText: {
+            color: colors.primary,
+            fontWeight: '500',
+        },
+        tabContentWrapper: {
+            backgroundColor: 'white',
+            borderRadius: 8,
+            padding: 16,
+        },
+        slideContent: {
+            paddingVertical: 8,
+        },
+        defectItemContainer: {
+            padding: 8,
+            borderWidth: 1,
+            borderColor: colors.gray,
+            borderRadius: 8,
+            backgroundColor: 'white',
+            marginBottom: 12,
+            alignItems: 'center',
+            height: 120,
+            position: 'relative',
+        },
+        selectedDefect: {
+            borderColor: colors.primary,
+            backgroundColor: 'rgba(74,108,247,0.05)',
+        },
+        defectIconContainer: {
+            marginBottom: 4,
+            backgroundColor: 'rgba(0,0,0,0.03)',
+            borderRadius: 20,
+            padding: 8,
+        },
+        defectName: {
+            color: '#2c3e50',
+            textAlign: 'center',
+            fontSize: 12,
+            lineHeight: 14,
+            height: 28,
+            marginBottom: 4,
+        },
+        selectedDefectName: {
+            color: colors.primary,
+            fontWeight: '500',
+        },
+        defectCountBadge: {
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            backgroundColor: colors.primary,
+            borderRadius: 10,
+            width: 20,
+            height: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        defectCountBadgeText: {
+            color: 'white',
+            fontSize: 12,
+            fontWeight: 'bold',
+        },
+        sliderRow: {
+            position: 'absolute',
+            top: 8,
+            left: -5,
+            width: 20,
+            height: 20,
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            paddingHorizontal: 0,
+        },
+        reductionText: {
+            color: colors.primary,
+            width: 40,
+            textAlign: 'right',
+            fontWeight: '500',
+        },
+        collectionRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 16,
+        },
+        collectionPickerContainer: {
+            flex: 1,
+            marginRight: 12,
+        },
+        picker: {
+            height: 50,
+            width: '100%',
+        },
+        pickerContainer: {
+            borderWidth: 0,
+            borderRadius: 8,
+            overflow: 'hidden',
+        },
+        bookCountContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.03)',
+            borderRadius: 15,
+            paddingVertical: 5,
+            paddingHorizontal: 10,
+        },
+        bookCountText: {
+            marginLeft: 5,
+            color: colors.primary,
+        },
+        createCollectionButton: {
+            height: 50,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'white',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.1)',
+        },
+        createCollectionText: {
+            color: colors.primary,
+            fontWeight: '500',
+        },
+        saveButton: {
+            height: 50,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            shadowColor: colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 3,
+            marginTop: 16,
+        },
+        saveButtonContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        saveButtonIcon: {
+            marginRight: 10,
+        },
+        saveButtonText: {
+            color: 'white',
+            fontWeight: '600',
+        },
+        navigationButtons: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 16,
+        },
+        navButton: {
+            flex: 1,
+            height: 50,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 8,
+            flexDirection: 'row',
+        },
+        backButton: {
+            backgroundColor: 'white',
+            borderWidth: 1,
+            borderColor: colors.primary,
+            marginRight: 8,
+        },
+        backButtonText: {
+            color: colors.primary,
+            fontWeight: '500',
+            marginLeft: 8,
+        },
+    });
 
     const renderDefectItem = ({ item }: { item: BookDefect }) => (
         <TouchableOpacity
@@ -96,14 +340,17 @@ const TabSection: React.FC<TabSectionProps> = ({
             <View style={styles.defectIconContainer}>
                 <Ionicons
                     name={item.icon as any}
-                    size={28}
-                    color={item.selected ? colors?.primary : '#5c6b7e'}
+                    size={22}
+                    color={item.selected ? colors.primary : '#5c6b7e'}
                 />
             </View>
-            <Text style={[
-                styles.defectName,
-                item.selected && styles.selectedDefectName
-            ]}>
+            <Text
+                style={[
+                    styles.defectName,
+                    item.selected && styles.selectedDefectName
+                ]}
+                numberOfLines={2}
+            >
                 {t(`defects.${item.id}`)}
             </Text>
         </TouchableOpacity>
@@ -113,22 +360,25 @@ const TabSection: React.FC<TabSectionProps> = ({
         <TouchableOpacity
             style={[
                 styles.defectItemContainer,
-                uniqueness[item.id] && styles.selectedDefect
+                uniqueness[item.id as keyof BookUniqueness] && styles.selectedDefect
             ]}
-            onPress={() => onToggleUniqueness(item.id)}
+            onPress={() => onToggleUniqueness(item.id as keyof BookUniqueness)}
             activeOpacity={0.7}
         >
             <View style={styles.defectIconContainer}>
                 <Ionicons
                     name={item.icon as any}
-                    size={28}
-                    color={uniqueness[item.id] ? colors?.primary : '#5c6b7e'}
+                    size={22}
+                    color={uniqueness[item.id as keyof BookUniqueness] ? colors.primary : '#5c6b7e'}
                 />
             </View>
-            <Text style={[
-                styles.defectName,
-                uniqueness[item.id] && styles.selectedDefectName
-            ]}>
+            <Text
+                style={[
+                    styles.defectName,
+                    uniqueness[item.id as keyof BookUniqueness] && styles.selectedDefectName
+                ]}
+                numberOfLines={2}
+            >
                 {t(item.label)}
             </Text>
         </TouchableOpacity>
@@ -146,14 +396,17 @@ const TabSection: React.FC<TabSectionProps> = ({
             <View style={styles.defectIconContainer}>
                 <Ionicons
                     name={item.icon as any}
-                    size={28}
-                    color={includedMarketFactors[item.id] ? colors?.primary : '#5c6b7e'}
+                    size={22}
+                    color={includedMarketFactors[item.id] ? colors.primary : '#5c6b7e'}
                 />
             </View>
-            <Text style={[
-                styles.defectName,
-                includedMarketFactors[item.id] && styles.selectedDefectName
-            ]}>
+            <Text
+                style={[
+                    styles.defectName,
+                    includedMarketFactors[item.id] && styles.selectedDefectName
+                ]}
+                numberOfLines={2}
+            >
                 {t(item.label)}
             </Text>
         </TouchableOpacity>
@@ -161,6 +414,16 @@ const TabSection: React.FC<TabSectionProps> = ({
 
     return (
         <View style={styles.tabSectionContainer}>
+            {/* Progress indicator */}
+            <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>
+                    {t('labels.step')} {currentStep}/{totalSteps}
+                </Text>
+                <View style={styles.progressBarContainer}>
+                    <View style={styles.progressBar} />
+                </View>
+            </View>
+
             <View style={styles.tabsContainer}>
                 {slides.map((slide) => (
                     <TouchableOpacity
@@ -176,7 +439,7 @@ const TabSection: React.FC<TabSectionProps> = ({
                             <Ionicons
                                 name={slide.icon as any}
                                 size={20}
-                                color={expandedTabs[slide.id] ? colors?.primary : colors?.grayDark}
+                                color={expandedTabs[slide.id] ? colors.primary : colors.grayDark}
                                 style={styles.tabIcon}
                             />
                             <Text style={[
@@ -197,8 +460,8 @@ const TabSection: React.FC<TabSectionProps> = ({
                             data={defects}
                             renderItem={renderDefectItem}
                             keyExtractor={item => item.id}
-                            numColumns={2}
-                            columnWrapperStyle={styles.columnWrapper}
+                            numColumns={3}
+                            columnWrapperStyle={{ justifyContent: 'space-between' }}
                             scrollEnabled={false}
                         />
                     </View>
@@ -210,8 +473,8 @@ const TabSection: React.FC<TabSectionProps> = ({
                             data={UNIQUENESS_TYPES}
                             renderItem={renderUniquenessItem}
                             keyExtractor={item => item.id}
-                            numColumns={2}
-                            columnWrapperStyle={styles.columnWrapper}
+                            numColumns={3}
+                            columnWrapperStyle={{ justifyContent: 'space-between' }}
                             scrollEnabled={false}
                         />
                     </View>
@@ -223,8 +486,8 @@ const TabSection: React.FC<TabSectionProps> = ({
                             data={MARKET_FACTOR_TOGGLES}
                             renderItem={renderMarketFactorToggle}
                             keyExtractor={item => item.id}
-                            numColumns={2}
-                            columnWrapperStyle={styles.columnWrapper}
+                            numColumns={3}
+                            columnWrapperStyle={{ justifyContent: 'space-between' }}
                             scrollEnabled={false}
                         />
                     </View>
@@ -240,7 +503,7 @@ const TabSection: React.FC<TabSectionProps> = ({
                                             selectedValue={selectedCollection}
                                             onValueChange={onSelectCollection}
                                             style={styles.picker}
-                                            dropdownIconColor={colors?.primary}
+                                            dropdownIconColor={colors.primary}
                                         >
                                             {collections.map((collection) => (
                                                 <Picker.Item
@@ -265,7 +528,7 @@ const TabSection: React.FC<TabSectionProps> = ({
 
                             {collections.length > 0 && (
                                 <View style={styles.bookCountContainer}>
-                                    <Ionicons name="book" size={20} color={colors?.primary} />
+                                    <Ionicons name="book" size={20} color={colors.primary} />
                                     <Text style={styles.bookCountText}>
                                         {books[selectedCollection]?.length || 0} {getBookWord(books[selectedCollection]?.length || 0)}
                                     </Text>

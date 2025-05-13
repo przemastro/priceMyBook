@@ -89,7 +89,6 @@ export const SUPPLY_OPTIONS = [
 export const DEFECT_TYPES = [
     { id: 'tornPages', icon: 'document-text-outline' },
     { id: 'brokenSpine', icon: 'book-outline' },
-    { id: 'waterDamage', icon: 'water-outline' },
     { id: 'missingPages', icon: 'remove-outline' },
     { id: 'heavyWear', icon: 'alert-circle-outline' },
     { id: 'stainedPages', icon: 'color-filter-outline' },

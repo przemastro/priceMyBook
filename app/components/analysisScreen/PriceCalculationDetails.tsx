@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/context/AppContext';
 import { colors } from '@/styles/styles';
 import { PriceCalculation } from './types';
 import { formatCurrency } from '../../utils/currency';
+
+const { width: viewportWidth } = Dimensions.get('window');
 
 interface PriceCalculationDetailsProps {
     calculation: PriceCalculation;
@@ -25,6 +27,12 @@ const PriceCalculationDetails = ({
     const { t } = useTranslation();
     const { exchangeRate } = useAppContext();
     const [expanded, setExpanded] = useState(false);
+    const animValue = useRef(new Animated.Value(0)).current;
+
+    const selectedDefects = defects.filter(d => d.selected);
+    const uniqueFeatures = Object.entries(uniqueness)
+        .filter(([_, value]) => value)
+        .map(([key]) => t(`uniqueness.${key}`));
 
     const formatPrice = (price: number) => {
         return formatCurrency({
@@ -33,161 +41,304 @@ const PriceCalculationDetails = ({
         });
     };
 
+    const toggleExpanded = () => {
+        const toValue = expanded ? 0 : 1;
+        setExpanded(!expanded);
+        Animated.spring(animValue, {
+            toValue,
+            useNativeDriver: false,
+            bounciness: expanded ? 0 : 6,
+        }).start();
+    };
+
+    const opacity = animValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1]
+    });
+
+    const translateY = animValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-5, 0]
+    });
+
     return (
-        <View style={styles.calculationContainer}>
+        <View style={styles.container}>
             <TouchableOpacity
-                style={styles.calculationHeader}
-                onPress={() => setExpanded(!expanded)}
-                activeOpacity={0.7}
+                style={styles.triggerContainer}
+                onPress={toggleExpanded}
+                activeOpacity={0.8}
             >
-                <View style={styles.priceSummary}>
-                    <Ionicons name="pricetag" size={20} color={colors.primary} />
-                    <Text style={styles.finalPriceText}>
-                        {t('priceCalculation.finalPrice')}: {formatPrice(calculation.finalPrice)}
-                    </Text>
+                <View style={styles.priceContainer}>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.priceLabel}>{t('labels.estimatedValue')}</Text>
+                        <Text style={styles.priceValue}>{formatPrice(calculation.finalPrice)}</Text>
+                    </View>
                 </View>
                 <Ionicons
                     name={expanded ? "chevron-up" : "chevron-down"}
-                    size={20}
+                    size={16}
                     color={colors.primary}
                 />
             </TouchableOpacity>
 
-            {expanded && (
-                <View style={styles.calculationDetails}>
-                    <View style={styles.calculationRow}>
-                        <Text style={styles.calculationLabel}>{t('priceCalculation.basePrice')}:</Text>
-                        <Text style={styles.calculationValue}>{formatPrice(calculation.basePrice)}</Text>
+            <Animated.View
+                style={[
+                    styles.tooltip,
+                    {
+                        opacity,
+                        transform: [{ translateY }],
+                        display: expanded ? 'flex' : 'none',
+                    }
+                ]}
+                pointerEvents={expanded ? 'auto' : 'none'}
+            >
+                <View style={styles.tooltipContent}>
+                    {/* Base Price */}
+                    <View style={styles.detailRow}>
+                        <View style={styles.detailLabelContainer}>
+                            <Ionicons name="book" size={16} color={colors.grayDark} />
+                            <Text style={styles.detailLabel}>{t('priceCalculation.basePrice')}</Text>
+                        </View>
+                        <Text style={styles.detailValue}>{formatPrice(calculation.basePrice)}</Text>
                     </View>
 
-                    <View style={styles.calculationRow}>
-                        <Text style={styles.calculationLabel}>
-                            {t('priceCalculation.defectsReduction')} ({calculation.defectsReduction.toFixed(1)}%):
-                        </Text>
-                        <Text style={styles.calculationValue}>
-                            -{formatPrice(calculation.basePrice * calculation.defectsReduction / 100)}
-                        </Text>
-                    </View>
-                    <View style={styles.calculationSubRow}>
-                        <Text style={styles.calculationSubText}>
-                            {t('priceCalculation.defectsDetails')}: {defects.filter(d => d.selected).map(d => `${t(`defects.${d.id}`)} (${d.count}x)`).join(', ')}
-                        </Text>
-                    </View>
-
-                    <View style={styles.calculationRow}>
-                        <Text style={styles.calculationLabel}>
-                            {t('priceCalculation.uniquenessBonus')} (+{calculation.uniquenessBonus.toFixed(1)}%):
-                        </Text>
-                        <Text style={styles.calculationValue}>
-                            +{formatPrice(calculation.basePrice * calculation.uniquenessBonus / 100)}
-                        </Text>
-                    </View>
-                    <View style={styles.calculationSubRow}>
-                        <Text style={styles.calculationSubText}>
-                            {t('priceCalculation.uniquenessDetails')}: {Object.entries(uniqueness)
-                            .filter(([_, value]) => value)
-                            .map(([key]) => t(`uniqueness.${key}`))
-                            .join(', ')}
-                        </Text>
+                    {/* Defects Reduction */}
+                    <View style={styles.detailSection}>
+                        <View style={styles.detailRow}>
+                            <View style={styles.detailLabelContainer}>
+                                <Ionicons name="warning" size={16} color={colors.error} />
+                                <Text style={styles.detailLabel}>
+                                    {t('priceCalculation.defectsReduction')} ({calculation.defectsReduction.toFixed(1)}%)
+                                </Text>
+                            </View>
+                            <Text style={[styles.detailValue, styles.negativeValue]}>
+                                -{formatPrice(calculation.basePrice * calculation.defectsReduction / 100)}
+                            </Text>
+                        </View>
+                        {selectedDefects.length > 0 && (
+                            <View style={styles.tagsContainer}>
+                                {selectedDefects.map((defect, index) => (
+                                    <View key={index} style={styles.tag}>
+                                        <Text style={styles.tagText}>
+                                            {t(`defects.${defect.id}`)} ({defect.count}x)
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
 
-                    <View style={styles.calculationRow}>
-                        <Text style={styles.calculationLabel}>
-                            {t('priceCalculation.marketModifier')} ({calculation.marketModifier > 0 ? '+' : ''}{calculation.marketModifier.toFixed(1)}%):
-                        </Text>
-                        <Text style={styles.calculationValue}>
-                            {calculation.marketModifier > 0 ? '+' : ''}{formatPrice(calculation.basePrice * calculation.marketModifier / 100)}
-                        </Text>
+                    {/* Uniqueness Bonus */}
+                    <View style={styles.detailSection}>
+                        <View style={styles.detailRow}>
+                            <View style={styles.detailLabelContainer}>
+                                <Ionicons name="sparkles" size={16} color={colors.primary} />
+                                <Text style={styles.detailLabel}>
+                                    {t('priceCalculation.uniquenessBonus')} (+{calculation.uniquenessBonus.toFixed(1)}%)
+                                </Text>
+                            </View>
+                            <Text style={[styles.detailValue, styles.positiveValue]}>
+                                +{formatPrice(calculation.basePrice * calculation.uniquenessBonus / 100)}
+                            </Text>
+                        </View>
+                        {uniqueFeatures.length > 0 && (
+                            <View style={styles.tagsContainer}>
+                                {uniqueFeatures.map((feature, index) => (
+                                    <View key={index} style={[styles.tag, styles.positiveTag]}>
+                                        <Text style={[styles.tagText, styles.positiveTagText]}>
+                                            {feature}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
-                    <View style={styles.calculationSubRow}>
-                        <Text style={styles.calculationSubText}>
-                            {t('priceCalculation.marketDetails')}: {t('demand')}: {t(`labels.${marketFactors.demand}`)}, {t('supply')}: {t(`labels.${marketFactors.supply}`)}, {t('publicationYear')}: {marketFactors.publicationYear}
-                        </Text>
+
+                    {/* Market Modifier */}
+                    <View style={styles.detailSection}>
+                        <View style={styles.detailRow}>
+                            <View style={styles.detailLabelContainer}>
+                                <Ionicons
+                                    name="trending-up"
+                                    size={16}
+                                    color={calculation.marketModifier >= 0 ? colors.primary : colors.error}
+                                />
+                                <Text style={styles.detailLabel}>
+                                    {t('priceCalculation.marketModifier')} ({calculation.marketModifier > 0 ? '+' : ''}{calculation.marketModifier.toFixed(1)}%)
+                                </Text>
+                            </View>
+                            <Text style={[
+                                styles.detailValue,
+                                calculation.marketModifier >= 0 ? styles.positiveValue : styles.negativeValue
+                            ]}>
+                                {calculation.marketModifier > 0 ? '+' : ''}{formatPrice(calculation.basePrice * calculation.marketModifier / 100)}
+                            </Text>
+                        </View>
+                        <View style={styles.marketFactors}>
+                            <View style={styles.marketFactor}>
+                                <Text style={styles.marketFactorLabel}>{t('demand')}:</Text>
+                                <Text style={styles.marketFactorValue}>{t(`labels.${marketFactors.demand}`)}</Text>
+                            </View>
+                            <View style={styles.marketFactor}>
+                                <Text style={styles.marketFactorLabel}>{t('supply')}:</Text>
+                                <Text style={styles.marketFactorValue}>{t(`labels.${marketFactors.supply}`)}</Text>
+                            </View>
+                            <View style={styles.marketFactor}>
+                                <Text style={styles.marketFactorLabel}>{t('publicationYear')}:</Text>
+                                <Text style={styles.marketFactorValue}>{marketFactors.publicationYear}</Text>
+                            </View>
+                        </View>
                     </View>
-                    <TouchableOpacity
-                        style={styles.marketAnalysisLink}
-                        onPress={onShowMarketAnalysis}
-                    >
-                        <Text style={styles.marketAnalysisLinkText}>
-                            {t('buttons.showMarketAnalysis')}
-                        </Text>
-                        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-                    </TouchableOpacity>
                 </View>
-            )}
+            </Animated.View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    calculationContainer: {
-        borderRadius: 8,
+    container: {
+        zIndex: 1000,
         marginBottom: 16,
-        borderWidth: 1,
-        borderColor: colors.grayDark,
-        overflow: 'hidden',
-        backgroundColor: 'rgba(74,108,247,0.08)'
+        elevation: 5, // dla Androida
     },
-    calculationHeader: {
+    triggerContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(74,108,247,0.1)',
+        borderRadius: 12,
         padding: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.2)',
     },
-    priceSummary: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    priceContainer: {
+        flex: 1,
     },
-    finalPriceText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.primary,
-        marginLeft: 10,
-    },
-    calculationDetails: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        borderTopWidth: 1,
-        borderTopColor: colors.gray,
-    },
-    calculationRow: {
+    priceRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    priceLabel: {
+        fontSize: 16,
+        color: colors.primary,
+        fontWeight: '500',
+    },
+    priceValue: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: colors.primary,
+    },
+    tooltip: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 10, // ważne dla Androida
+        marginTop: 8,
+        zIndex: 1001,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    tooltipContent: {
+        width: '100%',
+    },
+    detailSection: {
+        marginBottom: 16,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 8,
     },
-    calculationLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-        flex: 1,
-    },
-    calculationValue: {
-        fontSize: 14,
-        color: colors.black,
-        fontWeight: '500',
-        textAlign: 'right',
-        flex: 1,
-    },
-    calculationSubRow: {
-        marginBottom: 12,
-        paddingLeft: 12,
-    },
-    calculationSubText: {
-        fontSize: 12,
-        color: colors.grayDark,
-        fontStyle: 'italic',
-    },
-    marketAnalysisLink: {
+    detailLabelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-end',
-        marginTop: 8,
-        marginBottom: 12,
-        paddingVertical: 4,
+        flex: 1,
     },
-    marketAnalysisLinkText: {
-        color: colors.primary,
+    detailLabel: {
         fontSize: 14,
-        marginRight: 4,
+        color: colors.grayDark,
+        marginLeft: 8,
+    },
+    detailValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.black,
+        marginLeft: 8,
+        textAlign: 'right',
+    },
+    positiveValue: {
+        color: colors.primary,
+    },
+    negativeValue: {
+        color: colors.error,
+    },
+    tagsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 6,
+    },
+    tag: {
+        backgroundColor: 'rgba(255,59,48,0.1)',
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginRight: 6,
+        marginBottom: 6,
+    },
+    positiveTag: {
+        backgroundColor: 'rgba(74,108,247,0.1)',
+    },
+    tagText: {
+        fontSize: 12,
+        color: colors.error,
+    },
+    positiveTagText: {
+        color: colors.primary,
+    },
+    marketFactors: {
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 8,
+        padding: 10,
+        marginTop: 6,
+    },
+    marketFactor: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    marketFactorLabel: {
+        fontSize: 12,
+        color: colors.grayDark,
+    },
+    marketFactorValue: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: colors.black,
+    },
+    analysisButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primary,
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        marginTop: 8,
+    },
+    analysisButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        marginRight: 8,
     },
 });
 

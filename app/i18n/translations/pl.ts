@@ -179,7 +179,10 @@ export default {
         listed: 'Wystawione',
         sold: 'Sprzedane',
         manualEntry: 'Wpisz ISBN ręcznie',
-        showMarketAnalysis: "Analiza rynku"
+        showMarketAnalysis: "Analiza rynku",
+        back: 'WSTECZ',
+        next: 'DALEJ',
+        save: 'ZAPISZ'
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
@@ -280,5 +283,12 @@ export default {
         noData: "Brak danych o limitach",
         status: "Użyto {{used}} z {{limit}} requestów. Pozostało: {{remaining}}. Reset: {{resetDate}}",
         error: "Błąd podczas sprawdzania limitu"
+    },
+    stepTitles: {
+        scanForDefects: "SKANUJ W POSZUKIWANIU WAD",
+        detectedDefects: "WYKRYTE WADY KSIĄŻKI",
+        uniqueness: "UNIKATOWOŚĆ KSIĄŻKI",
+        marketFactors: "CZYNNIKI RYNKOWE",
+        addToCollection: "DODAJ DO KSIĘGOZBIORU"
     }
 }

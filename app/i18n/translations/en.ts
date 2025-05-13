@@ -182,7 +182,10 @@ export default {
         listed: 'Listed',
         sold: 'Sold',
         manualEntry: 'Manually enter ISBN',
-        showMarketAnalysis: "Market Analysis"
+        showMarketAnalysis: "Market Analysis",
+        back: 'BACK',
+        next: 'NEXT',
+        save: 'SAVE'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
@@ -288,5 +291,11 @@ export default {
         status: "Used {{used}} out of {{limit}} requests. Remaining: {{remaining}}. Reset: {{resetDate}}",
         error: "Error while checking the rate limit"
     },
-
+    stepTitles: {
+        scanForDefects: "SCAN FOR DEFECTS",
+        detectedDefects: "DETECTED BOOK DEFECTS",
+        uniqueness: "BOOK UNIQUENESS",
+        marketFactors: "MARKET FACTORS",
+        addToCollection: "ADD TO COLLECTION"
+    }
 }

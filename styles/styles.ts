@@ -13,7 +13,8 @@ export const colors = {
     grayDark: '#b6b5b5',
     error: '#e74c3c', // Kolor błędów
     success: '#2ecc71', // Kolor sukcesu
-    black: '#696767'
+    black: '#696767',
+    grayLight: '#fafafa'
 };
 
 // Typografia
