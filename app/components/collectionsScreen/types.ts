@@ -55,11 +55,12 @@ export interface CollectionCarouselProps {
     collections: string[];
     books: Record<string, BookData[]>;
     selectedCollection: string | null;
-    onSelectCollection: (collection: string) => void;
+    onSelectCollection: (collection: string | 'new') => void;
     calculateCollectionTotal: (collection: string) => number;
-    onEditCollection: (collection: string, newName: string) => Promise<void>;
+    onEditCollection: (oldName: string, newName: string) => Promise<void>;
     onDeleteCollection: (collection: string) => void;
     onExportCollection: (collection: string) => void;
+    onImportCollection: () => void;
     getBookWord: (count: number, language: string) => string;
     formatCurrency: (value: string) => string;
 }

@@ -471,7 +471,13 @@ const CollectionsScreen = () => {
                             collections={collections}
                             books={books}
                             selectedCollection={selectedCollection}
-                            onSelectCollection={toggleCollection}
+                            onSelectCollection={(collection) => {
+                                if (collection === 'new') {
+                                    setShowAddModal(true);
+                                } else {
+                                    toggleCollection(collection);
+                                }
+                            }}
                             calculateCollectionTotal={calculateCollectionTotal}
                             onEditCollection={async (collection, newName) => {
                                 await handleEditCollection(collection, newName);
@@ -480,6 +486,7 @@ const CollectionsScreen = () => {
                             onExportCollection={handleExportCSV}
                             getBookWord={getBookWord}
                             formatCurrency={formatCurrency}
+                            onImportCollection={handleImportCollection} // Przekazujemy właściwą funkcję
                         />
                         {selectedCollection && (
                             <View style={styles.collectionDetails}>
