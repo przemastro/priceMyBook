@@ -8,9 +8,10 @@ import {
     Linking,
     TouchableOpacity,
     Dimensions,
-    TextInput
+    TextInput,
+    Animated
 } from 'react-native';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors, typography } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
@@ -29,8 +30,9 @@ import ListingModal from '../components/collectionsScreen/ListingModal';
 import StatusChangeModal from '../components/collectionsScreen/StatusChangeModal';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
 import { BookAgeInfo } from "@/app/components/scanScreen/types";
-import Carousel, {ICarouselInstance} from 'react-native-reanimated-carousel';
+import Carousel, { ICarouselInstance } from 'react-native-reanimated-carousel';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Easing } from 'react-native-reanimated';
 
 const CollectionsScreen = () => {
     const router = useRouter();
@@ -56,6 +58,7 @@ const CollectionsScreen = () => {
 
     const carouselRef = useRef<ICarouselInstance>(null);
     const { width } = Dimensions.get('window');
+    const slideAnim = useRef(new Animated.Value(0)).current;
 
     const {
         collections,
@@ -86,8 +89,19 @@ const CollectionsScreen = () => {
     const defaultAgeInfo: BookAgeInfo = { years: 0 };
     const defaultListingStatus: ListingStatus = { status: 'notListed', platforms: [] };
 
+    const animateSlide = (direction: 'forward' | 'backward') => {
+        slideAnim.setValue(direction === 'forward' ? -50 : 50);
+        Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 300,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+        }).start();
+    };
+
     const handleNextSlide = () => {
         if (currentSlide < 1) {
+            animateSlide('forward');
             carouselRef.current?.next();
             setCurrentSlide(prev => prev + 1);
         }
@@ -95,6 +109,7 @@ const CollectionsScreen = () => {
 
     const handlePrevSlide = () => {
         if (currentSlide > 0) {
+            animateSlide('backward');
             AsyncStorage.setItem('@selectedCollection', selectedCollection || '');
             carouselRef.current?.prev();
             setCurrentSlide(prev => prev - 1);
@@ -477,33 +492,39 @@ const CollectionsScreen = () => {
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            {/* Statyczna sekcja z wartością całkowitą */}
-            <View style={styles.totalValueContainer}>
-                <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
-                <View style={styles.valueRow}>
-                    <TouchableOpacity
-                        style={styles.coinIconContainer}
-                        onPress={() => router.push({ pathname: '/settings', params: { initialTab: 'algorithm' } })}
-                        activeOpacity={0.7}
-                    >
-                        <FontAwesome5 name="coins" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-                    <View style={styles.priceContainer}>
-                        <Text style={styles.totalValueAmount}>{formatCurrency(calculateTotalValue().toString())}</Text>
+        <View style={{ flex: 1 }}>
+            <ScrollView
+                contentContainerStyle={[styles.scrollContainer, { paddingBottom: 80 }]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Statyczna sekcja z wartością całkowitą */}
+                <View style={styles.totalValueContainer}>
+                    <View style={styles.totalValueContent}>
+                        <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
+                        <View style={styles.valueRow}>
+                            <TouchableOpacity
+                                style={styles.coinIconContainer}
+                                onPress={() => router.push({ pathname: '/settings', params: { initialTab: 'algorithm' } })}
+                                activeOpacity={0.7}
+                            >
+                                <FontAwesome5 name="coins" size={20} color={colors.primary} />
+                            </TouchableOpacity>
+                            <View style={styles.priceContainer}>
+                                <Text style={styles.totalValueAmount}>{formatCurrency(calculateTotalValue().toString())}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.valueBreakdownContainer}>
+                            <View style={styles.valueBreakdownRow}>
+                                <Text style={styles.valueBreakdownLabel}>{t('labels.activeValue')}:</Text>
+                                <Text style={[styles.valueBreakdownAmount, styles.activeValue]}>{formatCurrency(calculateActiveValue().toString())}</Text>
+                            </View>
+                            <View style={styles.valueBreakdownRow}>
+                                <Text style={styles.valueBreakdownLabel}>{t('labels.soldValue')}:</Text>
+                                <Text style={[styles.valueBreakdownAmount, styles.soldValue]}>{formatCurrency(calculateSoldValue().toString())}</Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
-                <View style={styles.valueBreakdownContainer}>
-                    <View style={styles.valueBreakdownRow}>
-                        <Text style={styles.valueBreakdownLabel}>{t('labels.activeValue')}:</Text>
-                        <Text style={[styles.valueBreakdownAmount, styles.activeValue]}>{formatCurrency(calculateActiveValue().toString())}</Text>
-                    </View>
-                    <View style={styles.valueBreakdownRow}>
-                        <Text style={styles.valueBreakdownLabel}>{t('labels.soldValue')}:</Text>
-                        <Text style={[styles.valueBreakdownAmount, styles.soldValue]}>{formatCurrency(calculateSoldValue().toString())}</Text>
-                    </View>
-                </View>
-            </View>
 
             {/* Karuzela z dwoma slajdami */}
             <View style={styles.slidesContainer}>
@@ -515,11 +536,16 @@ const CollectionsScreen = () => {
                     data={[0, 1]}
                     onSnapToItem={(index) => setCurrentSlide(index)}
                     renderItem={({ index }) => (
-                        <View style={styles.slide}>
+                        <Animated.View
+                            style={[
+                                styles.slide,
+                                { transform: [{ translateX: slideAnim }] }
+                            ]}
+                        >
                             {index === 0 ? (
                                 <>
                                     <View style={styles.titleContainer}>
-                                        <Text style={styles.collectionsTitle}>{t('labels.yourCollections')}</Text>
+                                        <Text style={styles.slideTitle}>{t('labels.yourCollections')}</Text>
                                     </View>
                                     {collections.length > 0 ? (
                                         <CollectionCarousel
@@ -614,7 +640,9 @@ const CollectionsScreen = () => {
                                                     <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
                                                 </View>
                                             ) : (
-                                                <BooksCarousel
+                                                <><View style={styles.titleContainer}>
+                                                    <Text style={styles.slideTitle}>{t('labels.yourBooks')}</Text>
+                                                </View><BooksCarousel
                                                     books={books[selectedCollection]}
                                                     collectionName={selectedCollection}
                                                     onEditBook={(index) => handleEditBook(selectedCollection, index)}
@@ -623,46 +651,51 @@ const CollectionsScreen = () => {
                                                     formatDefectsSummary={formatDefectsSummary}
                                                     formatUniquenessSummary={formatUniquenessSummary}
                                                     formatMarketFactorsSummary={formatMarketFactorsSummary}
-                                                    formatListingStatus={formatListingStatus}
-                                                />
+                                                    formatListingStatus={formatListingStatus}/></>
                                             )}
                                         </View>
                                     )}
                                 </>
                             )}
-                        </View>
+                        </Animated.View>
                     )}
                     enabled={false}
                     autoPlay={false}
-                    mode="parallax"
-                    modeConfig={{
-                        parallaxScrollingScale: 1,
-                        parallaxScrollingOffset: 0,
-                    }}
                 />
             </View>
+            </ScrollView>
 
-            {/* Nawigacja między slajdami */}
-            <View style={styles.navigationContainer}>
+            {/* Nawigacja między slajdami - teraz przyklejona do dołu ekranu */}
+            <View style={styles.fixedNavigationContainer}>
                 <TouchableOpacity
                     onPress={handlePrevSlide}
                     disabled={currentSlide === 0}
-                    style={[styles.navButton, currentSlide === 0 && styles.disabledButton]}
+                    style={[
+                        styles.navButton,
+                        styles.backButton,
+                        currentSlide === 0 && styles.disabledNavButton
+                    ]}
                 >
-                    <Ionicons name="chevron-back" size={24} color={currentSlide === 0 ? colors.gray : colors.primary} />
+                    <Text style={styles.navButtonText}>{t('buttons.back')}</Text>
                 </TouchableOpacity>
 
-                <View style={styles.dotsContainer}>
-                    <View style={[styles.dot, currentSlide === 0 && styles.activeDot]} />
-                    <View style={[styles.dot, currentSlide === 1 && styles.activeDot]} />
+                <View style={styles.progressDotsContainer}>
+                    <View style={[styles.progressDot, currentSlide === 0 && styles.activeProgressDot]} />
+                    <View style={[styles.progressDot, currentSlide === 1 && styles.activeProgressDot]} />
                 </View>
 
                 <TouchableOpacity
                     onPress={handleNextSlide}
                     disabled={currentSlide === 1 || !selectedCollection}
-                    style={[styles.navButton, (currentSlide === 1 || !selectedCollection) && styles.disabledButton]}
+                    style={[
+                        styles.navButton,
+                        styles.nextButton,
+                        (currentSlide === 1 || !selectedCollection) && styles.disabledNavButton
+                    ]}
                 >
-                    <Ionicons name="chevron-forward" size={24} color={currentSlide === 1 || !selectedCollection ? colors.gray : colors.primary} />
+                    <Text style={[styles.navButtonText, styles.nextButtonText]}>
+                        {currentSlide === 1 ? t('buttons.done') : t('buttons.next')}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -700,7 +733,7 @@ const CollectionsScreen = () => {
                 currentStatus={currentListingBook ? books[currentListingBook.collection][currentListingBook.index].listingStatus?.status || 'notListed' : 'notListed'}
                 onChangeStatus={changeListingStatus}
             />
-        </ScrollView>
+        </View>
     );
 };
 
@@ -715,77 +748,34 @@ const styles = StyleSheet.create({
         backgroundColor: '#f0f4ff',
         padding: 20,
         marginBottom: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: -20,
-        marginRight: -20,
+        marginHorizontal: -16,
         paddingTop: 60,
         marginTop: -20,
         borderBottomLeftRadius: 22,
         borderBottomRightRadius: 22,
-        zIndex: 999, // niższy niż tooltip
-        elevation: 4, // dla Androida
+        zIndex: 999,
+        elevation: 4,
+    },
+    totalValueContent: {
+        alignItems: 'center',
     },
     totalValueLabel: {
         fontSize: 16,
-        color: colors.black,
+        color: colors.grayDark,
         marginBottom: 4,
     },
     totalValueAmount: {
-        fontSize: 18,
+        fontSize: 24,
+        fontWeight: '700',
         color: colors.primary,
-        fontWeight: 'bold',
-    },
-    slidesContainer: {
-        minHeight: 600,
-    },
-    slide: {
-        flex: 1,
-    },
-    titleContainer: {
-        height: 50,
-        marginBottom: 10,
-        alignItems: 'center'
-    },
-    collectionsTitle: {
-        fontSize: 16,
-        color: colors.primary,
-        marginTop: 0,
-        marginBottom: 0,
-    },
-    collectionDetails: {
-        marginTop: 10,
-    },
-    emptyContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: colors.white,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        marginTop: 20
-    },
-    emptyBookContainer: {
-        padding: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.white,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-    emptyText: {
-        fontSize: 16,
-        textAlign: 'center',
-        color: colors.grayDark,
     },
     valueRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 8,
     },
     coinIconContainer: {
-        marginTop: 13,
         backgroundColor: colors.white,
         borderRadius: 20,
         width: 45,
@@ -798,7 +788,6 @@ const styles = StyleSheet.create({
         marginRight: -5,
     },
     priceContainer: {
-        marginTop: 13,
         backgroundColor: colors.background,
         borderRadius: 20,
         paddingVertical: 10,
@@ -834,31 +823,54 @@ const styles = StyleSheet.create({
     soldValue: {
         color: colors.success,
     },
+    slidesContainer: {
+        minHeight: 600,
+    },
+    slide: {
+        flex: 1,
+    },
+    titleContainer: {
+        marginBottom: 20,
+        alignItems: 'center',
+    },
+    slideTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.primary,
+    },
+    emptyContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: colors.white,
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+        marginTop: 20
+    },
+    emptyBookContainer: {
+        padding: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.white,
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: colors.grayDark,
+    },
+    collectionDetails: {
+        marginTop: 10,
+    },
     navigationContainer: {
         flexDirection: 'row',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 16,
-    },
-    navButton: {
-        padding: 16,
-    },
-    dotsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
         paddingHorizontal: 20,
-    },
-    dot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: colors.gray,
-        marginHorizontal: 4,
-    },
-    activeDot: {
-        backgroundColor: colors.primary,
-        width: 12,
     },
     categoriesContainer: {
         minHeight: 120,
@@ -879,9 +891,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.grayDark,
     },
-    removeCategoryButton: {
-        marginLeft: 6,
-    },
     categoriesList: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -894,28 +903,6 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 16,
-    },
-    addCategoryInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: '100%',
-        marginTop: 8,
-    },
-    categoryInput: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: colors.gray,
-        borderRadius: 8,
-        padding: 8,
-        marginRight: 8,
-    },
-    confirmCategoryButton: {
-        padding: 8,
-        backgroundColor: colors.primary,
-        borderRadius: 8,
-    },
-    disabledConfirmButton: {
-        opacity: 0.5,
     },
     addCategoryContainer: {
         minWidth: 120,
@@ -965,6 +952,67 @@ const styles = StyleSheet.create({
     disabledButton: {
         opacity: 0.5,
         backgroundColor: colors.gray,
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        padding: 16,
+        paddingTop: 6,
+        backgroundColor: colors.white,
+    },
+    fixedNavigationContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'white',
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderTopWidth: 1,
+        borderTopColor: colors.grayLight,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    navButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    backButton: {
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    nextButton: {
+        backgroundColor: colors.primary,
+    },
+    navButtonText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    nextButtonText: {
+        color: 'white',
+    },
+    disabledNavButton: {
+        opacity: 0.5,
+    },
+    progressDotsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    progressDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: colors.grayLight,
+        marginHorizontal: 4,
+    },
+    activeProgressDot: {
+        backgroundColor: colors.primary,
+        width: 12,
     },
 });
 
