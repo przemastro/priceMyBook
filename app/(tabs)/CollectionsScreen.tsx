@@ -1,15 +1,14 @@
-// app/(tabs)/collections.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
     ScrollView,
     Alert,
-    ActivityIndicator,
-    Dimensions,
     StyleSheet,
     Linking,
-    TouchableOpacity
+    TouchableOpacity,
+    Dimensions,
+    TextInput
 } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '@/styles/styles';
@@ -29,7 +28,9 @@ import ImportPreviewModal from '../components/collectionsScreen/ImportPreviewMod
 import ListingModal from '../components/collectionsScreen/ListingModal';
 import StatusChangeModal from '../components/collectionsScreen/StatusChangeModal';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
-import {BookAgeInfo} from "@/app/components/scanScreen/types";
+import { BookAgeInfo } from "@/app/components/scanScreen/types";
+import Carousel, {ICarouselInstance} from 'react-native-reanimated-carousel';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CollectionsScreen = () => {
     const router = useRouter();
@@ -37,11 +38,10 @@ const CollectionsScreen = () => {
     const [isImporting, setIsImporting] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
     const [validBooks, setValidBooks] = useState<Omit<BookData, 'createdAt'>[]>([]);
     const [importPreview, setImportPreview] = useState<{
         collectionName: string;
-        books: BookData[]; // Zmieniamy z Omit<BookData, 'createdAt'>[] na BookData[]
+        books: BookData[];
         showPreview: boolean;
     } | null>(null);
     const [showListingModal, setShowListingModal] = useState(false);
@@ -50,16 +50,27 @@ const CollectionsScreen = () => {
     const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
     const [editingCollection, setEditingCollection] = useState<string | null>(null);
     const [newCollectionName, setNewCollectionName] = useState('');
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [addingCategory, setAddingCategory] = useState<boolean | null>(null);
+    const [newCategoryName, setNewCategoryName] = useState('');
+
+    const carouselRef = useRef<ICarouselInstance>(null);
+    const { width } = Dimensions.get('window');
 
     const {
         collections,
         books,
+        collectionCategories,
         addCollection,
         removeCollection,
         addBooksToCollection,
         removeBookFromCollection,
         renameCollection,
         updateBooksInCollection,
+        addCategoryToCollection,
+        removeCategoryFromCollection,
+        selectedCollection,
+        setSelectedCollection
     } = useAppContext();
 
     const defaultUniqueness: BookUniqueness = {
@@ -75,11 +86,34 @@ const CollectionsScreen = () => {
     const defaultAgeInfo: BookAgeInfo = { years: 0 };
     const defaultListingStatus: ListingStatus = { status: 'notListed', platforms: [] };
 
-    const handleAddCollection = (name: string) => {
-        if (!name.trim()) return;
-        addCollection(name);
-        setShowAddModal(false);
+    const handleNextSlide = () => {
+        if (currentSlide < 1) {
+            carouselRef.current?.next();
+            setCurrentSlide(prev => prev + 1);
+        }
     };
+
+    const handlePrevSlide = () => {
+        if (currentSlide > 0) {
+            AsyncStorage.setItem('@selectedCollection', selectedCollection || '');
+            carouselRef.current?.prev();
+            setCurrentSlide(prev => prev - 1);
+        }
+    };
+
+    useEffect(() => {
+        const loadSelected = async () => {
+            try {
+                const saved = await AsyncStorage.getItem('@selectedCollection');
+                if (saved && collections.includes(saved)) {
+                    setSelectedCollection(saved);
+                }
+            } catch (error) {
+                console.error('Failed to load selected collection', error);
+            }
+        };
+        loadSelected();
+    }, [collections]);
 
     const formatCurrency = (value: string): string => {
         try {
@@ -98,6 +132,12 @@ const CollectionsScreen = () => {
         }
     };
 
+    const handleAddCollection = (name: string) => {
+        if (!name.trim()) return;
+        addCollection(name);
+        setShowAddModal(false);
+    };
+
     const handleEditCollection = async (oldName: string, newName: string): Promise<void> => {
         if (newName.trim() && newName.trim() !== oldName) {
             try {
@@ -110,6 +150,34 @@ const CollectionsScreen = () => {
                 Alert.alert(t('alerts.error'), t('alerts.renameError'));
             }
         }
+    };
+
+    const handleAddCategory = (collectionName: string) => {
+        if (!collectionName || !newCategoryName.trim()) return;
+
+        if (collectionCategories[collectionName]?.includes(newCategoryName.trim())) {
+            Alert.alert(t('alerts.error'), t('alerts.categoryExists'));
+            return;
+        }
+
+        addCategoryToCollection(collectionName, newCategoryName.trim());
+        setAddingCategory(null);
+        setNewCategoryName('');
+    };
+
+    const handleRemoveCategory = (collectionName: string, category: string) => {
+        Alert.alert(
+            t('alerts.confirmDeleteTitle'),
+            t('alerts.confirmDeleteCategory', { category }),
+            [
+                { text: t('buttons.cancel'), style: 'cancel' },
+                {
+                    text: t('buttons.confirm'),
+                    onPress: () => removeCategoryFromCollection(collectionName, category),
+                    style: 'destructive'
+                },
+            ]
+        );
     };
 
     const handleImportCollection = async () => {
@@ -143,7 +211,7 @@ const CollectionsScreen = () => {
                     marketFactors: book['Market Factors'] ? JSON.parse(book['Market Factors']) : defaultMarketFactors,
                     ageInfo: book['Age Info'] ? JSON.parse(book['Age Info']) : defaultAgeInfo,
                     listingStatus: book['Listing Status'] ? JSON.parse(book['Listing Status']) : defaultListingStatus,
-                    createdAt: new Date().toISOString() // Dodaj to pole
+                    createdAt: new Date().toISOString()
                 }));
 
             setImportPreview({
@@ -158,11 +226,12 @@ const CollectionsScreen = () => {
             setIsImporting(false);
         }
     };
+
     const confirmImport = async () => {
         if (!importPreview) return;
         try {
             addCollection(importPreview.collectionName);
-            await addBooksToCollection(importPreview.collectionName, importPreview.books); // Użyj importPreview.books zamiast validBooks
+            await addBooksToCollection(importPreview.collectionName, importPreview.books);
             Alert.alert(t('alerts.success'), t('status.importSuccess', { count: importPreview.books.length, name: importPreview.collectionName }));
             setImportPreview(null);
         } catch (error) {
@@ -234,10 +303,6 @@ const CollectionsScreen = () => {
         }
     };
 
-    const toggleCollection = (collection: string) => {
-        setSelectedCollection(prev => prev === collection ? null : collection);
-    };
-
     const handleEditBook = (collectionName: string, bookIndex: number) => {
         const book = books[collectionName][bookIndex];
         router.push({
@@ -266,6 +331,24 @@ const CollectionsScreen = () => {
 
     const calculateTotalValue = () => {
         return collections.reduce((total, collection) => total + calculateCollectionTotal(collection), 0);
+    };
+
+    const calculateActiveValue = () => {
+        return collections.reduce((total, collection) => {
+            return total + (books[collection] || []).reduce((sum, book) => {
+                const status = book.listingStatus?.status || 'notListed';
+                return status !== 'sold' ? sum + parseFloat(book.price || '0') : sum;
+            }, 0);
+        }, 0);
+    };
+
+    const calculateSoldValue = () => {
+        return collections.reduce((total, collection) => {
+            return total + (books[collection] || []).reduce((sum, book) => {
+                const status = book.listingStatus?.status || 'notListed';
+                return status === 'sold' ? sum + parseFloat(book.price || '0') : sum;
+            }, 0);
+        }, 0);
     };
 
     const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined) => {
@@ -306,7 +389,7 @@ const CollectionsScreen = () => {
 
     const handleListBook = (collection: string, index: number) => {
         const book = books[collection][index];
-        setCurrentListingBook({collection, index});
+        setCurrentListingBook({ collection, index });
         if (book.listingStatus?.status === 'notListed') {
             setSelectedPlatforms([]);
             setShowListingModal(true);
@@ -350,7 +433,7 @@ const CollectionsScreen = () => {
 
     const changeListingStatus = (newStatus: 'notListed' | 'listed' | 'sold') => {
         if (!currentListingBook) return;
-        const {collection, index} = currentListingBook;
+        const { collection, index } = currentListingBook;
         const updatedBooks = [...books[collection]];
         const currentListingStatus = updatedBooks[index].listingStatus || defaultListingStatus;
         updatedBooks[index] = {
@@ -358,7 +441,7 @@ const CollectionsScreen = () => {
             listingStatus: {
                 ...currentListingStatus,
                 status: newStatus,
-                ...(newStatus === 'sold' ? {soldDate: new Date().toISOString()} : {})
+                ...(newStatus === 'sold' ? { soldDate: new Date().toISOString() } : {})
             }
         };
         updateBooksInCollection(collection, updatedBooks);
@@ -374,24 +457,6 @@ const CollectionsScreen = () => {
         );
     };
 
-    const calculateActiveValue = () => {
-        return collections.reduce((total, collection) => {
-            return total + (books[collection] || []).reduce((sum, book) => {
-                const status = book.listingStatus?.status || 'notListed';
-                return status !== 'sold' ? sum + parseFloat(book.price || '0') : sum;
-            }, 0);
-        }, 0);
-    };
-
-    const calculateSoldValue = () => {
-        return collections.reduce((total, collection) => {
-            return total + (books[collection] || []).reduce((sum, book) => {
-                const status = book.listingStatus?.status || 'notListed';
-                return status === 'sold' ? sum + parseFloat(book.price || '0') : sum;
-            }, 0);
-        }, 0);
-    };
-
     const getBookWord = (count: number, language: string) => {
         if (language === 'pl') {
             if (count === 1) return t('labels.book_one');
@@ -403,18 +468,26 @@ const CollectionsScreen = () => {
         }
     };
 
+    const handleCollectionPress = (collection: string) => {
+        if (collection === 'new') {
+            setShowAddModal(true);
+        } else {
+            setSelectedCollection(collection);
+        }
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={[typography.h1, styles.header]}></Text>
+            {/* Statyczna sekcja z wartością całkowitą */}
             <View style={styles.totalValueContainer}>
                 <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
                 <View style={styles.valueRow}>
                     <TouchableOpacity
                         style={styles.coinIconContainer}
-                        onPress={() => router.push({ pathname: '/settings', params: {initialTab: 'algorithm'} })}
+                        onPress={() => router.push({ pathname: '/settings', params: { initialTab: 'algorithm' } })}
                         activeOpacity={0.7}
                     >
-                        <FontAwesome5 name="coins" size={20} color={colors.primary}/>
+                        <FontAwesome5 name="coins" size={20} color={colors.primary} />
                     </TouchableOpacity>
                     <View style={styles.priceContainer}>
                         <Text style={styles.totalValueAmount}>{formatCurrency(calculateTotalValue().toString())}</Text>
@@ -431,91 +504,169 @@ const CollectionsScreen = () => {
                     </View>
                 </View>
             </View>
-            <View style={styles.sectionContainer}>
-                <View style={styles.topActionsRow}>
-                    <View style={styles.actionButtonContainer}>
-                        <TouchableOpacity
-                            style={styles.addCollectionButton}
-                            onPress={() => setShowAddModal(true)}
-                            activeOpacity={0.6}
-                        >
-                            <Ionicons name="add-circle" size={24} color={colors.primary}/>
-                            <Text style={styles.addCollectionText}>{t('buttons.addCollection')}</Text>
-                        </TouchableOpacity>
-                    </View>
 
-                    <View style={styles.actionButtonContainer}>
-                        <TouchableOpacity
-                            style={styles.importButton}
-                            onPress={handleImportCollection}
-                            disabled={isImporting}
-                            activeOpacity={0.6}
-                        >
-                            {isImporting ? (
-                                <ActivityIndicator size="small" color={colors.primary}/>
+            {/* Karuzela z dwoma slajdami */}
+            <View style={styles.slidesContainer}>
+                <Carousel
+                    ref={carouselRef}
+                    loop={false}
+                    width={width}
+                    height={currentSlide === 0 ? 500 : 500}
+                    data={[0, 1]}
+                    onSnapToItem={(index) => setCurrentSlide(index)}
+                    renderItem={({ index }) => (
+                        <View style={styles.slide}>
+                            {index === 0 ? (
+                                <>
+                                    <View style={styles.titleContainer}>
+                                        <Text style={styles.collectionsTitle}>{t('labels.yourCollections')}</Text>
+                                    </View>
+                                    {collections.length > 0 ? (
+                                        <CollectionCarousel
+                                            collections={collections}
+                                            books={books}
+                                            selectedCollection={selectedCollection}
+                                            onSelectCollection={handleCollectionPress}
+                                            calculateCollectionTotal={calculateCollectionTotal}
+                                            onEditCollection={async (collection, newName) => {
+                                                await handleEditCollection(collection, newName);
+                                            }}
+                                            onDeleteCollection={handleDeleteCollection}
+                                            onExportCollection={handleExportCSV}
+                                            getBookWord={getBookWord}
+                                            formatCurrency={formatCurrency}
+                                            onImportCollection={handleImportCollection}
+                                        />
+                                    ) : (
+                                        <View style={styles.emptyContainer}>
+                                            <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
+                                        </View>
+                                    )}
+
+                                    {/* Sekcja kategorii dla wybranej kolekcji */}
+                                    {selectedCollection && currentSlide === 0 && (
+                                        <View style={styles.categoriesContainer}>
+                                            <Text style={styles.categoriesTitle}>{t('labels.categories')}</Text>
+
+                                            <View style={styles.categoriesList}>
+                                                {/* Istniejące kategorie */}
+                                                {collectionCategories[selectedCollection]?.map((category) => (
+                                                    <View key={category} style={styles.categoryItem}>
+                                                        <Text style={styles.categoryText}>{category}</Text>
+                                                        <TouchableOpacity
+                                                            onPress={() => handleRemoveCategory(selectedCollection, category)}
+                                                        >
+                                                            <Ionicons name="close" size={16} color={colors.error} />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ))}
+
+                                                {/* Przycisk/Input - wersja zintegrowana */}
+                                                <View style={styles.addCategoryContainer}>
+                                                    {!addingCategory ? (
+                                                        <TouchableOpacity
+                                                            style={styles.addCategoryButton}
+                                                            onPress={() => setAddingCategory(true)}
+                                                        >
+                                                            <Text style={styles.addCategoryText}>+ {t('buttons.addCategory')}</Text>
+                                                        </TouchableOpacity>
+                                                    ) : (
+                                                        <View style={styles.inlineInputContainer}>
+                                                            <TextInput
+                                                                style={styles.inlineInput}
+                                                                placeholder={t('placeholders.categoryName')}
+                                                                value={newCategoryName}
+                                                                onChangeText={setNewCategoryName}
+                                                                autoFocus
+                                                                onSubmitEditing={() => {
+                                                                    if (newCategoryName.trim()) {
+                                                                        handleAddCategory(selectedCollection);
+                                                                        setNewCategoryName('');
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <TouchableOpacity
+                                                                style={[styles.inlineConfirmButton, !newCategoryName.trim() && styles.disabledButton]}
+                                                                onPress={() => {
+                                                                    if (newCategoryName.trim()) {
+                                                                        handleAddCategory(selectedCollection);
+                                                                        setNewCategoryName('');
+                                                                        setAddingCategory(false);
+                                                                    }
+                                                                }}
+                                                                disabled={!newCategoryName.trim()}
+                                                            >
+                                                                <Text style={styles.confirmButtonText}>✓</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            </View>
+                                        </View>
+                                    )}
+                                </>
                             ) : (
-                                <Ionicons name="cloud-upload" size={24} color={colors.primary}/>
+                                <>
+                                    {selectedCollection && (
+                                        <View style={styles.collectionDetails}>
+                                            {books[selectedCollection]?.length === 0 ? (
+                                                <View style={styles.emptyBookContainer}>
+                                                    <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
+                                                </View>
+                                            ) : (
+                                                <BooksCarousel
+                                                    books={books[selectedCollection]}
+                                                    collectionName={selectedCollection}
+                                                    onEditBook={(index) => handleEditBook(selectedCollection, index)}
+                                                    onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
+                                                    onListBook={(index) => handleListBook(selectedCollection, index)}
+                                                    formatDefectsSummary={formatDefectsSummary}
+                                                    formatUniquenessSummary={formatUniquenessSummary}
+                                                    formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                                    formatListingStatus={formatListingStatus}
+                                                />
+                                            )}
+                                        </View>
+                                    )}
+                                </>
                             )}
-                            <Text style={styles.importButtonText}>{t('buttons.importCollection')}</Text>
-                        </TouchableOpacity>
-                    </View>
+                        </View>
+                    )}
+                    enabled={false}
+                    autoPlay={false}
+                    mode="parallax"
+                    modeConfig={{
+                        parallaxScrollingScale: 1,
+                        parallaxScrollingOffset: 0,
+                    }}
+                />
+            </View>
+
+            {/* Nawigacja między slajdami */}
+            <View style={styles.navigationContainer}>
+                <TouchableOpacity
+                    onPress={handlePrevSlide}
+                    disabled={currentSlide === 0}
+                    style={[styles.navButton, currentSlide === 0 && styles.disabledButton]}
+                >
+                    <Ionicons name="chevron-back" size={24} color={currentSlide === 0 ? colors.gray : colors.primary} />
+                </TouchableOpacity>
+
+                <View style={styles.dotsContainer}>
+                    <View style={[styles.dot, currentSlide === 0 && styles.activeDot]} />
+                    <View style={[styles.dot, currentSlide === 1 && styles.activeDot]} />
                 </View>
 
-                {collections.length > 0 ? (
-                    <>
-                        <View style={styles.divider}/>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.collectionsTitle}>{t('labels.yourCollections')}</Text>
-                        </View>
-                        <CollectionCarousel
-                            collections={collections}
-                            books={books}
-                            selectedCollection={selectedCollection}
-                            onSelectCollection={(collection) => {
-                                if (collection === 'new') {
-                                    setShowAddModal(true);
-                                } else {
-                                    toggleCollection(collection);
-                                }
-                            }}
-                            calculateCollectionTotal={calculateCollectionTotal}
-                            onEditCollection={async (collection, newName) => {
-                                await handleEditCollection(collection, newName);
-                            }}
-                            onDeleteCollection={handleDeleteCollection}
-                            onExportCollection={handleExportCSV}
-                            getBookWord={getBookWord}
-                            formatCurrency={formatCurrency}
-                            onImportCollection={handleImportCollection} // Przekazujemy właściwą funkcję
-                        />
-                        {selectedCollection && (
-                            <View style={styles.collectionDetails}>
-                                {books[selectedCollection]?.length === 0 ? (
-                                    <View style={styles.emptyBookContainer}>
-                                        <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
-                                    </View>
-                                ) : (
-                                    <BooksCarousel
-                                        books={books[selectedCollection]}
-                                        collectionName={selectedCollection}
-                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
-                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
-                                        onListBook={(index) => handleListBook(selectedCollection, index)}
-                                        formatDefectsSummary={formatDefectsSummary}
-                                        formatUniquenessSummary={formatUniquenessSummary}
-                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
-                                        formatListingStatus={formatListingStatus}
-                                    />
-                                )}
-                            </View>
-                        )}
-                    </>
-                ) : (
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
-                    </View>
-                )}
+                <TouchableOpacity
+                    onPress={handleNextSlide}
+                    disabled={currentSlide === 1 || !selectedCollection}
+                    style={[styles.navButton, (currentSlide === 1 || !selectedCollection) && styles.disabledButton]}
+                >
+                    <Ionicons name="chevron-forward" size={24} color={currentSlide === 1 || !selectedCollection ? colors.gray : colors.primary} />
+                </TouchableOpacity>
             </View>
+
+            {/* Modale */}
             <AddCollectionModal
                 visible={showAddModal}
                 onClose={() => setShowAddModal(false)}
@@ -558,23 +709,22 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 6,
-        backgroundColor: '#f8f9fa',
-    },
-    header: {
-        marginBottom: 4,
-        textAlign: 'left',
-        color: colors.black,
-        marginTop: 20,
+        backgroundColor: colors.white,
     },
     totalValueContainer: {
-        backgroundColor: colors.white,
-        borderRadius: 2,
+        backgroundColor: '#f0f4ff',
         padding: 20,
         marginBottom: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        marginLeft: -20,
+        marginRight: -20,
+        paddingTop: 60,
+        marginTop: -20,
+        borderBottomLeftRadius: 22,
+        borderBottomRightRadius: 22,
+        zIndex: 999, // niższy niż tooltip
+        elevation: 4, // dla Androida
     },
     totalValueLabel: {
         fontSize: 16,
@@ -586,17 +736,20 @@ const styles = StyleSheet.create({
         color: colors.primary,
         fontWeight: 'bold',
     },
-    sectionContainer: {
-        backgroundColor: colors.white,
-        borderRadius: 2,
-        padding: 16,
-        marginBottom: 0,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+    slidesContainer: {
+        minHeight: 600,
+    },
+    slide: {
+        flex: 1,
+    },
+    titleContainer: {
+        height: 50,
+        marginBottom: 10,
+        alignItems: 'center'
     },
     collectionsTitle: {
         fontSize: 16,
-        color: colors.black,
+        color: colors.primary,
         marginTop: 0,
         marginBottom: 0,
     },
@@ -655,16 +808,6 @@ const styles = StyleSheet.create({
         borderColor: colors.background,
         zIndex: 2,
     },
-    divider: {
-        height: 1,
-        backgroundColor: colors.gray,
-        marginBottom: 12,
-    },
-    titleContainer: {
-        height: 50,
-        marginBottom: 10,
-        alignItems: 'center'
-    },
     valueBreakdownContainer: {
         width: '100%',
         marginTop: 12,
@@ -691,36 +834,137 @@ const styles = StyleSheet.create({
     soldValue: {
         color: colors.success,
     },
-    topActionsRow: {
+    navigationContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 16,
     },
-    actionButtonContainer: {
+    navButton: {
+        padding: 16,
+    },
+    dotsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: colors.gray,
+        marginHorizontal: 4,
+    },
+    activeDot: {
+        backgroundColor: colors.primary,
+        width: 12,
+    },
+    categoriesContainer: {
+        minHeight: 120,
+        padding: 16,
+        backgroundColor: colors.white,
+        borderRadius: 8,
+        marginTop: 16,
+        borderWidth: 1,
+        borderColor: colors.grayLight,
+        marginHorizontal: 16,
+    },
+    categoriesTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: colors.primary,
+    },
+    categoryText: {
+        fontSize: 14,
+        color: colors.grayDark,
+    },
+    removeCategoryButton: {
+        marginLeft: 6,
+    },
+    categoriesList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    categoryItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.grayLight,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+    },
+    addCategoryInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginTop: 8,
+    },
+    categoryInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: colors.gray,
+        borderRadius: 8,
+        padding: 8,
+        marginRight: 8,
+    },
+    confirmCategoryButton: {
+        padding: 8,
+        backgroundColor: colors.primary,
+        borderRadius: 8,
+    },
+    disabledConfirmButton: {
+        opacity: 0.5,
+    },
+    addCategoryContainer: {
+        minWidth: 120,
+    },
+    addCategoryButton: {
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderStyle: 'dashed',
+        borderRadius: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    addCollectionButton: {
-        alignItems: 'center',
-        padding: 8,
-    },
-    addCollectionText: {
-        marginTop: 4,
+    addCategoryText: {
         color: colors.primary,
         fontSize: 14,
-        fontWeight: '500',
-        textAlign: 'center',
     },
-    importButton: {
+    inlineInputContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
-        padding: 8,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderRadius: 16,
+        paddingLeft: 12,
+        paddingRight: 4,
+        paddingVertical: 4,
     },
-    importButtonText: {
-        marginTop: 4,
-        color: colors.primary,
+    inlineInput: {
+        flex: 1,
         fontSize: 14,
-        textAlign: 'center',
+        padding: 0,
+        marginRight: 4,
+    },
+    inlineConfirmButton: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    confirmButtonText: {
+        color: colors.white,
+        fontSize: 14,
+    },
+    disabledButton: {
+        opacity: 0.5,
+        backgroundColor: colors.gray,
     },
 });
 

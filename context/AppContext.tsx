@@ -62,6 +62,9 @@ interface AppContextType {
     addCollection: (name: string) => void;
     removeCollection: (name: string) => void;
     books: { [key: string]: BookData[] };
+    collectionCategories: { [key: string]: string[] };
+    addCategoryToCollection: (collectionName: string, category: string) => void;
+    removeCategoryFromCollection: (collectionName: string, category: string) => void;
     addBookToCollection: (collectionName: string, bookData: Omit<BookData, 'createdAt'>) => void;
     addBooksToCollection: (collectionName: string, booksData: Omit<BookData, 'createdAt'>[]) => Promise<void>;
     removeBookFromCollection: (collectionName: string, bookIndex: number) => void;
@@ -77,6 +80,8 @@ interface AppContextType {
     formatCurrency: (price: string) => string;
     forceUpdateCollections: () => void;
     renameCollection: (oldName: string, newName: string) => void;
+    selectedCollection: string | null;
+    setSelectedCollection: (collection: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -85,12 +90,13 @@ const STORAGE_KEYS = {
     COLLECTIONS: '@collections',
     BOOKS: '@books',
     SCAN_HISTORY: '@scanHistory',
-    EXCHANGE_RATE: '@exchangeRate'
+    EXCHANGE_RATE: '@exchangeRate',
+    COLLECTION_CATEGORIES: '@collectionCategories'
 } as const;
 
 const defaultListingStatus: ListingStatus = {
     status: 'notListed',
-    platforms: [] // Teraz może zawierać też 'olx'
+    platforms: []
 };
 
 const defaultUniqueness: BookUniqueness = {
@@ -115,15 +121,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [isbn, setISBN] = useState<string | null>(null);
     const [collections, setCollections] = useState<string[]>([]);
     const [books, setBooks] = useState<{ [key: string]: BookData[] }>({});
+    const [collectionCategories, setCollectionCategories] = useState<{ [key: string]: string[] }>({});
     const [exchangeRate, setExchangeRate] = useState<number>(3.8);
     const [exchangeRateError, setExchangeRateError] = useState<string | null>(null);
     const [lastRateUpdate, setLastRateUpdate] = useState<Date | null>(null);
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
     const [updateTrigger, setUpdateTrigger] = useState(0);
-    const defaultListingStatus: ListingStatus = {
-        status: 'notListed',
-        platforms: []
-    };
+    const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+
+
     const forceUpdateCollections = useCallback(() => {
         setUpdateTrigger(prev => prev + 1);
     }, []);
@@ -132,11 +138,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useEffect(() => {
         const loadPersistedData = async () => {
             try {
-                const [history, collections, books, rate] = await Promise.all([
+                const [history, collections, books, rate, categories] = await Promise.all([
                     AsyncStorage.getItem(STORAGE_KEYS.SCAN_HISTORY),
                     AsyncStorage.getItem(STORAGE_KEYS.COLLECTIONS),
                     AsyncStorage.getItem(STORAGE_KEYS.BOOKS),
-                    AsyncStorage.getItem(STORAGE_KEYS.EXCHANGE_RATE)
+                    AsyncStorage.getItem(STORAGE_KEYS.EXCHANGE_RATE),
+                    AsyncStorage.getItem(STORAGE_KEYS.COLLECTION_CATEGORIES)
                 ]);
 
                 if (history) setScanHistory(JSON.parse(history));
@@ -148,6 +155,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     setExchangeRateError(error);
                     setLastRateUpdate(new Date(timestamp));
                 }
+                if (categories) setCollectionCategories(JSON.parse(categories));
 
                 await refreshExchangeRate();
             } catch (error) {
@@ -170,6 +178,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useEffect(() => {
         AsyncStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
     }, [books]);
+
+    useEffect(() => {
+        AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(collectionCategories));
+    }, [collectionCategories]);
 
     const refreshExchangeRate = async () => {
         try {
@@ -207,6 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         setCollections(prev => [...prev, name]);
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
+        setCollectionCategories(prev => ({ ...prev, [name]: prev[name] || [] }));
     }, []);
 
     const renameCollection = useCallback((oldName: string, newName: string) => {
@@ -221,6 +234,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             return newBooks;
         });
+        setCollectionCategories(prev => {
+            const newCategories = {...prev};
+            if (newCategories[oldName]) {
+                newCategories[newName] = newCategories[oldName];
+                delete newCategories[oldName];
+            }
+            return newCategories;
+        });
         forceUpdateCollections();
     }, [forceUpdateCollections]);
 
@@ -231,8 +252,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             delete newBooks[name];
             return newBooks;
         });
+        setCollectionCategories(prev => {
+            const newCategories = { ...prev };
+            delete newCategories[name];
+            return newCategories;
+        });
         forceUpdateCollections();
     }, [forceUpdateCollections]);
+
+    const addCategoryToCollection = useCallback((collectionName: string, category: string) => {
+        if (!category.trim()) return;
+
+        setCollectionCategories(prev => ({
+            ...prev,
+            [collectionName]: [...(prev[collectionName] || []), category.trim()]
+        }));
+    }, []);
+
+    const removeCategoryFromCollection = useCallback((collectionName: string, category: string) => {
+        setCollectionCategories(prev => ({
+            ...prev,
+            [collectionName]: (prev[collectionName] || []).filter(c => c !== category)
+        }));
+    }, []);
 
     const addBookToCollection = useCallback((
         collectionName: string,
@@ -281,7 +323,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             uniqueness?: BookUniqueness;
             marketFactors?: MarketFactors;
             ageInfo?: BookAgeInfo;
-            listingStatus?: ListingStatus; // Teraz wspiera OLX
+            listingStatus?: ListingStatus;
         }>
     ) => {
         return new Promise<void>((resolve) => {
@@ -397,6 +439,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 removeCollection,
                 renameCollection,
                 books,
+                collectionCategories,
+                addCategoryToCollection,
+                removeCategoryFromCollection,
                 addBookToCollection,
                 addBooksToCollection,
                 updateBookInCollection,
@@ -410,7 +455,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 addToScanHistory,
                 clearScanHistory,
                 formatCurrency,
-                forceUpdateCollections
+                forceUpdateCollections,
+                selectedCollection,
+                setSelectedCollection,
             }}
         >
             {children}

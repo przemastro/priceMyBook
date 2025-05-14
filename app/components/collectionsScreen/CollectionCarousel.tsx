@@ -58,6 +58,8 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                         <Text style={styles.actionButtonText}>{t('buttons.addCollection')}</Text>
                     </TouchableOpacity>
 
+                    <View style={styles.horizontalDivider} />
+
                     <TouchableOpacity
                         style={styles.importButton}
                         onPress={onImportCollection}
@@ -213,8 +215,9 @@ const styles = StyleSheet.create({
         padding: 16,
         marginHorizontal: 8,
         borderWidth: 1,
-        borderColor: colors.grayLight,
-        height: 200,
+        borderColor: colors.primary,
+        borderStyle: 'dashed',
+        height: 220,
         justifyContent: 'space-between',
         alignItems: 'center',
     },
@@ -227,6 +230,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         width: '100%',
+    },
+    horizontalDivider: {
+        width: '120%',
+        height: 1,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.primary,
+        borderStyle: 'dashed',
     },
     actionButtonText: {
         marginTop: 8,
