@@ -271,7 +271,8 @@ export default {
         finalPrice: "Final Price",
         defectsDetails: "Defects Details",
         uniquenessDetails: "Uniqueness Details",
-        marketDetails: "Market Details"
+        marketDetails: "Market Details",
+        averageUsedPrice: "Market average used book price",
     },
     demand: "Demand",
     supply: "Supply",
@@ -298,5 +299,5 @@ export default {
         uniqueness: "BOOK UNIQUENESS",
         marketFactors: "MARKET FACTORS",
         addToCollection: "ADD TO COLLECTION"
-    }
+    },
 }

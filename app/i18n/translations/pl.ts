@@ -264,7 +264,8 @@ export default {
         finalPrice: "Cena końcowa",
         defectsDetails: "Szczegóły wad",
         uniquenessDetails: "Szczegóły unikatowości",
-        marketDetails: "Szczegóły rynkowe"
+        marketDetails: "Szczegóły rynkowe",
+        averageUsedPrice: "Średnia cena rynkowa książki używanej"
     },
     demand: "Podaż",
     supply: "Popyt",

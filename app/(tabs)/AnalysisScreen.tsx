@@ -1166,6 +1166,12 @@ export default function AnalysisScreen() {
                   uniqueness={uniqueness}
                   marketFactors={marketFactors}
                   onShowMarketAnalysis={() => setShowMarketModal(true)}
+                  averageUsedPrice={
+                      bookInfo?.amazonData?.prices?.find((p: { condition: string | string[]; }) =>
+                          p.condition?.includes('average') ||
+                          p.condition?.includes('średnia')
+                      )?.price || null
+                  }
               />
             </View>
           </View>

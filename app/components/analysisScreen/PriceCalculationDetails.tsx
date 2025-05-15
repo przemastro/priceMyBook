@@ -15,6 +15,7 @@ interface PriceCalculationDetailsProps {
     uniqueness: any;
     marketFactors: any;
     onShowMarketAnalysis: () => void;
+    averageUsedPrice?: number | null; // Dodaj tę linię
 }
 
 const PriceCalculationDetails = ({
@@ -22,7 +23,8 @@ const PriceCalculationDetails = ({
                                      defects,
                                      uniqueness,
                                      marketFactors,
-                                     onShowMarketAnalysis
+                                     onShowMarketAnalysis,
+                                     averageUsedPrice
                                  }: PriceCalculationDetailsProps) => {
     const { t } = useTranslation();
     const { exchangeRate } = useAppContext();
@@ -63,6 +65,28 @@ const PriceCalculationDetails = ({
 
     return (
         <View style={styles.container}>
+            {/* Sekcja z ceną średnią - teraz będzie zawsze nad szacowaną wartością */}
+            {averageUsedPrice !== undefined && averageUsedPrice !== null && (
+                <View style={[
+                    styles.averagePriceContainer,
+                    !expanded && { marginBottom: 8 } // Dodatkowy margines gdy nie jest rozwinięte
+                ]}>
+                    <View style={styles.averagePriceLabelContainer}>
+                        <Ionicons
+                            name="book-outline"
+                            size={16}
+                            color={colors.secondary}
+                            style={styles.averagePriceIcon}
+                        />
+                        <Text style={styles.averagePriceLabel}>
+                            {t('priceCalculation.averageUsedPrice')}:
+                        </Text>
+                    </View>
+                    <Text style={styles.averagePriceValue}>
+                        {formatPrice(averageUsedPrice)}
+                    </Text>
+                </View>
+            )}
             <TouchableOpacity
                 style={styles.triggerContainer}
                 onPress={toggleExpanded}
@@ -339,6 +363,32 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '600',
         marginRight: 8,
+    },
+    averagePriceContainer: {
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 8,
+        padding: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    averagePriceLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    averagePriceIcon: {
+        marginRight: 8,
+    },
+    averagePriceLabel: {
+        fontSize: 14,
+        color: colors.grayDark,
+    },
+    averagePriceValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: colors.black,
     },
 });
 
