@@ -15,7 +15,7 @@ interface PriceCalculationDetailsProps {
     uniqueness: any;
     marketFactors: any;
     onShowMarketAnalysis: () => void;
-    averageUsedPrice?: number | null; // Dodaj tę linię
+    averageUsedPrice?: number | null;
 }
 
 const PriceCalculationDetails = ({
@@ -65,28 +65,33 @@ const PriceCalculationDetails = ({
 
     return (
         <View style={styles.container}>
-            {/* Sekcja z ceną średnią - teraz będzie zawsze nad szacowaną wartością */}
-            {averageUsedPrice !== undefined && averageUsedPrice !== null && (
-                <View style={[
-                    styles.averagePriceContainer,
-                    !expanded && { marginBottom: 8 } // Dodatkowy margines gdy nie jest rozwinięte
-                ]}>
-                    <View style={styles.averagePriceLabelContainer}>
-                        <Ionicons
-                            name="book-outline"
-                            size={16}
-                            color={colors.secondary}
-                            style={styles.averagePriceIcon}
-                        />
-                        <Text style={styles.averagePriceLabel}>
-                            {t('priceCalculation.averageUsedPrice')}:
-                        </Text>
-                    </View>
+            {/* Always show the average price section */}
+            <View style={[
+                styles.averagePriceContainer,
+                !expanded && { marginBottom: 8 }
+            ]}>
+                <View style={styles.averagePriceLabelContainer}>
+                    <Ionicons
+                        name="book-outline"
+                        size={16}
+                        color={colors.secondary}
+                        style={styles.averagePriceIcon}
+                    />
+                    <Text style={styles.averagePriceLabel}>
+                        {t('priceCalculation.averageUsedPrice')}:
+                    </Text>
+                </View>
+                {averageUsedPrice !== undefined && averageUsedPrice !== null ? (
                     <Text style={styles.averagePriceValue}>
                         {formatPrice(averageUsedPrice)}
                     </Text>
-                </View>
-            )}
+                ) : (
+                    <Text style={styles.noDataText}>
+                        {t('priceCalculation.noMarketData')}
+                    </Text>
+                )}
+            </View>
+
             <TouchableOpacity
                 style={styles.triggerContainer}
                 onPress={toggleExpanded}
@@ -223,7 +228,7 @@ const styles = StyleSheet.create({
     container: {
         zIndex: 1000,
         marginBottom: 16,
-        elevation: 5, // dla Androida
+        elevation: 5,
     },
     triggerContainer: {
         flexDirection: 'row',
@@ -265,7 +270,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 10, // ważne dla Androida
+        elevation: 10,
         marginTop: 8,
         zIndex: 1001,
         borderWidth: 1,
@@ -349,21 +354,6 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: colors.black,
     },
-    analysisButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.primary,
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        marginTop: 8,
-    },
-    analysisButtonText: {
-        color: 'white',
-        fontWeight: '600',
-        marginRight: 8,
-    },
     averagePriceContainer: {
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderRadius: 8,
@@ -389,6 +379,11 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         color: colors.black,
+    },
+    noDataText: {
+        fontSize: 14,
+        color: colors.gray,
+        fontStyle: 'italic',
     },
 });
 
