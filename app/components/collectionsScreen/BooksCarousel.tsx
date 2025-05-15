@@ -6,13 +6,15 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
+    Alert,
 } from 'react-native';
-import {FontAwesome, Ionicons, FontAwesome5} from '@expo/vector-icons';
-import {colors} from '@/styles/styles';
-import {useTranslation} from 'react-i18next';
+import { FontAwesome, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { colors } from '@/styles/styles';
+import { useTranslation } from 'react-i18next';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from './types';
+import ExportToPDFButton from './ExportToPDFButton';
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
 
@@ -69,10 +71,48 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         const {icon, color, text, bgColor} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
         return (
             <View style={styles.listingButtonContainer}>
-                <TouchableOpacity style={[styles.iconContainer, { backgroundColor: bgColor, borderColor: color, marginLeft: 32 }]} onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}>
+                <TouchableOpacity
+                    style={[styles.iconContainer, { backgroundColor: bgColor, borderColor: color, marginLeft: 32 }]}
+                    onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}
+                >
                     <FontAwesome5 name={icon} size={20} color={color}/>
                 </TouchableOpacity>
                 <Text style={[styles.listingButtonText]} numberOfLines={2} ellipsizeMode="tail">{text}</Text>
+            </View>
+        );
+    };
+
+    const renderActionButtons = (bookIndex: number) => {
+        const book = books[bookIndex];
+        return (
+            <View style={styles.actionButtonsContainer}>
+                <ExportToPDFButton
+                    book={book}
+                    formatDefectsSummary={formatDefectsSummary}
+                    formatUniquenessSummary={formatUniquenessSummary}
+                    formatMarketFactorsSummary={formatMarketFactorsSummary}
+                    formatListingStatus={formatListingStatus}
+                />
+
+                <TouchableOpacity
+                    style={[styles.iconContainer, styles.editButton]}
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        onEditBook(bookIndex);
+                    }}
+                >
+                    <Ionicons name="create" size={20} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.iconContainer, styles.deleteButton]}
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        onDeleteBook(bookIndex);
+                    }}
+                >
+                    <FontAwesome name="trash" size={20} color={colors.error} />
+                </TouchableOpacity>
             </View>
         );
     };
@@ -113,14 +153,7 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
 
                     <View style={styles.bookCardFooter}>
                         {renderListingButton(index)}
-                        <View style={styles.bookCardActions}>
-                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onEditBook(index); }} style={styles.editButton}>
-                                <Ionicons name="create" size={18} color={colors.primary}/>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onDeleteBook(index); }} style={styles.deleteButton}>
-                                <FontAwesome name="trash" size={18} color={colors.error}/>
-                            </TouchableOpacity>
-                        </View>
+                        {renderActionButtons(index)}
                     </View>
                 </Animated.View>
             </View>
@@ -274,7 +307,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 12,
     },
-    bookCardActions: {
+    actionButtonsContainer: {
         flexDirection: 'row',
     },
     listingButtonContainer: {
@@ -305,9 +338,13 @@ const styles = StyleSheet.create({
     editButton: {
         padding: 8,
         marginRight: 4,
+        borderColor: colors.primary,
+        backgroundColor: 'rgba(74, 108, 247, 0.1)',
     },
     deleteButton: {
         padding: 8,
+        borderColor: colors.error,
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
     },
 });
 

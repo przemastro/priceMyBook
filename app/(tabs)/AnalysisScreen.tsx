@@ -177,7 +177,7 @@ export default function AnalysisScreen() {
 
   // Animacja przejścia między krokami
   const animateSlide = (direction: 'forward' | 'backward') => {
-    slideAnim.setValue(direction === 'forward' ? -50 : 50);
+    slideAnim.setValue(direction === 'forward' ? 50 : -50);
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 300,
@@ -668,7 +668,7 @@ export default function AnalysisScreen() {
     switch(currentStep) {
       case 0: // Krok 1: Szczegóły książki
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[0]}</Text>
                 <View style={styles.priceSection}>
@@ -824,7 +824,7 @@ export default function AnalysisScreen() {
 
       case 1: // Krok 2: Wady książki
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[1]}</Text>
                 <View style={styles.defectsGrid}>
@@ -881,7 +881,7 @@ export default function AnalysisScreen() {
 
       case 2: // Krok 3: Unikatowość
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[2]}</Text>
                 <FlatList
@@ -921,7 +921,7 @@ export default function AnalysisScreen() {
 
       case 3: // Krok 4: Czynniki rynkowe
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[3]}</Text>
 
@@ -976,76 +976,64 @@ export default function AnalysisScreen() {
 
       case 4: // Krok 5: Zapisanie do księgozbioru
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[4]}</Text>
 
-                <View style={styles.carouselContainer}>
-                  <Carousel
-                      loop={false}
-                      style={styles.carousel}
-                      width={viewportWidth / 2}
-                      height={180}
-                      data={[...collections, 'create_new']} // Dodajemy specjalny element na końcu
-                      onSnapToItem={(index) => {
-                        if (index < collections.length) {
-                          setSelectedCollection(collections[index]);
-                        }
-                      }}
-                      renderItem={({ index }) => {
-                        // Specjalny przypadek dla przycisku tworzenia nowego księgozbioru
-                        if (index >= collections.length) {
-                          return (
-                              <TouchableOpacity
-                                  style={styles.createCollectionCarouselItem}
-                                  onPress={() => setShowAddCollectionModal(true)}
-                              >
-                                <View style={styles.carouselContent}>
-                                  <Ionicons
-                                      name="add-circle"
-                                      size={24}
-                                      color={colors.primary}
-                                  />
-                                  <Text style={styles.createCollectionCarouselText}>
-                                    {t('buttons.createNewCollection')}
-                                  </Text>
-                                </View>
-                              </TouchableOpacity>
-                          );
-                        }
+                {/* Nowy styl wyboru kolekcji */}
+                <View style={styles.collectionsGrid}>
+                  {collections.map((collection) => {
+                    const bookCount = books[collection]?.length || 0;
+                    return (
+                        <TouchableOpacity
+                            key={collection}
+                            style={[
+                              styles.collectionButton,
+                              selectedCollection === collection && styles.selectedCollectionButton
+                            ]}
+                            onPress={() => setSelectedCollection(collection)}
+                            activeOpacity={0.7}
+                        >
+                          <View style={styles.collectionIconContainer}>
+                            <MaterialIcons
+                                name="collections-bookmark"
+                                size={24}
+                                color={selectedCollection === collection ? colors.primary : colors.secondary}
+                            />
+                          </View>
+                          <Text
+                              style={[
+                                styles.collectionName,
+                                selectedCollection === collection && styles.selectedCollectionName
+                              ]}
+                              numberOfLines={2}
+                          >
+                            {collection}
+                          </Text>
+                          <Text style={styles.collectionBookCount}>
+                            {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                          </Text>
+                        </TouchableOpacity>
+                    );
+                  })}
 
-                        const collection = collections[index];
-                        const bookCount = books[collection]?.length || 0;
-                        const isSelected = selectedCollection === collection;
-
-                        return (
-                            <View style={[
-                              styles.carouselItem,
-                              isSelected && styles.selectedCarouselItem
-                            ]}>
-                              <TouchableOpacity
-                                  onPress={() => setSelectedCollection(collection)}
-                                  style={styles.carouselContent}
-                              >
-                                <MaterialIcons
-                                    name="collections-bookmark"
-                                    size={24}
-                                    color={isSelected ? colors.primary : colors.secondary}
-                                />
-                                <Text style={[
-                                  styles.carouselCollectionName,
-                                  isSelected && styles.selectedText
-                                ]} numberOfLines={2}>
-                                  {collection}
-                                </Text>
-                                <Text style={styles.carouselBookCount}>
-                                  {bookCount} {t(getBookWord(bookCount, i18n.language))}
-                                </Text>
-                              </TouchableOpacity>
-                            </View>
-                        );
-                      }}
-                  />
+                  {/* Przycisk dodawania nowej kolekcji */}
+                  <TouchableOpacity
+                      style={styles.addCollectionButton}
+                      onPress={() => setShowAddCollectionModal(true)}
+                      activeOpacity={0.7}
+                  >
+                    <View style={styles.collectionIconContainer}>
+                      <Ionicons
+                          name="add-circle"
+                          size={24}
+                          color={colors.primary}
+                      />
+                    </View>
+                    <Text style={styles.addCollectionText}>
+                      {t('buttons.createNewCollection')}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </Animated.View>
@@ -1959,5 +1947,59 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     color: colors.primary,
+  },
+  collectionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  collectionButton: {
+    width: '48%',
+    backgroundColor: colors.grayLight,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.grayLight,
+  },
+  selectedCollectionButton: {
+    backgroundColor: 'rgba(74,108,247,0.1)',
+    borderColor: colors.primary,
+  },
+  collectionIconContainer: {
+    marginBottom: 8,
+  },
+  collectionName: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    color: colors.secondary,
+    marginBottom: 4,
+  },
+  selectedCollectionName: {
+    color: colors.primary,
+  },
+  collectionBookCount: {
+    fontSize: 14,
+    color: colors.black,
+  },
+  addCollectionButton: {
+    width: '48%',
+    backgroundColor: 'rgba(74,108,247,0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+  },
+  addCollectionText: {
+    fontSize: 14,
+    color: colors.primary,
+    textAlign: 'center',
+    marginTop: 8,
   },
 });

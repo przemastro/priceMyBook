@@ -64,3 +64,11 @@ export interface CollectionCarouselProps {
     getBookWord: (count: number, language: string) => string;
     formatCurrency: (value: string) => string;
 }
+
+export interface ExportToPDFButtonProps {
+    book: BookData;
+    formatDefectsSummary: (defects: Record<string, BookDefect> | undefined) => string;
+    formatUniquenessSummary: (uniqueness: BookUniqueness | undefined) => string;
+    formatMarketFactorsSummary: (marketFactors: MarketFactors | undefined) => string;
+    formatListingStatus: (status?: ListingStatus) => string;
+}
