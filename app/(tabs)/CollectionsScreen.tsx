@@ -830,7 +830,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     titleContainer: {
-        marginBottom: 20,
+        marginBottom: 0,
         alignItems: 'center',
     },
     slideTitle: {
@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
         color: colors.grayDark,
     },
     collectionDetails: {
-        marginTop: 10,
+        marginTop: 0,
     },
     navigationContainer: {
         flexDirection: 'row',

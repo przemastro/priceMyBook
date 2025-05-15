@@ -1,5 +1,5 @@
 // app/components/BooksCarousel.tsx
-import React from 'react';
+import React, { useRef } from 'react';
 import {
     View,
     Text,
@@ -40,6 +40,23 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                                                          formatListingStatus
                                                      }) => {
     const { t } = useTranslation();
+    const carouselRef = useRef<any>(null);
+
+    const goToFirstSlide = () => {
+        carouselRef.current?.scrollTo({ index: 0, animated: true });
+    };
+
+    const goToLastSlide = () => {
+        carouselRef.current?.scrollTo({ index: books.length - 1, animated: true });
+    };
+
+    const goToNextSlide = () => {
+        carouselRef.current?.next();
+    };
+
+    const goToPrevSlide = () => {
+        carouselRef.current?.prev();
+    };
 
     const renderListingButton = (bookIndex: number) => {
         const book = books[bookIndex];
@@ -112,8 +129,8 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
 
     return (
         <View style={styles.booksCarouselContainer}>
-            <Text style={styles.booksCarouselTitle}></Text>
             <Carousel
+                ref={carouselRef}
                 loop={false}
                 style={styles.booksCarousel}
                 width={BOOK_CARD_WIDTH}
@@ -122,6 +139,27 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 renderItem={({ index, animationValue }) => <BookItem index={index} animationValue={animationValue} />}
                 scrollAnimationDuration={800}
             />
+
+            {/* Navigation buttons */}
+            {books.length > 1 && (
+                <View style={styles.navigationContainer}>
+                    <TouchableOpacity onPress={goToFirstSlide} style={styles.navButton}>
+                        <Ionicons name="play-skip-back" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={goToPrevSlide} style={styles.navButton}>
+                        <Ionicons name="play-back" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={goToNextSlide} style={styles.navButton}>
+                        <Ionicons name="play-forward" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={goToLastSlide} style={styles.navButton}>
+                        <Ionicons name="play-skip-forward" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 };
@@ -144,6 +182,18 @@ const styles = StyleSheet.create({
     },
     booksCarousel: {
         width: '100%',
+    },
+    navigationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    navButton: {
+        padding: 10,
+        marginHorizontal: 5,
+        borderRadius: 20,
+        backgroundColor: 'rgba(74,108,247,0.1)',
     },
     bookCard: {
         width: BOOK_CARD_WIDTH - 40,

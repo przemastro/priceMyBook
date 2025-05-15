@@ -7,8 +7,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
-    Animated,
-    Easing
 } from 'react-native';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
@@ -42,6 +40,22 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         }
         setEditingCollection(null);
         setNewCollectionName('');
+    };
+
+    const goToFirstSlide = () => {
+        carouselRef.current?.scrollTo({ index: 0, animated: true });
+    };
+
+    const goToLastSlide = () => {
+        carouselRef.current?.scrollTo({ index: collections.length, animated: true });
+    };
+
+    const goToNextSlide = () => {
+        carouselRef.current?.next();
+    };
+
+    const goToPrevSlide = () => {
+        carouselRef.current?.prev();
     };
 
     const renderItem = ({ item, index }: { item: string | 'actions', index: number }) => {
@@ -174,18 +188,49 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                 renderItem={renderItem}
                 scrollAnimationDuration={300}
             />
+
+            {/* Navigation buttons */}
+            <View style={styles.navigationContainer}>
+                <TouchableOpacity onPress={goToFirstSlide} style={styles.navButton}>
+                    <Ionicons name="play-skip-back" size={20} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={goToPrevSlide} style={styles.navButton}>
+                    <Ionicons name="play-back" size={20} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={goToNextSlide} style={styles.navButton}>
+                    <Ionicons name="play-forward" size={20} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={goToLastSlide} style={styles.navButton}>
+                    <Ionicons name="play-skip-forward" size={20} color={colors.primary} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     carouselContainer: {
-        height: 240,
-        marginBottom: 20,
+        height: 280, // Increased height to accommodate navigation buttons
+        marginBottom: 30,
     },
     carousel: {
         width: '100%',
         height: '100%',
+    },
+    navigationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 0,
+    },
+    navButton: {
+        padding: 10,
+        marginHorizontal: 5,
+        borderRadius: 20,
+        backgroundColor: 'rgba(74,108,247,0.1)',
     },
     carouselItem: {
         width: viewportWidth / 2 - 30,
