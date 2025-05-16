@@ -43,9 +43,11 @@
     "expo-font": "~12.0.9",
     "expo-image-manipulator": "~12.0.5",
     "expo-image-picker": "~15.1.0",
+    "expo-linear-gradient": "^14.1.4",
     "expo-linking": "~6.3.1",
     "expo-localization": "~15.0.3",
     "expo-modules-core": "~1.12.26",
+    "expo-print": "~13.0.1",
     "expo-router": "~3.5.24",
     "expo-sharing": "~12.0.1",
     "expo-splash-screen": "~0.27.5",
@@ -70,8 +72,7 @@
     "react-native-screens": "~3.31.1",
     "react-native-svg": "15.2.0",
     "react-native-web": "~0.19.10",
-    "web-streams-polyfill": "^4.1.0",
-    "expo-print": "~13.0.1"
+    "web-streams-polyfill": "^4.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

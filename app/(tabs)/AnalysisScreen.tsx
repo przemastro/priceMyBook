@@ -13,7 +13,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Image
 } from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
@@ -22,13 +23,8 @@ import {colors, responsive, typography} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
 import {Ionicons, MaterialIcons} from '@expo/vector-icons';
 import i18n from "i18next";
-import 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'react-native';
-
-
-
-// Import komponentów
+import { LinearGradient } from 'expo-linear-gradient';
 import MarketChart from '../components/analysisScreen/MarketChart';
 import PriceCalculationDetails from '../components/analysisScreen/PriceCalculationDetails';
 import ScanDefectModal from '../components/analysisScreen/ScanDefectModal';
@@ -48,7 +44,6 @@ import {
   IncludedMarketFactors
 } from '../components/analysisScreen/types';
 import { formatCurrency } from '../utils/currency';
-import Carousel from "react-native-reanimated-carousel";
 
 const { width: viewportWidth } = Dimensions.get('window');
 
@@ -100,7 +95,6 @@ export default function AnalysisScreen() {
   const [hasScanned, setHasScanned] = useState(false);
   const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
   const [bookImage, setBookImage] = useState<string | null>(null);
-
   const {
     collections,
     addBookToCollection,
@@ -111,7 +105,6 @@ export default function AnalysisScreen() {
     books,
     addCollection
   } = useAppContext();
-
   const [defects, setDefects] = useState<BookDefect[]>(DEFECT_TYPES.map(defect => ({
     id: defect.id,
     selected: false,
@@ -119,9 +112,7 @@ export default function AnalysisScreen() {
     count: 0,
     icon: defect.icon
   })));
-
   const [ageInfo, setAgeInfo] = useState<BookAgeInfo>({ years: 0 });
-
   const initialUniqueness = parseParam<BookUniqueness>(params.uniqueness) || {
     isMassMarket: true,
     isFirstEdition: false,
@@ -131,7 +122,6 @@ export default function AnalysisScreen() {
     isPublisherDefunct: false
   };
   const [uniqueness, setUniqueness] = useState<BookUniqueness>(initialUniqueness);
-
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
     supply: 'medium',
@@ -140,7 +130,6 @@ export default function AnalysisScreen() {
   };
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
   const [marketData, setMarketData] = useState<MarketData | null>(null);
-
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -152,7 +141,6 @@ export default function AnalysisScreen() {
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const bookInfo = params.bookInfo ? JSON.parse(params.bookInfo as string) : null;
-
   const isbn = Array.isArray(params.isbn) ? params.isbn[0] : params.isbn || '';
   const originalPriceParam = Array.isArray(params.originalPrice) ? params.originalPrice[0] : params.originalPrice || '0';
   const title = Array.isArray(params.title) ? params.title[0] : params.title || t('bookInfo.unknownTitle');
@@ -175,6 +163,9 @@ export default function AnalysisScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const animValue = useRef(new Animated.Value(0)).current;
+  const [currentStep, setCurrentStep] = useState(0);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const totalSteps = 5;
 
   const formatPrice = (price: number) => {
     return formatCurrency({
@@ -183,21 +174,37 @@ export default function AnalysisScreen() {
     });
   };
 
-  // Funkcja do otwierania modala edycji
-  const openEditModal = () => {
-    setShowEditModal(true);
+  const openEditModal = () => setShowEditModal(true);
+  const closeEditModal = () => setShowEditModal(false);
+
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('alerts.error'), t('status.noPhotoLibraryAccess'));
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets && result.assets[0].uri) {
+        const response = await fetch(result.assets[0].uri);
+        const blob = await response.blob();
+        if (blob.size > 200 * 1024) {
+          Alert.alert(t('alerts.error'), t('alerts.imageSizeLimit'));
+          return;
+        }
+        setBookImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert(t('alerts.error'), t('alerts.imageUploadError'));
+    }
   };
 
-  // Funkcja do zamykania modala edycji
-  const closeEditModal = () => {
-    setShowEditModal(false);
-  };
-
-  // Nowy stan dla kroków/slajdów
-  const [currentStep, setCurrentStep] = useState(0);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  // Animacja przejścia między krokami
   const animateSlide = (direction: 'forward' | 'backward') => {
     slideAnim.setValue(direction === 'forward' ? 50 : -50);
     Animated.timing(slideAnim, {
@@ -208,42 +215,9 @@ export default function AnalysisScreen() {
     }).start();
   };
 
-  const pickImage = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('alerts.error'), t('status.noPhotoLibraryAccess'));
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0].uri) {
-        // Check image size
-        const response = await fetch(result.assets[0].uri);
-        const blob = await response.blob();
-
-        if (blob.size > 200 * 1024) { // 200KB limit
-          Alert.alert(t('alerts.error'), t('alerts.imageSizeLimit'));
-          return;
-        }
-
-        setBookImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert(t('alerts.error'), t('alerts.imageUploadError'));
-    }
-  };
-
   const goToNextStep = () => {
     animateSlide('forward');
-    setCurrentStep(prev => Math.min(prev + 1, 4));
+    setCurrentStep(prev => Math.min(prev + 1, totalSteps - 1));
   };
 
   const goToPrevStep = () => {
@@ -253,21 +227,17 @@ export default function AnalysisScreen() {
 
   useEffect(() => {
     let isMounted = true;
-
     const loadMarketData = async () => {
       if (!originalPriceParam || !isMounted) return;
-
       setIsLoading(true);
       try {
         const amazonFactors = bookInfo?.amazonData?.data?.marketFactors;
-
         if (amazonFactors && isMounted) {
           setMarketFactors({
             demand: amazonFactors.demand,
             supply: amazonFactors.supply,
             publicationYear: amazonFactors.publicationYear
           });
-
           const newMarketData: MarketData = {
             demand: amazonFactors.demand,
             supply: amazonFactors.supply,
@@ -305,17 +275,11 @@ export default function AnalysisScreen() {
       } catch (error) {
         console.error('Error loading market data:', error);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
-
     loadMarketData();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [originalPriceParam]);
 
   const toggleExpanded = () => {
@@ -333,7 +297,6 @@ export default function AnalysisScreen() {
       const bookDefects = parseParam<Record<string, {selected: boolean, reduction: number, count: number}>>(params.defects) || {};
       const bookUniqueness = parseParam<BookUniqueness>(params.uniqueness) || initialUniqueness;
       const bookMarketFactors = parseParam<MarketFactors>(params.marketFactors) || initialMarketFactors;
-
       const updatedDefects = DEFECT_TYPES.map(defect => {
         const bookDefect = bookDefects[defect.id];
         return {
@@ -344,7 +307,6 @@ export default function AnalysisScreen() {
           icon: defect.icon
         };
       });
-
       setDefects(updatedDefects);
       setUniqueness(bookUniqueness);
       setMarketFactors(bookMarketFactors);
@@ -429,7 +391,6 @@ export default function AnalysisScreen() {
       low: includedMarketFactors.includeDemand ? -5 : 0,
       veryLow: includedMarketFactors.includeDemand ? -10 : 0
     };
-
     const supplyModifiers = {
       veryLow: includedMarketFactors.includeSupply ? 25 : 0,
       low: includedMarketFactors.includeSupply ? 10 : 0,
@@ -437,11 +398,9 @@ export default function AnalysisScreen() {
       high: includedMarketFactors.includeSupply ? -5 : 0,
       flooded: includedMarketFactors.includeSupply ? -10 : 0
     };
-
     const ageModifier = includedMarketFactors.includePublicationYear
         ? calculateAgeModifier(ageInfo, uniqueness.isMassMarket)
         : 0;
-
     const baseModifier = (demandModifiers[marketFactors.demand] + supplyModifiers[marketFactors.supply]) / 2;
     const totalModifier = baseModifier + ageModifier;
     return Math.max(-30, Math.min(30, totalModifier));
@@ -458,7 +417,6 @@ export default function AnalysisScreen() {
     const marketModifier = calculateMarketModifier(marketFactors, ageInfo, uniqueness);
     const priceAfterMarket = priceAfterUniqueness * (1 + marketModifier / 100);
     const finalPrice = Math.max(0.01, priceAfterMarket);
-
     return {
       basePrice,
       defectsReduction,
@@ -473,7 +431,6 @@ export default function AnalysisScreen() {
   const bookRating = useMemo(() => {
     const selectedDefects = defects.filter(d => d.selected);
     if (selectedDefects.length === 0) return 10;
-
     let ratingReduction = selectedDefects.length;
     const countReduction = selectedDefects.reduce((sum, defect) => sum + Math.floor(defect.count / 5), 0);
     const totalReduction = ratingReduction + countReduction;
@@ -490,7 +447,6 @@ export default function AnalysisScreen() {
           return;
         }
       }
-
       if (permission?.granted) {
         setIsScanning(true);
         setScanProgress(0);
@@ -618,12 +574,10 @@ export default function AnalysisScreen() {
     const priceValue = finalPrice.toFixed(2);
     const currentIsbn = editingIsbn ? isbnInput : isbn;
     const currentTitle = editingTitle ? titleInput : title;
-
     const defaultListingStatus: ListingStatus = {
       status: 'notListed',
       platforms: []
     };
-
     const bookData = {
       isbn: currentIsbn,
       title: currentTitle,
@@ -648,7 +602,6 @@ export default function AnalysisScreen() {
           ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
           : defaultListingStatus
     };
-
     if (editMode && collectionName && bookIndex !== null) {
       if (selectedCollection === collectionName) {
         updateBookInCollection(collectionName, bookIndex, bookData);
@@ -678,58 +631,125 @@ export default function AnalysisScreen() {
     }
   };
 
-  const totalSteps = 5; // Całkowita liczba kroków
+  const renderRatingSection = () => {
+    const averageUsedPrice = bookInfo?.amazonData?.prices?.find((p: { condition: string }) =>
+        p.condition?.includes('average') || p.condition?.includes('średnia')
+    )?.price || null;
 
-  const renderProgressDots = () => (
-      <View style={styles.progressDotsContainer}>
-        {Array.from({ length: totalSteps }).map((_, index) => (
-            <View
-                key={index}
+    return (
+        <LinearGradient
+            colors={[colors.buttonSelected1, colors.buttonSelected2]}
+            start={[0, 0]}
+            end={[1, 1]}
+            style={styles.ratingOuterContainer}
+        >
+          <View style={styles.ratingContainer}>
+            <View style={styles.ratingHeader}>
+              <Text style={styles.ratingTitle}>{t('labels.bookCondition')}</Text>
+              <View style={styles.ratingStars}>
+                {[...Array(10)].map((_, i) => (
+                    <Ionicons
+                        key={i}
+                        name={i < bookRating ? 'star' : 'star-outline'}
+                        size={20}
+                        color={i < bookRating ? colors.primary : colors.grayLight}
+                    />
+                ))}
+              </View>
+              <Text style={styles.ratingText}>
+                {`${bookRating}/10 - ${
+                    bookRating >= 8 ? t('labels.excellent') :
+                        bookRating >= 6 ? t('labels.good') :
+                            bookRating >= 4 ? t('labels.fair') :
+                                t('labels.poor')
+                }`}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+                style={styles.priceSummarySection}
+                onPress={toggleExpanded}
+                activeOpacity={0.9}
+            >
+              <LinearGradient
+                  colors={['#ffffff', '#f9faff']}
+                  style={styles.priceSummaryGradient}
+              >
+                <View style={styles.priceRow}>
+                  <View style={styles.priceLabelContainer}>
+                    <Ionicons name="book-outline" size={16} color={colors.secondary} />
+                    <Text style={styles.priceLabel}>
+                      {t('priceCalculation.averageUsedPrice')}:
+                    </Text>
+                  </View>
+                  <Text style={styles.priceValue}>
+                    {averageUsedPrice ? formatPrice(averageUsedPrice) : t('priceCalculation.noMarketData')}
+                  </Text>
+                </View>
+
+                <View style={styles.separator} />
+
+                <View style={styles.priceRow}>
+                  <View style={styles.priceLabelContainer}>
+                    <Ionicons name="cash-outline" size={16} color={colors.primary} />
+                    <Text style={[styles.priceLabel, styles.estimatedPriceLabel]}>
+                      {t('labels.estimatedValue')}:
+                    </Text>
+                  </View>
+                  <View style={styles.estimatedPriceContainer}>
+                    <Text style={[styles.priceValue, styles.estimatedPriceValue]}>
+                      {formatPrice(priceCalculation.finalPrice)}
+                    </Text>
+                    <Ionicons
+                        name={expanded ? "chevron-up" : "chevron-down"}
+                        size={16}
+                        color={colors.primary}
+                        style={styles.expandIcon}
+                    />
+                  </View>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <Animated.View
                 style={[
-                  styles.progressDot,
-                  index === currentStep && styles.activeProgressDot
+                  styles.tooltip,
+                  {
+                    opacity: animValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1]
+                    }),
+                    transform: [{
+                      translateY: animValue.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-10, 0]
+                      })
+                    }],
+                    display: expanded ? 'flex' : 'none',
+                  }
                 ]}
-            />
-        ))}
-      </View>
-  );
+            >
+              <PriceCalculationDetails
+                  calculation={priceCalculation}
+                  defects={defects}
+                  uniqueness={uniqueness}
+                  marketFactors={marketFactors}
+                  onShowMarketAnalysis={() => setShowMarketModal(true)}
+                  averageUsedPrice={averageUsedPrice}
+                  formatPrice={formatPrice}
+              />
+            </Animated.View>
+          </View>
+        </LinearGradient>
+    );
+  };
 
-  const renderNavigationButtons = () => (
-      <View style={styles.fixedNavigationContainer}>
-        <TouchableOpacity
-            style={[
-              styles.simpleNavButton,
-              currentStep === 0 && styles.disabledNavButton
-            ]}
-            onPress={goToPrevStep}
-            disabled={currentStep === 0}
-        >
-          <Text style={styles.navButtonText}>{t('buttons.back')}</Text>
-        </TouchableOpacity>
-
-        {renderProgressDots()}
-
-        <TouchableOpacity
-            style={styles.simpleNavButton}
-            onPress={currentStep === totalSteps - 1 ? handleSaveBook : goToNextStep}
-        >
-          <Text style={styles.navButtonText}>
-            {currentStep === totalSteps - 1
-                ? editMode ? t('buttons.save') : t('buttons.save')
-                : t('buttons.next')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-  );
-
-  // Renderowanie podstawowego widoku informacji o książce
   const renderBasicBookInfo = () => (
       <View style={styles.detailsRowContainer}>
-        {/* Sekcja obrazka - lewa kolumna */}
         <TouchableOpacity
             style={styles.bookCoverContainer}
             onPress={pickImage}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
         >
           {bookImage ? (
               <Image
@@ -738,56 +758,59 @@ export default function AnalysisScreen() {
                   resizeMode="cover"
               />
           ) : (
-              <View style={styles.bookCoverPlaceholder}>
+              <LinearGradient
+                  colors={['#f5f7ff', '#e8ecff']}
+                  style={styles.bookCoverPlaceholder}
+              >
                 <Ionicons
                     name="image-outline"
                     size={32}
-                    color={colors.grayDark}
+                    color={colors.primary}
                 />
-              </View>
+              </LinearGradient>
           )}
         </TouchableOpacity>
 
-        {/* Sekcja szczegółów - prawa kolumna */}
         <View style={styles.bookDetailsColumn}>
-          {/* Tytuł */}
           <View style={styles.detailRow}>
             <Text style={styles.detailValue} numberOfLines={2} ellipsizeMode="tail">
               {t('bookInfo.title')}: {titleInput || title}
             </Text>
           </View>
 
-          {/* ISBN */}
           <View style={styles.detailRow}>
             <Text style={styles.detailValue}>
               {t('bookInfo.isbn')}: {isbnInput || isbn || t('bookInfo.noISBN')}
             </Text>
           </View>
 
-          {/* Cena */}
           <View style={styles.detailRow}>
             <Text style={styles.detailValue}>
               {t('bookInfo.originalPriceShort')}: {formatCurrency({ price: originalPrice, exchangeRate })}
             </Text>
           </View>
 
-          {/* Przycisk edycji */}
           <TouchableOpacity
               style={styles.editButton}
               onPress={openEditModal}
+              activeOpacity={0.7}
           >
-            <Ionicons
-                name="create-outline"
-                size={16}
-                color={colors.primary}
-            />
-            <Text style={styles.editButtonText}>{t('buttons.edit')}</Text>
+            <LinearGradient
+                colors={['#f5f7ff', '#e8ecff']}
+                style={styles.editButtonGradient}
+            >
+              <Ionicons
+                  name="create-outline"
+                  size={16}
+                  color={colors.primary}
+              />
+              <Text style={styles.editButtonText}>{t('buttons.edit')}</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
   );
 
-  // Renderowanie pełnego formularza edycji w modal
   const renderEditModal = () => (
       <Modal
           visible={showEditModal}
@@ -797,22 +820,25 @@ export default function AnalysisScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.editModalContainer}>
-            <View style={styles.modalHeader}>
+            <LinearGradient
+                colors={['#f5f7ff', '#e8ecff']}
+                style={styles.modalHeader}
+            >
               <Text style={styles.modalTitle}>{t('bookInfo.editBookDetails')}</Text>
               <TouchableOpacity
                   style={styles.closeModalButton}
                   onPress={closeEditModal}
+                  activeOpacity={0.7}
               >
                 <Ionicons name="close" size={24} color={colors.primary} />
               </TouchableOpacity>
-            </View>
+            </LinearGradient>
 
             <ScrollView style={styles.modalContent}>
-              {/* Obrazek w modal */}
               <TouchableOpacity
                   style={styles.modalBookCoverContainer}
                   onPress={pickImage}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
               >
                 {bookImage ? (
                     <Image
@@ -821,20 +847,22 @@ export default function AnalysisScreen() {
                         resizeMode="cover"
                     />
                 ) : (
-                    <View style={styles.modalBookCoverPlaceholder}>
+                    <LinearGradient
+                        colors={['#f5f7ff', '#e8ecff']}
+                        style={styles.modalBookCoverPlaceholder}
+                    >
                       <Ionicons
                           name="image-outline"
                           size={48}
-                          color={colors.gray}
+                          color={colors.primary}
                       />
                       <Text style={styles.modalBookCoverPlaceholderText}>
                         {t('bookInfo.addCover')}
                       </Text>
-                    </View>
+                    </LinearGradient>
                 )}
               </TouchableOpacity>
 
-              {/* Tytuł */}
               <View style={styles.modalInputGroup}>
                 <Text style={styles.modalInputLabel}>{t('bookInfo.title')}</Text>
                 <TextInput
@@ -845,7 +873,6 @@ export default function AnalysisScreen() {
                 />
               </View>
 
-              {/* Autor */}
               <View style={styles.modalInputGroup}>
                 <Text style={styles.modalInputLabel}>{t('bookInfo.author')}</Text>
                 <Text style={styles.modalInput}>
@@ -853,7 +880,6 @@ export default function AnalysisScreen() {
                 </Text>
               </View>
 
-              {/* Wydawca */}
               <View style={styles.modalInputGroup}>
                 <Text style={styles.modalInputLabel}>{t('bookInfo.publisher')}</Text>
                 <Text style={styles.modalInput}>
@@ -861,7 +887,6 @@ export default function AnalysisScreen() {
                 </Text>
               </View>
 
-              {/* ISBN */}
               <View style={styles.modalInputGroup}>
                 <Text style={styles.modalInputLabel}>{t('bookInfo.isbn')}</Text>
                 <TextInput
@@ -873,7 +898,6 @@ export default function AnalysisScreen() {
                 />
               </View>
 
-              {/* Cena */}
               <View style={styles.modalInputGroup}>
                 <Text style={styles.modalInputLabel}>{t('bookInfo.originalPriceShort')}</Text>
                 <TextInput
@@ -885,7 +909,6 @@ export default function AnalysisScreen() {
                 />
               </View>
 
-              {/* Opis */}
               <View style={styles.modalInputGroup}>
                 <Text style={styles.modalInputLabel}>{t('bookInfo.description')}</Text>
                 <Text style={styles.modalDescriptionText}>
@@ -898,6 +921,7 @@ export default function AnalysisScreen() {
               <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={closeEditModal}
+                  activeOpacity={0.7}
               >
                 <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
               </TouchableOpacity>
@@ -909,8 +933,14 @@ export default function AnalysisScreen() {
                     saveOriginalPrice();
                     closeEditModal();
                   }}
+                  activeOpacity={0.7}
               >
-                <Text style={styles.saveButtonText}>{t('buttons.save')}</Text>
+                <LinearGradient
+                    colors={['#4a6cf7', colors.primary]}
+                    style={styles.saveButtonGradient}
+                >
+                  <Text style={styles.saveButtonText}>{t('buttons.save')}</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -918,7 +948,6 @@ export default function AnalysisScreen() {
       </Modal>
   );
 
-  // Renderowanie poszczególnych kroków
   const renderStep = () => {
     const stepTitles = [
       t('stepTitles.scanForDefects'),
@@ -927,49 +956,47 @@ export default function AnalysisScreen() {
       t('stepTitles.marketFactors'),
       t('stepTitles.addToCollection')
     ];
+
     switch(currentStep) {
-      case 0: // Krok 1: Szczegóły książki
+      case 0:
         return (
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[0]}</Text>
-
-                {/* Wyświetlamy podstawowe informacje */}
                 {renderBasicBookInfo()}
 
                 <View style={styles.scanButtonContainer}>
                   <TouchableOpacity
-                      style={[
-                        styles.scanButtonWrapper,
-                        (isScanning || isLoading) && styles.disabledButton
-                      ]}
+                      style={styles.scanButtonWrapper}
                       onPress={startScanning}
                       disabled={isScanning || isLoading}
                       activeOpacity={0.7}
                   >
-                    <Ionicons
-                        name="scan-sharp"
-                        size={50}
-                        color={isScanning || isLoading ? colors.gray : colors.primary}
-                    />
+                    <LinearGradient
+                        colors={isScanning || isLoading ?
+                            ['#e0e4ff', '#d5daff'] :
+                            ['#4a6cf7', colors.primary]}
+                        style={styles.scanButtonGradient}
+                    >
+                      <Ionicons
+                          name="scan-sharp"
+                          size={50}
+                          color={isScanning || isLoading ? colors.gray : 'white'}
+                      />
+                    </LinearGradient>
                   </TouchableOpacity>
-                  <Text style={[
-                    styles.scanButtonLabel,
-                    (isScanning || isLoading) && styles.disabledButtonText
-                  ]}>
+                  <Text style={styles.scanButtonLabel}>
                     {t('buttons.startScanning')}
                   </Text>
                 </View>
               </View>
-
-              {/* Modal edycji */}
               {renderEditModal()}
             </Animated.View>
         );
 
-      case 1: // Krok 2: Wady książki
+      case 1:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[1]}</Text>
                 <View style={styles.defectsGrid}>
@@ -984,34 +1011,32 @@ export default function AnalysisScreen() {
                               onPress={() => toggleDefectSelection(item.id)}
                               activeOpacity={0.7}
                           >
-                            {item.selected && (
-                                <>
-                                  <View style={styles.sliderRow}>
-                                    <Text style={styles.reductionText}>
-                                      {item.priceReduction.toFixed(0)}%
-                                    </Text>
+                            <LinearGradient
+                                colors={item.selected ?
+                                    [colors.buttonSelected1, colors.buttonSelected2] :
+                                    ['#ffffff', '#f9faff']}
+                                style={styles.defectItemGradient}
+                            >
+                              {item.selected && item.count > 0 && (
+                                  <View style={styles.defectCountBadge}>
+                                    <Text style={styles.defectCountBadgeText}>{item.count}</Text>
                                   </View>
-                                </>
-                            )}
-                            {item.selected && item.count > 0 && (
-                                <View style={styles.defectCountBadge}>
-                                  <Text style={styles.defectCountBadgeText}>{item.count}</Text>
-                                </View>
-                            )}
+                              )}
 
-                            <View style={styles.defectIconContainer}>
-                              <Ionicons
-                                  name={item.icon as any}
-                                  size={28}
-                                  color={item.selected ? colors.primary : colors.secondary}
-                              />
-                            </View>
-                            <Text style={[
-                              styles.defectName,
-                              item.selected && styles.selectedDefectName
-                            ]}>
-                              {t(`defects.${item.id}`)}
-                            </Text>
+                              <View style={styles.defectIconContainer}>
+                                <Ionicons
+                                    name={item.icon as any}
+                                    size={28}
+                                    color={item.selected ? colors.primary : colors.secondary}
+                                />
+                              </View>
+                              <Text style={[
+                                styles.defectName,
+                                item.selected && styles.selectedDefectName
+                              ]}>
+                                {t(`defects.${item.id}`)}
+                              </Text>
+                            </LinearGradient>
                           </TouchableOpacity>
                       )}
                       keyExtractor={item => item.id}
@@ -1024,9 +1049,9 @@ export default function AnalysisScreen() {
             </Animated.View>
         );
 
-      case 2: // Krok 3: Unikatowość
+      case 2:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[2]}</Text>
                 <FlatList
@@ -1035,24 +1060,31 @@ export default function AnalysisScreen() {
                         <TouchableOpacity
                             style={[
                               styles.defectItemContainer,
-                              uniqueness[item.id] && styles.selectedDefect
+                              uniqueness[item.id as keyof BookUniqueness] && styles.selectedDefect
                             ]}
-                            onPress={() => toggleUniquenessSelection(item.id)}
+                            onPress={() => toggleUniquenessSelection(item.id as keyof BookUniqueness)}
                             activeOpacity={0.7}
                         >
-                          <View style={styles.defectIconContainer}>
-                            <Ionicons
-                                name={item.icon as any}
-                                size={28}
-                                color={uniqueness[item.id] ? colors.primary : '#5c6b7e'}
-                            />
-                          </View>
-                          <Text style={[
-                            styles.defectName,
-                            uniqueness[item.id] && styles.selectedDefectName
-                          ]}>
-                            {t(item.label)}
-                          </Text>
+                          <LinearGradient
+                              colors={uniqueness[item.id as keyof BookUniqueness] ?
+                                  [colors.buttonSelected1, colors.buttonSelected2] :
+                                  ['#ffffff', '#f9faff']}
+                              style={styles.defectItemGradient}
+                          >
+                            <View style={styles.defectIconContainer}>
+                              <Ionicons
+                                  name={item.icon as any}
+                                  size={28}
+                                  color={uniqueness[item.id as keyof BookUniqueness] ? colors.primary : colors.secondary}
+                              />
+                            </View>
+                            <Text style={[
+                              styles.defectName,
+                              uniqueness[item.id as keyof BookUniqueness] && styles.selectedDefectName
+                            ]}>
+                              {t(item.label)}
+                            </Text>
+                          </LinearGradient>
                         </TouchableOpacity>
                     )}
                     keyExtractor={item => item.id}
@@ -1064,12 +1096,11 @@ export default function AnalysisScreen() {
             </Animated.View>
         );
 
-      case 3: // Krok 4: Czynniki rynkowe
+      case 3:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[3]}</Text>
-
                 <FlatList
                     data={MARKET_FACTOR_TOGGLES}
                     renderItem={({ item }) => (
@@ -1084,19 +1115,26 @@ export default function AnalysisScreen() {
                             }))}
                             activeOpacity={0.7}
                         >
-                          <View style={styles.defectIconContainer}>
-                            <Ionicons
-                                name={item.icon as any}
-                                size={28}
-                                color={includedMarketFactors[item.id] ? colors.primary : '#5c6b7e'}
-                            />
-                          </View>
-                          <Text style={[
-                            styles.defectName,
-                            includedMarketFactors[item.id] && styles.selectedDefectName
-                          ]}>
-                            {t(item.label)}
-                          </Text>
+                          <LinearGradient
+                              colors={includedMarketFactors[item.id] ?
+                                  [colors.buttonSelected1, colors.buttonSelected2] :
+                                  ['#ffffff', '#f9faff']}
+                              style={styles.defectItemGradient}
+                          >
+                            <View style={styles.defectIconContainer}>
+                              <Ionicons
+                                  name={item.icon as any}
+                                  size={28}
+                                  color={includedMarketFactors[item.id] ? colors.primary : colors.secondary}
+                              />
+                            </View>
+                            <Text style={[
+                              styles.defectName,
+                              includedMarketFactors[item.id] && styles.selectedDefectName
+                            ]}>
+                              {t(item.label)}
+                            </Text>
+                          </LinearGradient>
                         </TouchableOpacity>
                     )}
                     keyExtractor={item => item.id}
@@ -1105,18 +1143,16 @@ export default function AnalysisScreen() {
                     scrollEnabled={false}
                 />
 
-                <MarketChart marketData={marketData} />
+                {marketData && <MarketChart marketData={marketData} />}
               </View>
             </Animated.View>
         );
 
-      case 4: // Krok 5: Zapisanie do księgozbioru
+      case 4:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1  }}>
+            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[4]}</Text>
-
-                {/* Nowy styl wyboru kolekcji */}
                 <View style={styles.collectionsGrid}>
                   {collections.map((collection) => {
                     const bookCount = books[collection]?.length || 0;
@@ -1130,45 +1166,56 @@ export default function AnalysisScreen() {
                             onPress={() => setSelectedCollection(collection)}
                             activeOpacity={0.7}
                         >
-                          <View style={styles.collectionIconContainer}>
-                            <MaterialIcons
-                                name="collections-bookmark"
-                                size={24}
-                                color={selectedCollection === collection ? colors.primary : colors.secondary}
-                            />
-                          </View>
-                          <Text
-                              style={[
-                                styles.collectionName,
-                                selectedCollection === collection && styles.selectedCollectionName
-                              ]}
-                              numberOfLines={2}
+                          <LinearGradient
+                              colors={selectedCollection === collection ?
+                                  [colors.buttonSelected1, colors.buttonSelected2] :
+                                  ['#ffffff', '#f9faff']}
+                              style={styles.collectionButtonGradient}
                           >
-                            {collection}
-                          </Text>
-                          <Text style={styles.collectionBookCount}>
-                            {bookCount} {t(getBookWord(bookCount, i18n.language))}
-                          </Text>
+                            <View style={styles.collectionIconContainer}>
+                              <MaterialIcons
+                                  name="collections-bookmark"
+                                  size={24}
+                                  color={selectedCollection === collection ? colors.primary : colors.secondary}
+                              />
+                            </View>
+                            <Text
+                                style={[
+                                  styles.collectionName,
+                                  selectedCollection === collection && styles.selectedCollectionName
+                                ]}
+                                numberOfLines={2}
+                            >
+                              {collection}
+                            </Text>
+                            <Text style={styles.collectionBookCount}>
+                              {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                            </Text>
+                          </LinearGradient>
                         </TouchableOpacity>
                     );
                   })}
 
-                  {/* Przycisk dodawania nowej kolekcji */}
                   <TouchableOpacity
                       style={styles.addCollectionButton}
                       onPress={() => setShowAddCollectionModal(true)}
                       activeOpacity={0.7}
                   >
-                    <View style={styles.collectionIconContainer}>
-                      <Ionicons
-                          name="add-circle"
-                          size={24}
-                          color={colors.primary}
-                      />
-                    </View>
-                    <Text style={styles.addCollectionText}>
-                      {t('buttons.createNewCollection')}
-                    </Text>
+                    <LinearGradient
+                        colors={['#ffffff', '#f9faff']}
+                        style={styles.addCollectionGradient}
+                    >
+                      <View style={styles.collectionIconContainer}>
+                        <Ionicons
+                            name="add-circle"
+                            size={24}
+                            color={colors.primary}
+                        />
+                      </View>
+                      <Text style={styles.addCollectionText}>
+                        {t('buttons.createNewCollection')}
+                      </Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1179,6 +1226,46 @@ export default function AnalysisScreen() {
         return null;
     }
   };
+
+  const renderNavigationButtons = () => (
+      <View style={styles.fixedNavigationContainer}>
+        <TouchableOpacity
+            style={[
+              styles.simpleNavButton,
+              currentStep === 0 && styles.disabledNavButton
+            ]}
+            onPress={goToPrevStep}
+            disabled={currentStep === 0}
+            activeOpacity={0.7}
+        >
+          <Text style={styles.navButtonText}>{t('buttons.back')}</Text>
+        </TouchableOpacity>
+
+        <View style={styles.progressDotsContainer}>
+          {Array.from({ length: totalSteps }).map((_, index) => (
+              <View
+                  key={index}
+                  style={[
+                    styles.progressDot,
+                    index === currentStep && styles.activeProgressDot
+                  ]}
+              />
+          ))}
+        </View>
+
+        <TouchableOpacity
+            style={styles.simpleNavButton}
+            onPress={currentStep === totalSteps - 1 ? handleSaveBook : goToNextStep}
+            activeOpacity={0.7}
+        >
+          <Text style={styles.navButtonText}>
+            {currentStep === totalSteps - 1
+                ? editMode ? t('buttons.save') : t('buttons.save')
+                : t('buttons.next')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+  );
 
   if (!permission) {
     return (
@@ -1202,6 +1289,7 @@ export default function AnalysisScreen() {
               <TouchableOpacity
                   style={styles.closeButton}
                   onPress={stopScanning}
+                  activeOpacity={0.7}
               >
                 <Ionicons name="close" size={32} color="white" />
               </TouchableOpacity>
@@ -1218,7 +1306,7 @@ export default function AnalysisScreen() {
                     style={styles.scanButton}
                     onPress={takePictureAndAnalyze}
                 >
-                  <Ionicons name="scan" size={24} color="white" style={styles.scanIcon} />
+                  <Ionicons name="scan" size={24} color="white" />
                   <Text style={styles.scanButtonText}>
                     {t('labels.scanningDefects')}
                   </Text>
@@ -1252,123 +1340,6 @@ export default function AnalysisScreen() {
     );
   }
 
-  const renderRatingSection = () => {
-
-    const averageUsedPrice = bookInfo?.amazonData?.prices?.find((p: { condition: string }) =>
-        p.condition?.includes('average') ||
-        p.condition?.includes('średnia')
-    )?.price || null;
-
-    const toggleExpanded = () => {
-      const toValue = expanded ? 0 : 1;
-      setExpanded(!expanded);
-      Animated.spring(animValue, {
-        toValue,
-        useNativeDriver: false,
-        bounciness: expanded ? 0 : 6,
-      }).start();
-    };
-
-    const opacity = animValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1]
-    });
-
-    const translateY = animValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [-5, 0]
-    });
-
-    return (
-        <View style={styles.ratingOuterContainer}>
-          <View style={styles.ratingContainer}>
-            <View style={styles.ratingHeader}>
-              <Text style={styles.ratingTitle}>{t('labels.bookCondition')}</Text>
-              <View style={styles.ratingStars}>
-                {[...Array(10)].map((_, i) => (
-                    <Ionicons
-                        key={i}
-                        name={i < bookRating ? 'star' : 'star-outline'}
-                        size={20}
-                        color={i < bookRating ? colors.primary : colors.gray}
-                    />
-                ))}
-              </View>
-              <Text style={styles.ratingText}>
-                {`${bookRating}/10 - ${
-                    bookRating >= 8 ? t('labels.excellent') :
-                        bookRating >= 6 ? t('labels.good') :
-                            bookRating >= 4 ? t('labels.fair') :
-                                t('labels.poor')
-                }`}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-                style={styles.priceSummarySection}
-                onPress={toggleExpanded}
-                activeOpacity={0.8}
-            >
-              <View style={styles.priceRow}>
-                <View style={styles.priceLabelContainer}>
-                  <Ionicons name="book-outline" size={16} color={colors.secondary} />
-                  <Text style={styles.priceLabel}>
-                    {t('priceCalculation.averageUsedPrice')}:
-                  </Text>
-                </View>
-                <Text style={styles.priceValue}>
-                  {averageUsedPrice ? formatPrice(averageUsedPrice) : t('priceCalculation.noMarketData')}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              <View style={styles.priceRow}>
-                <View style={styles.priceLabelContainer}>
-                  <Ionicons name="cash-outline" size={16} color={colors.primary} />
-                  <Text style={[styles.priceLabel, styles.estimatedPriceLabel]}>
-                    {t('labels.estimatedValue')}:
-                  </Text>
-                </View>
-                <View style={styles.estimatedPriceContainer}>
-                  <Text style={[styles.priceValue, styles.estimatedPriceValue]}>
-                    {formatPrice(priceCalculation.finalPrice)}
-                  </Text>
-                  <Ionicons
-                      name={expanded ? "chevron-up" : "chevron-down"}
-                      size={16}
-                      color={colors.primary}
-                      style={styles.expandIcon}
-                  />
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <Animated.View
-                style={[
-                  styles.tooltip,
-                  {
-                    opacity,
-                    transform: [{ translateY }],
-                    display: expanded ? 'flex' : 'none',
-                  }
-                ]}
-            >
-              <PriceCalculationDetails
-                  calculation={priceCalculation}
-                  defects={defects}
-                  uniqueness={uniqueness}
-                  marketFactors={marketFactors}
-                  onShowMarketAnalysis={() => setShowMarketModal(true)}
-                  averageUsedPrice={averageUsedPrice}
-                  formatPrice={formatPrice}
-              />
-            </Animated.View>
-          </View>
-        </View>
-    );
-  };
-
   return (
       <View style={{ flex: 1 }}>
         <ScrollView
@@ -1376,13 +1347,11 @@ export default function AnalysisScreen() {
             showsVerticalScrollIndicator={false}
         >
           {renderRatingSection()}
-
-        {/* Renderowanie aktualnego kroku */}
-        {renderStep()}
-
+          {renderStep()}
         </ScrollView>
-        {/* Fixed navigation at bottom */}
+
         {renderNavigationButtons()}
+
         <Modal
             visible={showMarketModal}
             transparent={true}
@@ -1395,6 +1364,7 @@ export default function AnalysisScreen() {
                 <TouchableOpacity
                     style={styles.closeModalButton}
                     onPress={() => setShowMarketModal(false)}
+                    activeOpacity={0.7}
                 >
                   <Ionicons name="close" size={24} color={colors.primary} />
                 </TouchableOpacity>
@@ -1419,71 +1389,322 @@ export default function AnalysisScreen() {
 }
 
 const styles = StyleSheet.create({
-  ratingLabel: {
-    fontSize: 16,
+  container: {
+    flexGrow: 1,
+    padding: 16,
+    paddingTop: 82,
+    backgroundColor: colors.white,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  ratingOuterContainer: {
+    marginLeft: -16,
+    marginRight: -16,
+    marginBottom: 0,
+    paddingTop: 40,
+    marginTop: -80,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  ratingContainer: {
+    padding: 24,
+    paddingBottom: 16,
+  },
+  ratingHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  ratingTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+    marginBottom: 12,
+  },
+  ratingStars: {
+    flexDirection: 'row',
     marginBottom: 8,
-    color: colors.black,
   },
-  priceSection: {
-    paddingBottom: 12,
-  },
-  priceInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  priceInput: {
-    height: 30,
-    width: 80,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 8,
-    marginRight: 8,
-  },
-  savePriceButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  priceDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  horizontalLine: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.08)',
-    marginVertical: 16,
-  },
-  startScanButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    marginTop: 20,
-    width: '100%',
-  },
-  disabledButtonText: {
-    color: colors.gray,
-  },
-  startScanButtonText: {
+  ratingText: {
+    fontSize: 16,
     color: colors.primary,
     fontWeight: '500',
   },
-  scanIcon: {
-    marginRight: 10,
+  priceSummarySection: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 16,
+    shadowColor: '#4a6cf7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  priceSummaryGradient: {
+    padding: 16,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  priceLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: colors.grayDark,
+    marginLeft: 8,
+  },
+  estimatedPriceLabel: {
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  priceValue: {
+    fontSize: 16,
+    color: colors.black,
+    fontWeight: '500',
+  },
+  estimatedPriceValue: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  estimatedPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  expandIcon: {
+    marginLeft: 8,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.buttonSelected1,
+    marginVertical: 12,
+  },
+  tooltip: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.buttonSelected1,
+    shadowColor: '#4a6cf7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  detailsRowContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 16,
+  },
+  bookCoverContainer: {
+    width: 110,
+    height: 160,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  bookCoverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bookCoverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bookDetailsColumn: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 20,
+    maxHeight: 30,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.black,
+  },
+  editButton: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  editButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  editButtonText: {
+    color: colors.primary,
+    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  editModalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    maxHeight: '80%',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.buttonSelected1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  closeModalButton: {
+    padding: 4,
+  },
+  modalContent: {
+    padding: 16,
+  },
+  modalBookCoverContainer: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modalBookCoverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalBookCoverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBookCoverPlaceholderText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: colors.primary,
+  },
+  modalInputGroup: {
+    marginBottom: 16,
+  },
+  modalInputLabel: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 4,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: colors.buttonSelected2,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+  },
+  modalDescriptionText: {
+    fontSize: 14,
+    color: colors.black,
+    lineHeight: 20,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.buttonSelected1,
+  },
+  cancelButton: {
+    padding: 12,
+    marginRight: 8,
+    borderRadius: 8,
+    backgroundColor: colors.buttonSelected1,
+  },
+  cancelButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  saveButton: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    minWidth: 100,
+  },
+  saveButtonGradient: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  scanButtonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  scanButtonWrapper: {
+    borderRadius: 50,
+    width: 80,
+    height: 80,
+    shadowColor: '#4a6cf7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  scanButtonGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanButtonLabel: {
+    marginTop: 10,
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   defectsGrid: {
     marginBottom: 16,
@@ -1493,47 +1714,42 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   defectItemContainer: {
-    width: 100, // Zmieniamy z '48%' na '30%' aby zmieścić 3 kolumny
-    padding: 5, // Zmniejszamy padding aby zaoszczędzić miejsce
-    borderWidth: 1,
-    borderColor: colors.gray,
-    borderRadius: 12,
-    backgroundColor: colors.grayLight,
+    width: '30%',
     marginBottom: 12,
-    alignItems: 'center',
-    height: 100, // Zmniejszamy wysokość
-    position: 'relative',
-    marginHorizontal: '1.66%', // Dodajemy marginesy po bokach
+    borderRadius: 12,
+    overflow: 'hidden',
+    height: 120,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  defectItemGradient: {
+    width: '100%',
+    height: '100%',
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selectedDefect: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(74,108,247,0.15)',
-    shadowColor: 'rgba(74,108,247,0.15)',
-    marginHorizontal: '1.66%', // Dodajemy marginesy po bokach
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: 'rgba(0,0,0,0.03)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   defectIconContainer: {
     marginBottom: 4,
     backgroundColor: 'rgba(0,0,0,0.03)',
     borderRadius: 20,
-    padding: 8, // Zmniejszamy padding
-    marginTop: 4, // Zmniejszamy margines
+    padding: 8,
   },
   defectName: {
     color: colors.secondary,
     textAlign: 'center',
-    fontSize: 12, // Zmniejszamy rozmiar czcionki
-    lineHeight: 14, // Ustawiamy odpowiedni interlinia
-    height: 28, // Stała wysokość dla dwóch linii
+    fontSize: 12,
+    lineHeight: 14,
+    height: 28,
     marginBottom: 4,
   },
   selectedDefectName: {
@@ -1542,8 +1758,8 @@ const styles = StyleSheet.create({
   },
   defectCountBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 8,
+    right: 8,
     backgroundColor: colors.primary,
     borderRadius: 10,
     width: 20,
@@ -1568,59 +1784,70 @@ const styles = StyleSheet.create({
   },
   reductionText: {
     color: colors.primary,
-    width: 0,
+    width: 40,
     textAlign: 'right',
     fontWeight: '500',
   },
-  dataRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.grayDark,
+  combinedSection: {
+    backgroundColor: 'white',
+    borderRadius: 0,
+    paddingTop: 20,
+    marginBottom: 0,
   },
-  dataText: {
-    fontSize: 16,
-    color: colors.black,
+  stepTitle: {
+    color: colors.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
   },
-  collectionRow: {
+  fixedNavigationContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  collectionPickerContainer: {
-    flex: 1,
-    marginRight: 12,
+  simpleNavButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
-  picker: {
-    height: 50,
-    width: '100%',
-  },
-  pickerContainer: {
-    borderWidth: 0,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  bookCountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 15,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  bookCountText: {
-    marginLeft: 5,
+  navButtonText: {
     color: colors.primary,
+    fontWeight: '600',
   },
-  saveButtonContent: {
+  disabledNavButton: {
+    opacity: 0.5,
+  },
+  progressDotsContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 16,
   },
-  saveButtonIcon: {
-    marginRight: 10,
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+    backgroundColor: colors.grayLight,
+  },
+  activeProgressDot: {
+    backgroundColor: colors.primary,
+    width: 12,
   },
   fullScreenContainer: {
     flex: 1,
@@ -1713,389 +1940,28 @@ const styles = StyleSheet.create({
     color: colors.white,
     marginLeft: 10,
   },
+  progressContainer: {
+    width: '80%',
+    alignItems: 'center',
+  },
+  progressBar: {
+    width: '100%',
+    backgroundColor: colors.gray,
+    height: 5,
+    borderRadius: 2,
+    marginBottom: 5,
+    overflow: 'hidden'
+  },
   scanningText: {
     color: 'white',
     textAlign: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
   marketModalContainer: {
     width: '90%',
     backgroundColor: 'white',
-    borderRadius: 2,
+    borderRadius: 16,
     padding: 20,
     maxHeight: '80%',
-  },
-  closeModalButton: {
-    padding: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  isbnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  titleInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 8,
-  },
-  titleInput: {
-    flex: 1,
-    height: 30,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 8,
-    marginRight: 8,
-  },
-  isbnInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 8,
-  },
-  isbnInput: {
-    flex: 1,
-    height: 30,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 2,
-    paddingHorizontal: 8,
-    marginRight: 8,
-  },
-  saveTitleButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
-    flex: 1,
-  },
-  originalPriceLabel: {
-    fontSize: 12,
-    color: colors.gray,
-    marginBottom: 2,
-  },
-  originalPrice: {
-    fontSize: 16,
-    color: colors.grayDark,
-    textDecorationLine: 'line-through',
-    marginBottom: 8,
-  },
-  finalPriceContainer: {
-    backgroundColor: 'rgba(74,108,247,0.1)',
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  finalPriceLabel: {
-    fontSize: 12,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  finalPrice: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  priceSummary: {
-    flex: 1,
-    overflow: 'visible', // zmieniamy z 'hidden' na 'visible'
-    zIndex: 1000,
-    elevation: 5, // dla Androida
-    marginBottom: 20, // dodatkowy margines
-  },
-  ratingContainerWrapper: {
-    position: 'relative',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  // Aktualizujemy container aby lepiej wypełniał przestrzeń
-  container: {
-    flexGrow: 1,
-    padding: 16,
-    paddingTop: 82,
-    backgroundColor: colors.white,
-  },
-
-  // Nowy styl dla tooltipa
-  tooltipContainer: {
-    position: 'absolute',
-    bottom: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 1000,
-    flexDirection: 'row', // Etykieta i wartość w jednej linii
-    justifyContent: 'space-between', // Rozmieszczenie na całej szerokości
-    alignItems: 'center', // Wyśrodkowanie w pionie
-  },
-  tooltipLabel: {
-    fontSize: 14,
-    color: colors.grayDark,
-  },
-  tooltipValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-
-  // Aktualizacja dla sekcji poniżej
-  combinedSection: {
-    backgroundColor: 'white',
-    borderRadius: 1, // Zaokrąglenie rogów
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 0,
-    borderColor: 'rgba(0,0,0,0.05)',
-    marginLeft: -20, // Usuwamy marginesy boczne
-    marginRight: 0,
-    width: '110%', // Pełna szerokość
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-  progressText: {
-    fontSize: 14,
-    color: colors.grayDark,
-  },
-  progressBarContainer: {
-    flex: 1,
-    height: 4,
-    backgroundColor: colors.grayLight,
-    borderRadius: 2,
-    marginHorizontal: 8,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: colors.primary,
-  },
-  navigationButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 0,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  navButton: {
-    flex: 1,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    flexDirection: 'row',
-  },
-  backButton: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: colors.primary,
-    marginRight: 8,
-    borderRadius: 12,
-    width: 120
-  },
-  backButtonText: {
-    color: colors.primary,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  nextButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-
-    marginLeft: 8,
-    width: 120
-  },
-  nextButtonText: {
-    color: 'white',
-    fontWeight: '500',
-    marginRight: 8,
-  },
-  progressDotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
-    backgroundColor: colors.gray,
-  },
-  activeProgressDot: {
-    backgroundColor: colors.primary,
-    width: 8,
-  },
-
-  // Simplified navigation container
-  fixedNavigationContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.grayLight,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  simpleNavButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  navButtonText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  disabledNavButton: {
-    opacity: 0.5,
-  },
-  stepTitle: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 26,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  chartContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  carouselContainer: {
-    height: 280,
-    marginBottom: 0,
-  },
-  carousel: {
-    width: '100%',
-    height: '120%'
-  },
-  carouselItem: {
-    width: viewportWidth / 2 - 30,
-    backgroundColor: 'rgba(74,108,247,0.05)',
-    borderRadius: 22,
-    padding: 16,
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: colors.grayLight,
-    height: 220,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: 'rgba(74,108,247,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  selectedCarouselItem: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(74,108,247,0.2)',
-    shadowColor: 'rgba(74,108,247,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  carouselContent: {
-    alignItems: 'center',
-  },
-  carouselCollectionName: {
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 8,
-    color: colors.secondary,
-  },
-  selectedText: {
-    color: colors.primary,
-  },
-  carouselBookCount: {
-    marginTop: 8,
-    fontSize: 14,
-    color: colors.secondary,
-  },
-  createCollectionButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    marginBottom: 20,
-  },
-  createCollectionText: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  createCollectionCarouselItem: {
-    width: viewportWidth / 2 - 30,
-    backgroundColor: 'rgba(74,108,247,0.05)',
-    borderRadius: 22,
-    padding: 16,
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-    height: 220,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  createCollectionCarouselText: {
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 8,
-    color: colors.primary,
   },
   collectionsGrid: {
     flexDirection: 'row',
@@ -2105,28 +1971,24 @@ const styles = StyleSheet.create({
   },
   collectionButton: {
     width: '48%',
-    backgroundColor: colors.grayLight,
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.grayLight,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  collectionButtonGradient: {
+    padding: 16,
+    alignItems: 'center',
+  },
   selectedCollectionButton: {
-    borderWidth: 1,
-    backgroundColor: 'rgba(74,108,247,0.1)',
-    borderColor: colors.primary,
-    shadowColor: 'rgba(74,108,247,0.1)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: 'rgba(0,0,0,0.03)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   collectionIconContainer: {
     marginBottom: 8,
@@ -2147,373 +2009,21 @@ const styles = StyleSheet.create({
   },
   addCollectionButton: {
     width: '48%',
-    backgroundColor: 'rgba(74,108,247,0.05)',
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
-    alignItems: 'center',
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.primary,
     borderStyle: 'dashed',
+  },
+  addCollectionGradient: {
+    padding: 16,
+    alignItems: 'center',
   },
   addCollectionText: {
     fontSize: 14,
     color: colors.primary,
     textAlign: 'center',
     marginTop: 8,
-  },
-  imageUploadContainer: {
-    width: '100%',
-    height: 150,
-    backgroundColor: colors.grayLight,
-    borderRadius: 8,
-    marginBottom: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  bookImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imagePlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholderText: {
-    marginTop: 8,
-    color: colors.gray,
-    fontSize: 14,
-  },
-  detailsRowContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    gap: 16,
-  },
-  bookCoverContainer: {
-    width: 110,
-    height: 160,
-    borderRadius: 8,
-    backgroundColor: colors.grayLight,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.grayDark,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  bookCoverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  bookCoverPlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 8,
-  },
-  bookCoverPlaceholderText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: colors.grayDark,
-    textAlign: 'center',
-  },
-  bookDetailsColumn: {
-    flex: 1,
-    justifyContent: 'space-between',
-    height: 90
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 20,
-    maxHeight: 30,
-  },
-  detailLabel: {
-    width: 40,
-    fontSize: 14,
-    color: colors.secondary,
-  },
-  detailValue: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.black,
-  },
-  editableField: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  editableInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  editableInput: {
-    flex: 1,
-    height: 26,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    fontSize: 14,
-  },
-  saveEditButton: {
-    width: 36,
-    height: 36,
-    backgroundColor: colors.primary,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  editIcon: {
-    marginLeft: 8,
-  },
-  exchangeRateError: {
-    fontSize: 12,
-    color: colors.error,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    padding: 4,
-    alignSelf: 'flex-start',
-  },
-  editButtonText: {
-    color: colors.primary,
-    marginLeft: 4,
-    fontSize: 14,
-  },
-
-  // Style dla modala edycji
-  editModalContainer: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.grayLight,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  modalContent: {
-    padding: 16,
-  },
-  modalBookCoverContainer: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: colors.grayLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  modalBookCoverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  modalBookCoverPlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBookCoverPlaceholderText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: colors.gray,
-  },
-  modalInputGroup: {
-    marginBottom: 16,
-  },
-  modalInputLabel: {
-    fontSize: 14,
-    color: colors.secondary,
-    marginBottom: 4,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: colors.grayLight,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: 'white',
-  },
-  modalDescriptionText: {
-    fontSize: 14,
-    color: colors.black,
-    lineHeight: 20,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.grayLight,
-  },
-  cancelButton: {
-    padding: 12,
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    color: colors.secondary,
-    fontSize: 16,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 12,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  ratingOuterContainer: {
-    marginLeft: -16,
-    marginRight: -16,
-    marginBottom: 0,
-    backgroundColor: '#f0f4ff',
-    paddingTop: 40,
-    marginTop: -80,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    zIndex: 999,
-    elevation: 4,
-  },
-  ratingContainer: {
-    padding: 16,
-    paddingBottom: 24,
-  },
-  ratingHeader: {
-    flex: 1,
-    paddingRight: 16,
-  },
-  ratingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.black,
-    marginBottom: 8,
-  },
-  ratingStars: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  ratingText: {
-    fontSize: 14,
-    color: colors.grayDark,
-  },
-  priceSummarySection: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  priceLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: colors.grayDark,
-    marginLeft: 8,
-  },
-  estimatedPriceLabel: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  priceValue: {
-    fontSize: 16,
-    color: colors.black,
-    fontWeight: '500',
-  },
-  estimatedPriceValue: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  estimatedPriceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  expandIcon: {
-    marginLeft: 8,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    marginVertical: 12,
-  },
-  tooltip: {
-    position: 'relative',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  scanButtonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30,
-    marginBottom: 20,
-  },
-  scanButtonWrapper: {
-    backgroundColor: 'white',
-    borderRadius: 50,
-    width: 80,
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  scanButtonLabel: {
-    marginTop: 10,
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
   },
 });

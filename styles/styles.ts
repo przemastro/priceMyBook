@@ -14,7 +14,9 @@ export const colors = {
     error: '#e74c3c', // Kolor błędów
     success: '#2ecc71', // Kolor sukcesu
     black: '#696767',
-    grayLight: '#fafafa'
+    grayLight: '#fafafa',
+    buttonSelected1: 'rgba(74,108,247,0.1)',
+    buttonSelected2: 'rgba(74,108,247,0.2)'
 };
 
 // Typografia
