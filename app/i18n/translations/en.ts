@@ -186,7 +186,9 @@ export default {
         showMarketAnalysis: "Market Analysis",
         back: 'BACK',
         next: 'NEXT',
-        save: 'SAVE'
+        save: 'SAVE',
+        collections: 'COLLECTIONS',
+        books: 'BOOKS'
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',

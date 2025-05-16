@@ -183,7 +183,9 @@ export default {
         showMarketAnalysis: "Analiza rynku",
         back: 'WSTECZ',
         next: 'DALEJ',
-        save: 'ZAPISZ'
+        save: 'ZAPISZ',
+        collections: 'KSIĘGOZBIORY',
+        books: 'KSIĄŻKI'
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',

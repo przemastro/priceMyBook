@@ -12,7 +12,7 @@ import {
     Animated
 } from 'react-native';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { colors, typography } from '@/styles/styles';
+import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -20,7 +20,11 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
-import i18n from "i18next";
+import Carousel, { ICarouselInstance } from 'react-native-reanimated-carousel';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Easing } from 'react-native-reanimated';
+
+// Components
 import CollectionCarousel from '../components/collectionsScreen/CollectionCarousel';
 import BooksCarousel from '../components/collectionsScreen/BooksCarousel';
 import AddCollectionModal from '../components/collectionsScreen/AddCollectionModal';
@@ -28,11 +32,11 @@ import EditCollectionModal from '../components/collectionsScreen/EditCollectionM
 import ImportPreviewModal from '../components/collectionsScreen/ImportPreviewModal';
 import ListingModal from '../components/collectionsScreen/ListingModal';
 import StatusChangeModal from '../components/collectionsScreen/StatusChangeModal';
+import CategoriesManager from '../components/collectionsScreen/CategoriesManager';
+
+// Types
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
 import { BookAgeInfo } from "@/app/components/scanScreen/types";
-import Carousel, { ICarouselInstance } from 'react-native-reanimated-carousel';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Easing } from 'react-native-reanimated';
 
 const CollectionsScreen = () => {
     const router = useRouter();
@@ -40,7 +44,6 @@ const CollectionsScreen = () => {
     const [isImporting, setIsImporting] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [validBooks, setValidBooks] = useState<Omit<BookData, 'createdAt'>[]>([]);
     const [importPreview, setImportPreview] = useState<{
         collectionName: string;
         books: BookData[];
@@ -51,10 +54,7 @@ const CollectionsScreen = () => {
     const [selectedPlatforms, setSelectedPlatforms] = useState<('amazon' | 'allegro' | 'olx')[]>([]);
     const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
     const [editingCollection, setEditingCollection] = useState<string | null>(null);
-    const [newCollectionName, setNewCollectionName] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [addingCategory, setAddingCategory] = useState<boolean | null>(null);
-    const [newCategoryName, setNewCategoryName] = useState('');
 
     const carouselRef = useRef<ICarouselInstance>(null);
     const { width } = Dimensions.get('window');
@@ -76,6 +76,7 @@ const CollectionsScreen = () => {
         setSelectedCollection
     } = useAppContext();
 
+    // Default values
     const defaultUniqueness: BookUniqueness = {
         isMassMarket: false,
         isFirstEdition: false,
@@ -89,6 +90,7 @@ const CollectionsScreen = () => {
     const defaultAgeInfo: BookAgeInfo = { years: 0 };
     const defaultListingStatus: ListingStatus = { status: 'notListed', platforms: [] };
 
+    // Animation handlers
     const animateSlide = (direction: 'forward' | 'backward') => {
         slideAnim.setValue(direction === 'forward' ? -50 : 50);
         Animated.timing(slideAnim, {
@@ -116,6 +118,7 @@ const CollectionsScreen = () => {
         }
     };
 
+    // Load selected collection on mount
     useEffect(() => {
         const loadSelected = async () => {
             try {
@@ -130,26 +133,11 @@ const CollectionsScreen = () => {
         loadSelected();
     }, [collections]);
 
-    const formatCurrency = (value: string): string => {
-        try {
-            const number = parseFloat(value);
-            if (isNaN(number)) return value;
-
-            return new Intl.NumberFormat(i18n.language, {
-                style: 'currency',
-                currency: 'PLN',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }).format(number);
-        } catch (error) {
-            console.error('Error formatting currency:', error);
-            return value;
-        }
-    };
-
-    const handleAddCollection = (name: string) => {
+    // Collection management
+    const handleAddCollection = (name: string, categories: string[] = []) => {
         if (!name.trim()) return;
         addCollection(name);
+        categories.forEach(category => addCategoryToCollection(name, category));
         setShowAddModal(false);
     };
 
@@ -167,17 +155,38 @@ const CollectionsScreen = () => {
         }
     };
 
-    const handleAddCategory = (collectionName: string) => {
-        if (!collectionName || !newCategoryName.trim()) return;
+    const handleDeleteCollection = (collectionName: string) => {
+        const bookCount = books[collectionName]?.length || 0;
+        Alert.alert(
+            t('alerts.confirmDeleteTitle'),
+            bookCount > 0 ?
+                t('alerts.confirmDeleteMessage', { collectionName, bookCount }) :
+                t('alerts.confirmEmptyDeleteMessage', { collectionName }),
+            [
+                { text: t('buttons.cancel'), style: 'cancel' },
+                {
+                    text: t('buttons.confirm'),
+                    onPress: () => {
+                        removeCollection(collectionName);
+                        if (selectedCollection === collectionName) setSelectedCollection(null);
+                    },
+                    style: 'destructive'
+                },
+            ],
+            { cancelable: true }
+        );
+    };
 
-        if (collectionCategories[collectionName]?.includes(newCategoryName.trim())) {
+    // Category management
+    const handleAddCategory = (collectionName: string, category: string) => {
+        if (!collectionName || !category.trim()) return;
+
+        if (collectionCategories[collectionName]?.includes(category.trim())) {
             Alert.alert(t('alerts.error'), t('alerts.categoryExists'));
             return;
         }
 
-        addCategoryToCollection(collectionName, newCategoryName.trim());
-        setAddingCategory(null);
-        setNewCategoryName('');
+        addCategoryToCollection(collectionName, category.trim());
     };
 
     const handleRemoveCategory = (collectionName: string, category: string) => {
@@ -195,6 +204,30 @@ const CollectionsScreen = () => {
         );
     };
 
+    // Book management
+    const handleEditBook = (collectionName: string, bookIndex: number) => {
+        const book = books[collectionName][bookIndex];
+        router.push({
+            pathname: '/AnalysisScreen',
+            params: {
+                isbn: book.isbn,
+                title: book.title,
+                authors: book.authors,
+                originalPrice: book.originalPrice,
+                fromHistory: 'false',
+                editMode: 'true',
+                collectionName,
+                bookIndex: bookIndex.toString(),
+                defects: JSON.stringify(book.defects || {}),
+                uniqueness: JSON.stringify(book.uniqueness || defaultUniqueness),
+                marketFactors: JSON.stringify(book.marketFactors || defaultMarketFactors),
+                ageInfo: JSON.stringify(book.ageInfo || defaultAgeInfo),
+                listingStatus: JSON.stringify(book.listingStatus || defaultListingStatus)
+            }
+        });
+    };
+
+    // Import/export
     const handleImportCollection = async () => {
         try {
             setIsImporting(true);
@@ -257,29 +290,6 @@ const CollectionsScreen = () => {
 
     const cancelImport = () => {
         setImportPreview(null);
-        setValidBooks([]);
-    };
-
-    const handleDeleteCollection = (collectionName: string) => {
-        const bookCount = books[collectionName]?.length || 0;
-        Alert.alert(
-            t('alerts.confirmDeleteTitle'),
-            bookCount > 0 ?
-                t('alerts.confirmDeleteMessage', { collectionName, bookCount }) :
-                t('alerts.confirmEmptyDeleteMessage', { collectionName }),
-            [
-                { text: t('buttons.cancel'), style: 'cancel' },
-                {
-                    text: t('buttons.confirm'),
-                    onPress: () => {
-                        removeCollection(collectionName);
-                        if (selectedCollection === collectionName) setSelectedCollection(null);
-                    },
-                    style: 'destructive'
-                },
-            ],
-            { cancelable: true }
-        );
     };
 
     const handleExportCSV = async (collectionName: string) => {
@@ -318,90 +328,7 @@ const CollectionsScreen = () => {
         }
     };
 
-    const handleEditBook = (collectionName: string, bookIndex: number) => {
-        const book = books[collectionName][bookIndex];
-        router.push({
-            pathname: '/AnalysisScreen',
-            params: {
-                isbn: book.isbn,
-                title: book.title,
-                authors: book.authors,
-                originalPrice: book.originalPrice,
-                fromHistory: 'false',
-                editMode: 'true',
-                collectionName,
-                bookIndex: bookIndex.toString(),
-                defects: JSON.stringify(book.defects || {}),
-                uniqueness: JSON.stringify(book.uniqueness || defaultUniqueness),
-                marketFactors: JSON.stringify(book.marketFactors || defaultMarketFactors),
-                ageInfo: JSON.stringify(book.ageInfo || defaultAgeInfo),
-                listingStatus: JSON.stringify(book.listingStatus || defaultListingStatus)
-            }
-        });
-    };
-
-    const calculateCollectionTotal = (collection: string) => {
-        return (books[collection] || []).reduce((sum, book) => sum + parseFloat(book.price || '0'), 0);
-    };
-
-    const calculateTotalValue = () => {
-        return collections.reduce((total, collection) => total + calculateCollectionTotal(collection), 0);
-    };
-
-    const calculateActiveValue = () => {
-        return collections.reduce((total, collection) => {
-            return total + (books[collection] || []).reduce((sum, book) => {
-                const status = book.listingStatus?.status || 'notListed';
-                return status !== 'sold' ? sum + parseFloat(book.price || '0') : sum;
-            }, 0);
-        }, 0);
-    };
-
-    const calculateSoldValue = () => {
-        return collections.reduce((total, collection) => {
-            return total + (books[collection] || []).reduce((sum, book) => {
-                const status = book.listingStatus?.status || 'notListed';
-                return status === 'sold' ? sum + parseFloat(book.price || '0') : sum;
-            }, 0);
-        }, 0);
-    };
-
-    const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined) => {
-        if (!defects) return t('labels.noDefects');
-        const defectList = Object.keys(defects).filter(key => defects[key].selected).map(key => `${t(`defects.${key}`)} (${defects[key].count}x)`);
-        return defectList.length > 0 ? defectList.join(', ') : t('labels.noDefects');
-    };
-
-    const formatUniquenessSummary = (uniqueness: BookUniqueness | undefined) => {
-        if (!uniqueness) return t('labels.standardEdition');
-        const uniqueFeatures = [];
-        if (uniqueness.isFirstEdition) uniqueFeatures.push(t('labels.firstEdition'));
-        if (uniqueness.isCollectorsEdition) uniqueFeatures.push(t('labels.collectorsEdition'));
-        if (uniqueness.hasAuthorSignature) uniqueFeatures.push(t('labels.authorSignature'));
-        if (uniqueness.isLimitedEdition) uniqueFeatures.push(t('labels.limitedEdition'));
-        if (uniqueness.isPublisherDefunct) uniqueFeatures.push(t('labels.defunctPublisher'));
-        return uniqueFeatures.length > 0 ? uniqueFeatures.join(', ') : t('labels.standardEdition');
-    };
-
-    const formatMarketFactorsSummary = (marketFactors: MarketFactors | undefined) => {
-        if (!marketFactors) return '';
-        return `${t(`labels.${marketFactors.demand}`)} ${t('labels.demand')}, ${t(`labels.${marketFactors.supply}`)} ${t('labels.supply')}`;
-    };
-
-    const formatListingStatus = (status?: ListingStatus): string => {
-        if (!status) return t('listingStatus.notListed', 'Not listed');
-        switch (status.status) {
-            case 'listed':
-                return t('listingStatus.listed', 'Listed on {{platforms}}', {
-                    platforms: (status.platforms || []).map(p => t(`platforms.${p}`, p)).join(', ')
-                });
-            case 'sold':
-                return t('listingStatus.sold', 'Sold');
-            default:
-                return t('listingStatus.notListed', 'Not listed');
-        }
-    };
-
+    // Listing management
     const handleListBook = (collection: string, index: number) => {
         const book = books[collection][index];
         setCurrentListingBook({ collection, index });
@@ -472,6 +399,24 @@ const CollectionsScreen = () => {
         );
     };
 
+    // Helpers
+    const formatCurrency = (value: string): string => {
+        try {
+            const number = parseFloat(value);
+            if (isNaN(number)) return value;
+
+            return new Intl.NumberFormat('pl-PL', {
+                style: 'currency',
+                currency: 'PLN',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(number);
+        } catch (error) {
+            console.error('Error formatting currency:', error);
+            return value;
+        }
+    };
+
     const getBookWord = (count: number, language: string) => {
         if (language === 'pl') {
             if (count === 1) return t('labels.book_one');
@@ -480,6 +425,68 @@ const CollectionsScreen = () => {
             return t('labels.book_many');
         } else {
             return count === 1 ? t('labels.book_one') : t('labels.book_other');
+        }
+    };
+
+    const calculateCollectionTotal = (collection: string) => {
+        return (books[collection] || []).reduce((sum, book) => sum + parseFloat(book.price || '0'), 0);
+    };
+
+    const calculateTotalValue = () => {
+        return collections.reduce((total, collection) => total + calculateCollectionTotal(collection), 0);
+    };
+
+    const calculateActiveValue = () => {
+        return collections.reduce((total, collection) => {
+            return total + (books[collection] || []).reduce((sum, book) => {
+                const status = book.listingStatus?.status || 'notListed';
+                return status !== 'sold' ? sum + parseFloat(book.price || '0') : sum;
+            }, 0);
+        }, 0);
+    };
+
+    const calculateSoldValue = () => {
+        return collections.reduce((total, collection) => {
+            return total + (books[collection] || []).reduce((sum, book) => {
+                const status = book.listingStatus?.status || 'notListed';
+                return status === 'sold' ? sum + parseFloat(book.price || '0') : sum;
+            }, 0);
+        }, 0);
+    };
+
+    const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined) => {
+        if (!defects) return t('labels.noDefects');
+        const defectList = Object.keys(defects).filter(key => defects[key].selected).map(key => `${t(`defects.${key}`)} (${defects[key].count}x)`);
+        return defectList.length > 0 ? defectList.join(', ') : t('labels.noDefects');
+    };
+
+    const formatUniquenessSummary = (uniqueness: BookUniqueness | undefined) => {
+        if (!uniqueness) return t('labels.standardEdition');
+        const uniqueFeatures = [];
+        if (uniqueness.isFirstEdition) uniqueFeatures.push(t('labels.firstEdition'));
+        if (uniqueness.isCollectorsEdition) uniqueFeatures.push(t('labels.collectorsEdition'));
+        if (uniqueness.hasAuthorSignature) uniqueFeatures.push(t('labels.authorSignature'));
+        if (uniqueness.isLimitedEdition) uniqueFeatures.push(t('labels.limitedEdition'));
+        if (uniqueness.isPublisherDefunct) uniqueFeatures.push(t('labels.defunctPublisher'));
+        return uniqueFeatures.length > 0 ? uniqueFeatures.join(', ') : t('labels.standardEdition');
+    };
+
+    const formatMarketFactorsSummary = (marketFactors: MarketFactors | undefined) => {
+        if (!marketFactors) return '';
+        return `${t(`labels.${marketFactors.demand}`)} ${t('labels.demand')}, ${t(`labels.${marketFactors.supply}`)} ${t('labels.supply')}`;
+    };
+
+    const formatListingStatus = (status?: ListingStatus): string => {
+        if (!status) return t('listingStatus.notListed', 'Not listed');
+        switch (status.status) {
+            case 'listed':
+                return t('listingStatus.listed', 'Listed on {{platforms}}', {
+                    platforms: (status.platforms || []).map(p => t(`platforms.${p}`, p)).join(', ')
+                });
+            case 'sold':
+                return t('listingStatus.sold', 'Sold');
+            default:
+                return t('listingStatus.notListed', 'Not listed');
         }
     };
 
@@ -497,7 +504,7 @@ const CollectionsScreen = () => {
                 contentContainerStyle={[styles.scrollContainer, { paddingBottom: 80 }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Statyczna sekcja z wartością całkowitą */}
+                {/* Total value section */}
                 <View style={styles.totalValueContainer}>
                     <View style={styles.totalValueContent}>
                         <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
@@ -526,146 +533,98 @@ const CollectionsScreen = () => {
                     </View>
                 </View>
 
-            {/* Karuzela z dwoma slajdami */}
-            <View style={styles.slidesContainer}>
-                <Carousel
-                    ref={carouselRef}
-                    loop={false}
-                    width={width}
-                    height={currentSlide === 0 ? 500 : 500}
-                    data={[0, 1]}
-                    onSnapToItem={(index) => setCurrentSlide(index)}
-                    renderItem={({ index }) => (
-                        <Animated.View
-                            style={[
-                                styles.slide,
-                                { transform: [{ translateX: slideAnim }] }
-                            ]}
-                        >
-                            {index === 0 ? (
-                                <>
-                                    <View style={styles.titleContainer}>
-                                        <Text style={styles.slideTitle}>{t('labels.yourCollections')}</Text>
-                                    </View>
-                                    {collections.length > 0 ? (
-                                        <CollectionCarousel
-                                            collections={collections}
-                                            books={books}
-                                            selectedCollection={selectedCollection}
-                                            onSelectCollection={handleCollectionPress}
-                                            calculateCollectionTotal={calculateCollectionTotal}
-                                            onEditCollection={async (collection, newName) => {
-                                                await handleEditCollection(collection, newName);
-                                            }}
-                                            onDeleteCollection={handleDeleteCollection}
-                                            onExportCollection={handleExportCSV}
-                                            getBookWord={getBookWord}
-                                            formatCurrency={formatCurrency}
-                                            onImportCollection={handleImportCollection}
-                                        />
-                                    ) : (
-                                        <View style={styles.emptyContainer}>
-                                            <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
+                {/* Carousel with two slides */}
+                <View style={styles.slidesContainer}>
+                    <Carousel
+                        ref={carouselRef}
+                        loop={false}
+                        width={width}
+                        height={currentSlide === 0 ? 500 : 500}
+                        data={[0, 1]}
+                        onSnapToItem={(index) => setCurrentSlide(index)}
+                        renderItem={({ index }) => (
+                            <Animated.View
+                                style={[
+                                    styles.slide,
+                                    { transform: [{ translateX: slideAnim }] }
+                                ]}
+                            >
+                                {index === 0 ? (
+                                    <>
+                                        <View style={styles.titleContainer}>
+                                            <Text style={styles.slideTitle}>{t('labels.yourCollections')}</Text>
                                         </View>
-                                    )}
-
-                                    {/* Sekcja kategorii dla wybranej kolekcji */}
-                                    {selectedCollection && currentSlide === 0 && (
-                                        <View style={styles.categoriesContainer}>
-                                            <Text style={styles.categoriesTitle}>{t('labels.categories')}</Text>
-
-                                            <View style={styles.categoriesList}>
-                                                {/* Istniejące kategorie */}
-                                                {collectionCategories[selectedCollection]?.map((category) => (
-                                                    <View key={category} style={styles.categoryItem}>
-                                                        <Text style={styles.categoryText}>{category}</Text>
-                                                        <TouchableOpacity
-                                                            onPress={() => handleRemoveCategory(selectedCollection, category)}
-                                                        >
-                                                            <Ionicons name="close" size={16} color={colors.error} />
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                ))}
-
-                                                {/* Przycisk/Input - wersja zintegrowana */}
-                                                <View style={styles.addCategoryContainer}>
-                                                    {!addingCategory ? (
-                                                        <TouchableOpacity
-                                                            style={styles.addCategoryButton}
-                                                            onPress={() => setAddingCategory(true)}
-                                                        >
-                                                            <Text style={styles.addCategoryText}>+ {t('buttons.addCategory')}</Text>
-                                                        </TouchableOpacity>
-                                                    ) : (
-                                                        <View style={styles.inlineInputContainer}>
-                                                            <TextInput
-                                                                style={styles.inlineInput}
-                                                                placeholder={t('placeholders.categoryName')}
-                                                                value={newCategoryName}
-                                                                onChangeText={setNewCategoryName}
-                                                                autoFocus
-                                                                onSubmitEditing={() => {
-                                                                    if (newCategoryName.trim()) {
-                                                                        handleAddCategory(selectedCollection);
-                                                                        setNewCategoryName('');
-                                                                    }
-                                                                }}
-                                                            />
-                                                            <TouchableOpacity
-                                                                style={[styles.inlineConfirmButton, !newCategoryName.trim() && styles.disabledButton]}
-                                                                onPress={() => {
-                                                                    if (newCategoryName.trim()) {
-                                                                        handleAddCategory(selectedCollection);
-                                                                        setNewCategoryName('');
-                                                                        setAddingCategory(false);
-                                                                    }
-                                                                }}
-                                                                disabled={!newCategoryName.trim()}
-                                                            >
-                                                                <Text style={styles.confirmButtonText}>✓</Text>
-                                                            </TouchableOpacity>
-                                                        </View>
-                                                    )}
-                                                </View>
+                                        {selectedCollection && (
+                                            <CategoriesManager
+                                                collectionName={selectedCollection}
+                                                collectionCategories={collectionCategories}
+                                                onAddCategory={handleAddCategory}
+                                                onRemoveCategory={handleRemoveCategory}
+                                            />
+                                        )}
+                                        {collections.length > 0 ? (
+                                            <>
+                                                <CollectionCarousel
+                                                    collections={collections}
+                                                    books={books}
+                                                    selectedCollection={selectedCollection}
+                                                    onSelectCollection={handleCollectionPress}
+                                                    calculateCollectionTotal={calculateCollectionTotal}
+                                                    onEditCollection={async (collection, newName) => {
+                                                        await handleEditCollection(collection, newName);
+                                                    }}
+                                                    onDeleteCollection={handleDeleteCollection}
+                                                    onExportCollection={handleExportCSV}
+                                                    getBookWord={getBookWord}
+                                                    formatCurrency={formatCurrency}
+                                                    onImportCollection={handleImportCollection}
+                                                />
+                                            </>
+                                        ) : (
+                                            <View style={styles.emptyContainer}>
+                                                <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
                                             </View>
-                                        </View>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    {selectedCollection && (
-                                        <View style={styles.collectionDetails}>
-                                            {books[selectedCollection]?.length === 0 ? (
-                                                <View style={styles.emptyBookContainer}>
-                                                    <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
-                                                </View>
-                                            ) : (
-                                                <><View style={styles.titleContainer}>
-                                                    <Text style={styles.slideTitle}>{t('labels.yourBooks')}</Text>
-                                                </View><BooksCarousel
-                                                    books={books[selectedCollection]}
-                                                    collectionName={selectedCollection}
-                                                    onEditBook={(index) => handleEditBook(selectedCollection, index)}
-                                                    onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
-                                                    onListBook={(index) => handleListBook(selectedCollection, index)}
-                                                    formatDefectsSummary={formatDefectsSummary}
-                                                    formatUniquenessSummary={formatUniquenessSummary}
-                                                    formatMarketFactorsSummary={formatMarketFactorsSummary}
-                                                    formatListingStatus={formatListingStatus}/></>
-                                            )}
-                                        </View>
-                                    )}
-                                </>
-                            )}
-                        </Animated.View>
-                    )}
-                    enabled={false}
-                    autoPlay={false}
-                />
-            </View>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {selectedCollection && (
+                                            <View style={styles.collectionDetails}>
+                                                {books[selectedCollection]?.length === 0 ? (
+                                                    <View style={styles.emptyBookContainer}>
+                                                        <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
+                                                    </View>
+                                                ) : (
+                                                    <>
+                                                        <View style={styles.titleContainer}>
+                                                            <Text style={styles.slideTitle}>{t('labels.yourBooks')}</Text>
+                                                        </View>
+                                                        <BooksCarousel
+                                                            books={books[selectedCollection]}
+                                                            collectionName={selectedCollection}
+                                                            onEditBook={(index) => handleEditBook(selectedCollection, index)}
+                                                            onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
+                                                            onListBook={(index) => handleListBook(selectedCollection, index)}
+                                                            formatDefectsSummary={formatDefectsSummary}
+                                                            formatUniquenessSummary={formatUniquenessSummary}
+                                                            formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                                            formatListingStatus={formatListingStatus}
+                                                        />
+                                                    </>
+                                                )}
+                                            </View>
+                                        )}
+                                    </>
+                                )}
+                            </Animated.View>
+                        )}
+                        enabled={false}
+                        autoPlay={false}
+                    />
+                </View>
             </ScrollView>
 
-            {/* Nawigacja między slajdami - teraz przyklejona do dołu ekranu */}
+            {/* Navigation buttons */}
             <View style={styles.fixedNavigationContainer}>
                 <TouchableOpacity
                     onPress={handlePrevSlide}
@@ -676,7 +635,7 @@ const CollectionsScreen = () => {
                         currentSlide === 0 && styles.disabledNavButton
                     ]}
                 >
-                    <Text style={styles.navButtonText}>{t('buttons.back')}</Text>
+                    <Text style={styles.navButtonText}>{t('buttons.collections')}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.progressDotsContainer}>
@@ -694,12 +653,12 @@ const CollectionsScreen = () => {
                     ]}
                 >
                     <Text style={[styles.navButtonText, styles.nextButtonText]}>
-                        {currentSlide === 1 ? t('buttons.done') : t('buttons.next')}
+                        {currentSlide === 1 ? t('buttons.done') : t('buttons.books')}
                     </Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Modale */}
+            {/* Modals */}
             <AddCollectionModal
                 visible={showAddModal}
                 onClose={() => setShowAddModal(false)}
@@ -865,94 +824,6 @@ const styles = StyleSheet.create({
     collectionDetails: {
         marginTop: 0,
     },
-    navigationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-    },
-    categoriesContainer: {
-        minHeight: 120,
-        padding: 16,
-        backgroundColor: colors.white,
-        borderRadius: 8,
-        marginTop: 16,
-        borderWidth: 1,
-        borderColor: colors.grayLight,
-        marginHorizontal: 16,
-    },
-    categoriesTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.primary,
-    },
-    categoryText: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    categoriesList: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    categoryItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.grayLight,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 16,
-    },
-    addCategoryContainer: {
-        minWidth: 120,
-    },
-    addCategoryButton: {
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderStyle: 'dashed',
-        borderRadius: 16,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    addCategoryText: {
-        color: colors.primary,
-        fontSize: 14,
-    },
-    inlineInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderRadius: 16,
-        paddingLeft: 12,
-        paddingRight: 4,
-        paddingVertical: 4,
-    },
-    inlineInput: {
-        flex: 1,
-        fontSize: 14,
-        padding: 0,
-        marginRight: 4,
-    },
-    inlineConfirmButton: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    confirmButtonText: {
-        color: colors.white,
-        fontSize: 14,
-    },
-    disabledButton: {
-        opacity: 0.5,
-        backgroundColor: colors.gray,
-    },
     scrollContainer: {
         flexGrow: 1,
         padding: 16,
@@ -982,18 +853,20 @@ const styles = StyleSheet.create({
     },
     backButton: {
         backgroundColor: 'white',
-        borderWidth: 1,
+        color: colors.primary,
+        borderWidth: 0,
         borderColor: colors.primary,
     },
     nextButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.white,
     },
     navButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '500',
+        color: colors.primary,
     },
     nextButtonText: {
-        color: 'white',
+        color: colors.primary,
     },
     disabledNavButton: {
         opacity: 0.5,
@@ -1007,12 +880,12 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.grayDark,
         marginHorizontal: 4,
     },
     activeProgressDot: {
         backgroundColor: colors.primary,
-        width: 12,
+        width: 8,
     },
 });
 

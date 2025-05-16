@@ -3,21 +3,32 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import CategoriesManager from '../collectionsScreen/CategoriesManager';
 
 interface AddCollectionModalProps {
     visible: boolean;
     onClose: () => void;
-    onConfirm: (name: string) => void;
+    onConfirm: (name: string, categories: string[]) => void;
 }
 
 const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClose, onConfirm }) => {
-    const [localCollectionName, setLocalCollectionName] = useState('');
     const { t } = useTranslation();
+    const [localCollectionName, setLocalCollectionName] = useState('');
+    const [categories, setCategories] = useState<string[]>([]);
+
+    const handleAddCategory = (collectionName: string, category: string) => {
+        setCategories([...categories, category]);
+    };
+
+    const handleRemoveCategory = (collectionName: string, category: string) => {
+        setCategories(categories.filter(c => c !== category));
+    };
 
     const handleConfirm = () => {
         if (!localCollectionName.trim()) return;
-        onConfirm(localCollectionName);
+        onConfirm(localCollectionName, categories);
         setLocalCollectionName('');
+        setCategories([]);
         onClose();
     };
 
@@ -26,6 +37,7 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>{t('labels.addNewCollection')}</Text>
+
                     <TextInput
                         style={styles.modalInput}
                         placeholder={t('placeholders.enterCollectionName')}
@@ -33,9 +45,15 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                         value={localCollectionName}
                         onChangeText={setLocalCollectionName}
                         autoFocus
-                        onSubmitEditing={handleConfirm}
-                        returnKeyType="done"
                     />
+
+                    <CategoriesManager
+                        collectionName="new"
+                        collectionCategories={{ new: categories }}
+                        onAddCategory={handleAddCategory}
+                        onRemoveCategory={handleRemoveCategory}
+                    />
+
                     <View style={styles.modalButtons}>
                         <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={onClose}>
                             <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
