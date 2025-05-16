@@ -41,8 +41,9 @@ export default {
         noCollectionsExist: "You don't have any collections yet. Do you want to create one?",
         bookMoved: "Book has been moved from \"{oldCollection}\" to \"{newCollection}\"",
         rateLimitTitle: "Request Limit",
-        rateLimitMessage: "The weekly limit of {limit} requests to the Amazon API has been reached. The limit will reset on Monday."
-
+        rateLimitMessage: "The weekly limit of {limit} requests to the Amazon API has been reached. The limit will reset on Monday.",
+        imageSizeLimit: "Image size must be less than 200KB",
+        imageUploadError: "Failed to upload image"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -66,7 +67,8 @@ export default {
         suggestedPrice: 'Suggested price',
         noPrice: 'No price available',
         discountedPrice: 'Discounted Price',
-        amazonPrices: 'Latest Amazon Prices'
+        amazonPrices: 'Latest Amazon Prices',
+        addCover: "Add book cover (max 200KB)"
     },
     labels: {
         selectCollection: 'Select Collection',
@@ -210,6 +212,7 @@ export default {
         exportError: 'Export failed',
         importError: 'Import failed',
         importSuccess: 'Collection imported successfully',
+        noPhotoLibraryAccess: 'Permission to access photo library is required'
     },
     currency: {
         symbol: '$',

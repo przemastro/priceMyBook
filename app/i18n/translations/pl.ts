@@ -37,7 +37,9 @@ export default {
         noCollectionsExist: "Nie masz jeszcze żadnych księgozbiorów. Czy chcesz utworzyć nowy?",
         bookMoved: "Książka została przeniesiona z \"{oldCollection}\" do \"{newCollection}\"",
         rateLimitTitle: "Limit requestów",
-        rateLimitMessage: "Osiągnięto limit {limit} requestów tygodniowo do Amazon API. Limit zostanie zresetowany w poniedziałek."
+        rateLimitMessage: "Osiągnięto limit {limit} requestów tygodniowo do Amazon API. Limit zostanie zresetowany w poniedziałek.",
+        imageSizeLimit: "Rozmiar obrazu musi być mniejszy niż 200KB",
+        imageUploadError: "Błąd podczas przesyłania obrazu"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -61,7 +63,8 @@ export default {
         suggestedPrice: 'Sugerowana cena',
         noPrice: 'Brak dostępnej ceny',
         discountedPrice: 'Cena po obniżce',
-        amazonPrices: 'Najnowsze ceny na Amazon'
+        amazonPrices: 'Najnowsze ceny na Amazon',
+        addCover: "Dodaj okładkę książki (max 200KB)"
     },
     labels: {
         selectCollection: 'Wybierz księgozbiór',
@@ -206,7 +209,8 @@ export default {
         exportSuccess: 'Eksport zakończony sukcesem',
         exportError: 'Błąd podczas eksportu',
         importSuccess: 'Import zakończony sukcesem',
-        importError: 'Błąd podczas importu'
+        importError: 'Błąd podczas importu',
+        noPhotoLibraryAccess: "Wymagane są uprawnienia do dostępu do biblioteki zdjęć"
     },
     currency: {
         symbol: 'zł',

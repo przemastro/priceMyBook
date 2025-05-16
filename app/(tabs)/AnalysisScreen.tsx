@@ -24,7 +24,8 @@ import {useTranslation} from 'react-i18next';
 import {Ionicons, MaterialIcons} from '@expo/vector-icons';
 import i18n from "i18next";
 import 'react-native-svg';
-import Svg, { Path } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 
 
 // Import komponentów
@@ -98,6 +99,7 @@ export default function AnalysisScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [hasScanned, setHasScanned] = useState(false);
   const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
+  const [bookImage, setBookImage] = useState<string | null>(null);
 
   const {
     collections,
@@ -184,6 +186,39 @@ export default function AnalysisScreen() {
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
+  };
+
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('alerts.error'), t('status.noPhotoLibraryAccess'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0].uri) {
+        // Check image size
+        const response = await fetch(result.assets[0].uri);
+        const blob = await response.blob();
+
+        if (blob.size > 200 * 1024) { // 200KB limit
+          Alert.alert(t('alerts.error'), t('alerts.imageSizeLimit'));
+          return;
+        }
+
+        setBookImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert(t('alerts.error'), t('alerts.imageUploadError'));
+    }
   };
 
   const goToNextStep = () => {
@@ -671,131 +706,165 @@ export default function AnalysisScreen() {
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[0]}</Text>
-                <View style={styles.priceSection}>
-                  <View style={styles.titleRow}>
-                    <Text style={typography.body}>{t('bookInfo.title')}:</Text>
-                    {editingTitle ? (
-                        <View style={styles.titleInputContainer}>
-                          <TextInput
-                              style={styles.titleInput}
-                              value={titleInput}
-                              onChangeText={setTitleInput}
-                              autoFocus
-                              placeholder={title}
-                          />
-                          <TouchableOpacity
-                              style={styles.saveTitleButton}
-                              onPress={saveTitle}
-                          >
-                            <Ionicons name="checkmark" size={20} color="white" />
-                          </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.titleDisplay}
-                            onPress={() => {
-                              setTitleInput(title);
-                              setEditingTitle(true);
-                            }}
-                        >
-                          <Text style={typography.body} numberOfLines={1} ellipsizeMode="tail">
-                            {titleInput || title}
-                          </Text>
-                          <Ionicons
-                              name="create"
-                              size={16}
-                              color={colors.primary}
-                              style={styles.editIcon}
-                          />
-                        </TouchableOpacity>
-                    )}
-                  </View>
 
-                  <View style={styles.isbnRow}>
-                    <Text style={typography.body}>{t('bookInfo.isbn')}:</Text>
-                    {editingIsbn ? (
-                        <View style={styles.isbnInputContainer}>
-                          <TextInput
-                              style={styles.isbnInput}
-                              value={isbnInput}
-                              onChangeText={setIsbnInput}
-                              autoFocus
-                              placeholder={isbn}
-                              keyboardType="numeric"
-                          />
-                          <TouchableOpacity
-                              style={styles.saveTitleButton}
-                              onPress={saveIsbn}
-                          >
-                            <Ionicons name="checkmark" size={20} color="white" />
-                          </TouchableOpacity>
-                        </View>
+                {/* Nowy kontener z obrazkiem po lewej i szczegółami po prawej */}
+                <View style={styles.detailsRowContainer}>
+                  {/* Sekcja obrazka - lewa kolumna */}
+                  <TouchableOpacity
+                      style={styles.bookCoverContainer}
+                      onPress={pickImage}
+                      activeOpacity={0.7}
+                  >
+                    {bookImage ? (
+                        <Image
+                            source={{ uri: bookImage }}
+                            style={styles.bookCoverImage}
+                            resizeMode="cover"
+                        />
                     ) : (
-                        <TouchableOpacity
-                            style={styles.titleDisplay}
-                            onPress={() => {
-                              setIsbnInput(isbn);
-                              setEditingIsbn(true);
-                            }}
-                        >
-                          <Text style={typography.body}>
-                            {isbnInput || isbn || t('bookInfo.noISBN')}
-                          </Text>
+                        <View style={styles.bookCoverPlaceholder}>
                           <Ionicons
-                              name="create"
-                              size={16}
-                              color={colors.primary}
-                              style={styles.editIcon}
+                              name="image-outline"
+                              size={32}
+                              color={colors.gray}
                           />
-                        </TouchableOpacity>
+                          <Text style={styles.bookCoverPlaceholderText}>
+                            {t('bookInfo.addCover')}
+                          </Text>
+                        </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
 
-                  <View style={styles.priceRow}>
-                    <Text style={typography.body}>
-                      {t('bookInfo.originalPrice')}:
-                    </Text>
-                    {editingOriginalPrice ? (
-                        <View style={styles.priceInputContainer}>
-                          <TextInput
-                              style={styles.priceInput}
-                              value={originalPriceInput}
-                              onChangeText={setOriginalPriceInput}
-                              keyboardType="numeric"
-                              autoFocus
-                          />
+                  {/* Sekcja szczegółów - prawa kolumna */}
+                  <View style={styles.bookDetailsColumn}>
+                    {/* Tytuł */}
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>{t('bookInfo.title')}:</Text>
+                      {editingTitle ? (
+                          <View style={styles.editableInputContainer}>
+                            <TextInput
+                                style={styles.editableInput}
+                                value={titleInput}
+                                onChangeText={setTitleInput}
+                                autoFocus
+                                placeholder={title}
+                            />
+                            <TouchableOpacity
+                                style={styles.saveEditButton}
+                                onPress={saveTitle}
+                            >
+                              <Ionicons name="checkmark" size={18} color="white" />
+                            </TouchableOpacity>
+                          </View>
+                      ) : (
                           <TouchableOpacity
-                              style={styles.savePriceButton}
-                              onPress={saveOriginalPrice}
+                              style={styles.editableField}
+                              onPress={() => {
+                                setTitleInput(title);
+                                setEditingTitle(true);
+                              }}
                           >
-                            <Ionicons name="checkmark" size={20} color="white" />
+                            <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                              {titleInput || title}
+                            </Text>
+                            <Ionicons
+                                name="create-outline"
+                                size={16}
+                                color={colors.primary}
+                                style={styles.editIcon}
+                            />
                           </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.priceDisplay}
-                            onPress={toggleEditOriginalPrice}
-                        >
-                          <Text style={typography.body}>
-                            {formatCurrency({ price: originalPrice, exchangeRate })}
-                          </Text>
-                          <Ionicons
-                              name="create"
-                              size={16}
-                              color={colors.primary}
-                              style={styles.editIcon}
-                          />
-                        </TouchableOpacity>
-                    )}
+                      )}
+                    </View>
+
+                    {/* ISBN */}
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>{t('bookInfo.isbn')}:</Text>
+                      {editingIsbn ? (
+                          <View style={styles.editableInputContainer}>
+                            <TextInput
+                                style={styles.editableInput}
+                                value={isbnInput}
+                                onChangeText={setIsbnInput}
+                                autoFocus
+                                placeholder={isbn}
+                                keyboardType="numeric"
+                            />
+                            <TouchableOpacity
+                                style={styles.saveEditButton}
+                                onPress={saveIsbn}
+                            >
+                              <Ionicons name="checkmark" size={18} color="white" />
+                            </TouchableOpacity>
+                          </View>
+                      ) : (
+                          <TouchableOpacity
+                              style={styles.editableField}
+                              onPress={() => {
+                                setIsbnInput(isbn);
+                                setEditingIsbn(true);
+                              }}
+                          >
+                            <Text style={styles.detailValue}>
+                              {isbnInput || isbn || t('bookInfo.noISBN')}
+                            </Text>
+                            <Ionicons
+                                name="create-outline"
+                                size={16}
+                                color={colors.primary}
+                                style={styles.editIcon}
+                            />
+                          </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* Cena */}
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>{t('bookInfo.originalPrice')}:</Text>
+                      {editingOriginalPrice ? (
+                          <View style={styles.editableInputContainer}>
+                            <TextInput
+                                style={styles.editableInput}
+                                value={originalPriceInput}
+                                onChangeText={setOriginalPriceInput}
+                                keyboardType="numeric"
+                                autoFocus
+                            />
+                            <TouchableOpacity
+                                style={styles.saveEditButton}
+                                onPress={saveOriginalPrice}
+                            >
+                              <Ionicons name="checkmark" size={18} color="white" />
+                            </TouchableOpacity>
+                          </View>
+                      ) : (
+                          <TouchableOpacity
+                              style={styles.editableField}
+                              onPress={toggleEditOriginalPrice}
+                          >
+                            <Text style={styles.detailValue}>
+                              {formatCurrency({ price: originalPrice, exchangeRate })}
+                            </Text>
+                            <Ionicons
+                                name="create-outline"
+                                size={16}
+                                color={colors.primary}
+                                style={styles.editIcon}
+                            />
+                          </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
-                  {exchangeRateError && (
-                      <Text style={[typography.caption, { color: colors.error }]}>
-                        {t('alerts.exchangeRateError')}
-                      </Text>
-                  )}
                 </View>
 
+                {exchangeRateError && (
+                    <Text style={styles.exchangeRateError}>
+                      {t('alerts.exchangeRateError')}
+                    </Text>
+                )}
+
                 <View style={styles.horizontalLine} />
+
                 <TouchableOpacity
                     style={[
                       styles.startScanButton,
@@ -1255,9 +1324,6 @@ const styles = StyleSheet.create({
   priceDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 8,
-  },
-  editIcon: {
     marginLeft: 8,
   },
   horizontalLine: {
@@ -2001,5 +2067,115 @@ const styles = StyleSheet.create({
     color: colors.primary,
     textAlign: 'center',
     marginTop: 8,
+  },
+  imageUploadContainer: {
+    width: '100%',
+    height: 150,
+    backgroundColor: colors.grayLight,
+    borderRadius: 8,
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  bookImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    marginTop: 8,
+    color: colors.gray,
+    fontSize: 14,
+  },
+  detailsRowContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 16,
+  },
+  bookCoverContainer: {
+    width: 110,
+    height: 160,
+    borderRadius: 8,
+    backgroundColor: colors.grayLight,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bookCoverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bookCoverPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
+  },
+  bookCoverPlaceholderText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: colors.gray,
+    textAlign: 'center',
+  },
+  bookDetailsColumn: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    minHeight: 40,
+  },
+  detailLabel: {
+    width: 80,
+    fontSize: 14,
+    color: colors.secondary,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.black,
+  },
+  editableField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  editableInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editableInput: {
+    flex: 1,
+    height: 36,
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    fontSize: 14,
+  },
+  saveEditButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: colors.primary,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  editIcon: {
+    marginLeft: 8,
+  },
+  exchangeRateError: {
+    fontSize: 12,
+    color: colors.error,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
