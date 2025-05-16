@@ -63,6 +63,7 @@ export default {
         loadingDescription: 'Loading description...',
         unknownTitle: 'Unknown title',
         originalPrice: "Base price",
+        originalPriceShort: "Price",
         priceNotAvailable: 'Price not available',
         suggestedPrice: 'Suggested price',
         noPrice: 'No price available',
@@ -137,7 +138,9 @@ export default {
         priceRange: "Price Range",
         includePublicationYear: "Publication Year",
         includeDemand: "Demand",
-        includeSupply: "Supply"
+        includeSupply: "Supply",
+        estimatedValue: "Estimated value"
+
     },
     titles: {
         scan: 'Scan ISBN',
@@ -170,7 +173,7 @@ export default {
         saveChanges: "Save Changes",
         selectImage: 'Select Image',
         analyzeImage: 'Analyze',
-        startScanning: 'Start Scanning',
+        startScanning: 'Scan',
         stopScanning: 'Stop Scanning',
         simulateDefect: 'Simulate Defect',
         confirmDefect: 'CONFIRM',
@@ -277,7 +280,8 @@ export default {
         defectsDetails: "Defects Details",
         uniquenessDetails: "Uniqueness Details",
         marketDetails: "Market Details",
-        averageUsedPrice: "Market average used book price",
+        averageUsedPrice: "Used book market price",
+        noMarketData: "No data"
     },
     demand: "Demand",
     supply: "Supply",

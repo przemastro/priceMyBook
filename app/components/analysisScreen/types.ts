@@ -42,12 +42,13 @@ export interface BookUniqueness {
     hasAuthorSignature: boolean;
     isLimitedEdition: boolean;
     isPublisherDefunct: boolean;
+    [key: string]: boolean; // Dodane dla zgodności z Record<string, boolean>
 }
 
 export interface MarketFactors {
     demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
     supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
-    publicationYear?: number;
+    publicationYear: number;
 }
 
 export interface PriceCalculation {

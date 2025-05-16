@@ -1,9 +1,10 @@
-import React from 'react';
-import {View, Text, ActivityIndicator, ScrollView, StyleSheet, Dimensions} from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/styles';
 import { MarketData } from './types';
+import Carousel from 'react-native-reanimated-carousel';
 
 interface MarketChartProps {
     marketData: MarketData | null;
@@ -11,114 +12,271 @@ interface MarketChartProps {
 
 const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
     const { t } = useTranslation();
-    const chartWidth = Dimensions.get('window').width - 64;
+    const screenWidth = Dimensions.get('window').width;
+    const chartWidth = screenWidth - 64;
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scaleAnim = useRef(new Animated.Value(0.95)).current;
+
+    // Animacje
+    React.useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.exp)
+            }),
+            Animated.timing(scaleAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.back(1.2))
+            })
+        ]).start();
+    }, []);
+
+    // Premium config - odpicowana kolorystyka
+    const premiumConfig = {
+        backgroundColor: '#f8f9ff', // Jasnoniebieskie tło
+        backgroundGradientFrom: '#f8f9ff',
+        backgroundGradientTo: '#f8f9ff',
+        decimalPlaces: 0,
+        color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`, // Główny niebieski
+        labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`, // Ciemnoszary dla tekstu
+        style: {
+            borderRadius: 16,
+            paddingRight: 20
+        },
+        propsForDots: {
+            r: "5",
+            strokeWidth: "2",
+            stroke: colors.primary,
+            fill: "#fff" // Białe wypełnienie kropek
+        },
+        fillShadowGradient: colors.primary,
+        fillShadowGradientOpacity: 0.15, // Delikatny gradient
+        strokeWidth: 2,
+        barPercentage: 0.7,
+        barRadius: 6,
+        useShadowColorFromDataset: false,
+        propsForBackgroundLines: {
+            strokeWidth: 0, // Usuwamy siatkę
+        },
+        propsForLabels: {
+            fontFamily: 'System',
+            fontSize: 12,
+            fontWeight: '500'
+        },
+        propsForVerticalLabels: {
+            dx: -10,
+            dy: 0
+        },
+        propsForHorizontalLabels: {
+            dy: 5,
+            rotation: -45 // Ukośne etykiety dla lepszej czytelności
+        }
+    };
 
     if (!marketData) {
         return (
-            <View style={styles.chartContainer}>
+            <Animated.View style={[styles.skeletonContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }]}]}>
                 <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
                 <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-        );
-    }
+                </Animated.View>
+            );
+            }
 
-    return (
-        <View style={styles.chartContainer}>
-            <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ width: chartWidth }}>
-                    <BarChart
-                        data={{
-                            labels: [t('labels.demand'), t('labels.supply')],
-                            datasets: [{
-                                data: [
-                                    marketData.demand === 'veryHigh' ? 100 :
-                                        marketData.demand === 'high' ? 80 :
-                                            marketData.demand === 'medium' ? 60 :
-                                                marketData.demand === 'low' ? 40 : 20,
-                                    marketData.supply === 'veryLow' ? 20 :
-                                        marketData.supply === 'low' ? 40 :
-                                            marketData.supply === 'medium' ? 60 :
-                                                marketData.supply === 'high' ? 80 : 100
-                                ]
-                            }]
-                        }}
-                        width={chartWidth}
-                        height={220}
-                        yAxisLabel=""
-                        yAxisSuffix=""
-                        chartConfig={{
-                            backgroundColor: colors.white,
-                            backgroundGradientFrom: colors.white,
-                            backgroundGradientTo: colors.white,
-                            decimalPlaces: 0,
-                            color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
-                            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                            style: { borderRadius: 16 },
-                            propsForDots: {
-                                r: "6",
-                                strokeWidth: "2",
-                                stroke: colors.primary
-                            }
-                        }}
-                        style={{
-                            marginVertical: 8,
-                            borderRadius: 16
-                        }}
-                    />
-
-                    {marketData.priceHistory && marketData.priceHistory.length > 1 && (
-                        <LineChart
-                            data={{
-                                labels: marketData.priceHistory.map(entry =>
-                                    new Date(entry.date).toLocaleDateString()),
-                                datasets: [{
-                                    data: marketData.priceHistory.map(entry => entry.price)
-                                }]
-                            }}
-                            width={chartWidth}
-                            height={220}
-                            yAxisLabel=""
-                            yAxisSuffix=""
-                            chartConfig={{
-                                backgroundColor: colors.white,
-                                backgroundGradientFrom: colors.white,
-                                backgroundGradientTo: colors.white,
-                                decimalPlaces: 2,
-                                color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
-                                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                                style: { borderRadius: 16 }
-                            }}
-                            bezier
-                            style={{
-                                marginVertical: 8,
-                                borderRadius: 16
-                            }}
-                        />
-                    )}
-                </View>
-            </ScrollView>
+    const renderBarChart = () => (
+        <View key="bar-chart">
+            <Text style={styles.chartSubtitle}>{t('labels.demandVsSupply')}</Text>
+            <BarChart
+                data={{
+                    labels: [t('labels.demand'), t('labels.supply')],
+                    datasets: [{
+                        data: [
+                            marketData.demand === 'veryHigh' ? 100 :
+                                marketData.demand === 'high' ? 80 :
+                                    marketData.demand === 'medium' ? 60 :
+                                        marketData.demand === 'low' ? 40 : 20,
+                            marketData.supply === 'veryLow' ? 20 :
+                                marketData.supply === 'low' ? 40 :
+                                    marketData.supply === 'medium' ? 60 :
+                                        marketData.supply === 'high' ? 80 : 100
+                        ],
+                        colors: [
+                            (opacity = 1) => `rgba(74, 108, 247, ${opacity})`, // Niebieski dla popytu
+                            (opacity = 1) => `rgba(255, 159, 64, ${opacity})`  // Pomarańczowy dla podaży
+                        ]
+                    }]
+                }}
+                width={chartWidth}
+                height={220}
+                yAxisLabel=""
+                yAxisSuffix="%"
+                yAxisInterval={20}
+                chartConfig={{
+                    ...premiumConfig,
+                    fillShadowGradientFromOpacity: 0.3,
+                    fillShadowGradientToOpacity: 0.1,
+                }}
+                style={{
+                    marginVertical: 8,
+                    borderRadius: 16,
+                }}
+                fromZero
+                showBarTops={false}
+                withCustomBarColorFromData={true}
+            />
         </View>
     );
+
+    const renderLineChart = () => {
+        if (!marketData.priceHistory || marketData.priceHistory.length <= 1) return null;
+
+        return (
+            <View key="line-chart">
+                <Text style={styles.chartSubtitle}>{t('labels.priceHistory')}</Text>
+                <LineChart
+                    data={{
+                        labels: marketData.priceHistory.map(entry =>
+                            new Date(entry.date).toLocaleDateString('pl-PL', { month: 'short', day: 'numeric' })),
+                        datasets: [{
+                            data: marketData.priceHistory.map(entry => entry.price),
+                            color: (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,
+                            strokeWidth: 3
+                        }]
+                    }}
+                    width={chartWidth}
+                    height={220}
+                    yAxisLabel=""
+                    yAxisSuffix=""
+                    chartConfig={{
+                        ...premiumConfig,
+                        fillShadowGradientFrom: 'rgba(74, 108, 247, 0.3)',
+                        fillShadowGradientTo: 'rgba(74, 108, 247, 0.01)',
+                    }}
+                    style={{
+                        marginVertical: 8,
+                        borderRadius: 16,
+                    }}
+                    bezier
+                    withHorizontalLabels={true}
+                    withVerticalLabels={true}
+                    withInnerLines={false} // Brak linii siatki
+                    withOuterLines={false}
+                    withShadow={true}
+                    withDots={true}
+                />
+            </View>
+        );
+    };
+
+    const charts = [
+        renderBarChart(),
+        ...(marketData.priceHistory && marketData.priceHistory.length > 1 ? [renderLineChart()] : [])
+    ].filter(Boolean);
+
+    return (
+        <Animated.View style={[styles.premiumContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }]}]}>
+            <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
+
+        {charts.length > 1 ? (
+            <Carousel
+            loop={false}
+                       width={screenWidth - 32}
+                       height={280} // Więcej miejsca na podpisy
+                       autoPlay={false}
+                       data={charts}
+                       renderItem={({ item }) => (
+                           <View style={styles.carouselItem}>
+                               {item}
+                           </View>
+                       )}
+                       scrollAnimationDuration={400}
+        />
+    ) : (
+        <View style={styles.singleChartContainer}>
+            {charts[0]}
+        </View>
+    )}
+
+<View style={styles.legendContainer}>
+<View style={styles.legendItem}>
+<View style={[styles.legendColor, { backgroundColor: colors.primary }]} />
+<Text style={styles.legendText}>{t('labels.demand')}</Text>
+</View>
+    <View style={styles.legendItem}>
+        <View style={[styles.legendColor, { backgroundColor: '#FF9F40' }]} />
+        <Text style={styles.legendText}>{t('labels.supply')}</Text>
+    </View>
+</View>
+</Animated.View>
+);
 });
 
 const styles = StyleSheet.create({
-    chartContainer: {
-        backgroundColor: 'white',
-        borderRadius: 2,
-        padding: 12,
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+    premiumContainer: {
+        backgroundColor: '#f8f9ff', // Jasne niebieskie tło
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 20,
+        shadowColor: '#4A6CF7',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    skeletonContainer: {
+        backgroundColor: '#f8f9ff',
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 200
     },
     chartTitle: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '600',
+        color: colors.primary,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    chartSubtitle: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: colors.grayDark,
         marginBottom: 8,
-        color: colors.black,
+        textAlign: 'center',
+    },
+    carouselItem: {
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    singleChartContainer: {
+        alignItems: 'center',
+    },
+    legendContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 16,
+        gap: 20
+    },
+    legendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    legendColor: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        marginRight: 6,
+    },
+    legendText: {
+        fontSize: 13,
+        color: colors.grayDark,
+        fontWeight: '500'
     },
 });
 

@@ -59,6 +59,7 @@ export default {
         loadingDescription: 'Wczytywanie opisu...',
         unknownTitle: 'Nieznany tytuł',
         originalPrice: "Cena pierwotna",
+        originalPriceShort: "Cena",
         priceNotAvailable: 'Cena niedostępna',
         suggestedPrice: 'Sugerowana cena',
         noPrice: 'Brak dostępnej ceny',
@@ -135,7 +136,8 @@ export default {
         priceRange: "Przedział cenowy",
         includePublicationYear: "Data wydania",
         includeDemand: "Popyt",
-        includeSupply: "Podaż"
+        includeSupply: "Podaż",
+        estimatedValue: "Cena szacowana"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -168,7 +170,7 @@ export default {
         saveChanges: "Zapisz zmiany",
         selectImage: 'Wybierz zdjęcie',
         analyzeImage: 'Analizuj',
-        startScanning: 'Rozpocznij skanowanie',
+        startScanning: 'Skanuj',
         stopScanning: 'Zatrzymaj skanowanie',
         simulateDefect: 'Symuluj wadę',
         confirmDefect: 'POTWIERDŹ',
@@ -188,7 +190,7 @@ export default {
         next: 'DALEJ',
         save: 'ZAPISZ',
         collections: 'KSIĘGOZBIORY',
-        books: 'KSIĄŻKI'
+        books: 'KSIĄŻKI',
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
@@ -271,7 +273,8 @@ export default {
         defectsDetails: "Szczegóły wad",
         uniquenessDetails: "Szczegóły unikatowości",
         marketDetails: "Szczegóły rynkowe",
-        averageUsedPrice: "Średnia cena rynkowa książki używanej"
+        averageUsedPrice: "Cena rynkowa książki używanej",
+        noMarketData: "Brak danych"
     },
     demand: "Podaż",
     supply: "Popyt",
