@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     modalContainer: {
         width: '90%',
         backgroundColor: 'white',
-        borderRadius: 16,
+        borderRadius: 8,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },

@@ -5,6 +5,7 @@ export const { width, height } = Dimensions.get('window');
 // Kolory
 export const colors = {
     primary: '#0167ae', // Główny kolor (np. przyciski, akcenty)
+    lightPrimary: '#4a6cf7',
     primary2: '#4a6cf714',
     secondary: '#2c3e50', // Kolor tekstu i nagłówków
     background: '#f5f5f5', // Kolor tła
@@ -15,8 +16,10 @@ export const colors = {
     success: '#2ecc71', // Kolor sukcesu
     black: '#696767',
     grayLight: '#fafafa',
-    buttonSelected1: 'rgba(74,108,247,0.1)',
-    buttonSelected2: 'rgba(74,108,247,0.2)'
+    buttonSelected1: '#e6f1ff',
+    buttonSelected2: '#cce0ff',
+    whiteBlue: '#f9faff',
+    blackDark: '#000'
 };
 
 // Typografia

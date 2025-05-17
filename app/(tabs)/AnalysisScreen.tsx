@@ -672,7 +672,7 @@ export default function AnalysisScreen() {
                 activeOpacity={0.9}
             >
               <LinearGradient
-                  colors={['#ffffff', '#f9faff']}
+                  colors={[colors.white, colors.whiteBlue]}
                   style={styles.priceSummaryGradient}
               >
                 <View style={styles.priceRow}>
@@ -759,7 +759,7 @@ export default function AnalysisScreen() {
               />
           ) : (
               <LinearGradient
-                  colors={['#f5f7ff', '#e8ecff']}
+                  colors={[colors.buttonSelected1, colors.buttonSelected2]}
                   style={styles.bookCoverPlaceholder}
               >
                 <Ionicons
@@ -796,7 +796,7 @@ export default function AnalysisScreen() {
               activeOpacity={0.7}
           >
             <LinearGradient
-                colors={['#f5f7ff', '#e8ecff']}
+                colors={[colors.buttonSelected1, colors.buttonSelected2]}
                 style={styles.editButtonGradient}
             >
               <Ionicons
@@ -821,7 +821,7 @@ export default function AnalysisScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.editModalContainer}>
             <LinearGradient
-                colors={['#f5f7ff', '#e8ecff']}
+                colors={[colors.buttonSelected1, colors.buttonSelected2]}
                 style={styles.modalHeader}
             >
               <Text style={styles.modalTitle}>{t('bookInfo.editBookDetails')}</Text>
@@ -848,7 +848,7 @@ export default function AnalysisScreen() {
                     />
                 ) : (
                     <LinearGradient
-                        colors={['#f5f7ff', '#e8ecff']}
+                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
                         style={styles.modalBookCoverPlaceholder}
                     >
                       <Ionicons
@@ -936,7 +936,7 @@ export default function AnalysisScreen() {
                   activeOpacity={0.7}
               >
                 <LinearGradient
-                    colors={['#4a6cf7', colors.primary]}
+                    colors={[colors.lightPrimary, colors.primary]}
                     style={styles.saveButtonGradient}
                 >
                   <Text style={styles.saveButtonText}>{t('buttons.save')}</Text>
@@ -974,8 +974,8 @@ export default function AnalysisScreen() {
                   >
                     <LinearGradient
                         colors={isScanning || isLoading ?
-                            ['#e0e4ff', '#d5daff'] :
-                            ['#4a6cf7', colors.primary]}
+                            [colors.buttonSelected1, colors.buttonSelected2] :
+                            [colors.lightPrimary, colors.primary]}
                         style={styles.scanButtonGradient}
                     >
                       <Ionicons
@@ -1014,7 +1014,7 @@ export default function AnalysisScreen() {
                             <LinearGradient
                                 colors={item.selected ?
                                     [colors.buttonSelected1, colors.buttonSelected2] :
-                                    ['#ffffff', '#f9faff']}
+                                    [colors.white, colors.whiteBlue]}
                                 style={styles.defectItemGradient}
                             >
                               {item.selected && item.count > 0 && (
@@ -1068,7 +1068,7 @@ export default function AnalysisScreen() {
                           <LinearGradient
                               colors={uniqueness[item.id as keyof BookUniqueness] ?
                                   [colors.buttonSelected1, colors.buttonSelected2] :
-                                  ['#ffffff', '#f9faff']}
+                                  [colors.white, colors.whiteBlue]}
                               style={styles.defectItemGradient}
                           >
                             <View style={styles.defectIconContainer}>
@@ -1118,7 +1118,7 @@ export default function AnalysisScreen() {
                           <LinearGradient
                               colors={includedMarketFactors[item.id] ?
                                   [colors.buttonSelected1, colors.buttonSelected2] :
-                                  ['#ffffff', '#f9faff']}
+                                  [colors.white, colors.whiteBlue]}
                               style={styles.defectItemGradient}
                           >
                             <View style={styles.defectIconContainer}>
@@ -1169,7 +1169,7 @@ export default function AnalysisScreen() {
                           <LinearGradient
                               colors={selectedCollection === collection ?
                                   [colors.buttonSelected1, colors.buttonSelected2] :
-                                  ['#ffffff', '#f9faff']}
+                                  [colors.white, colors.whiteBlue]}
                               style={styles.collectionButtonGradient}
                           >
                             <View style={styles.collectionIconContainer}>
@@ -1202,7 +1202,7 @@ export default function AnalysisScreen() {
                       activeOpacity={0.7}
                   >
                     <LinearGradient
-                        colors={['#ffffff', '#f9faff']}
+                        colors={[colors.white, colors.whiteBlue]}
                         style={styles.addCollectionGradient}
                     >
                       <View style={styles.collectionIconContainer}>
@@ -1230,17 +1230,20 @@ export default function AnalysisScreen() {
   const renderNavigationButtons = () => (
       <View style={styles.fixedNavigationContainer}>
         <TouchableOpacity
-            style={[
-              styles.simpleNavButton,
-              currentStep === 0 && styles.disabledNavButton
-            ]}
             onPress={goToPrevStep}
             disabled={currentStep === 0}
             activeOpacity={0.7}
         >
-          <Text style={styles.navButtonText}>{t('buttons.back')}</Text>
+          <LinearGradient
+              style={[
+                styles.simpleNavButton,
+                currentStep === 0 && styles.disabledNavButton
+              ]}
+              colors={[colors.lightPrimary, colors.primary]}
+          >
+            <Text style={styles.navButtonText}>{t('buttons.back')}</Text>
+          </LinearGradient>
         </TouchableOpacity>
-
         <View style={styles.progressDotsContainer}>
           {Array.from({ length: totalSteps }).map((_, index) => (
               <View
@@ -1252,17 +1255,20 @@ export default function AnalysisScreen() {
               />
           ))}
         </View>
-
         <TouchableOpacity
-            style={styles.simpleNavButton}
             onPress={currentStep === totalSteps - 1 ? handleSaveBook : goToNextStep}
             activeOpacity={0.7}
         >
-          <Text style={styles.navButtonText}>
-            {currentStep === totalSteps - 1
-                ? editMode ? t('buttons.save') : t('buttons.save')
-                : t('buttons.next')}
-          </Text>
+          <LinearGradient
+              style={styles.simpleNavButton}
+              colors={[colors.lightPrimary, colors.primary]}
+          >
+            <Text style={styles.navButtonText}>
+              {currentStep === totalSteps - 1
+                  ? editMode ? t('buttons.save') : t('buttons.save')
+                  : t('buttons.next')}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
   );
@@ -1399,7 +1405,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.grayLight,
   },
   ratingOuterContainer: {
     marginLeft: -16,
@@ -1438,7 +1444,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginTop: 16,
-    shadowColor: '#4a6cf7',
+    shadowColor: colors.lightPrimary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -1494,7 +1500,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderWidth: 1,
     borderColor: colors.buttonSelected1,
-    shadowColor: '#4a6cf7',
+    shadowColor: colors.lightPrimary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -1510,7 +1516,7 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: colors.blackDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1568,10 +1574,10 @@ const styles = StyleSheet.create({
   editModalContainer: {
     width: '90%',
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: 8,
     maxHeight: '80%',
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: colors.blackDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -1602,7 +1608,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: colors.blackDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1686,7 +1692,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     width: 80,
     height: 80,
-    shadowColor: '#4a6cf7',
+    shadowColor: colors.lightPrimary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1719,7 +1725,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     height: 120,
-    shadowColor: '#000',
+    backgroundColor: 'white', // Dodaj białe tło
+    shadowColor: colors.blackDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1731,12 +1738,14 @@ const styles = StyleSheet.create({
     padding: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'white', // Dodaj białe tło pod gradientem
   },
   selectedDefect: {
-    shadowColor: 'rgba(0,0,0,0.03)',
+    shadowColor: colors.blackDark, // Zmień kolor cienia na niebieski
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
+    elevation: 3,
   },
   defectIconContainer: {
     marginBottom: 4,
@@ -1809,27 +1818,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+  },
+  simpleNavButton: {
+    padding: 0,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    borderRadius: 15,
+    borderWidth: 0,
+    maxWidth: 120,
+    minWidth: 120,
+    minHeight: 40,
+    shadowColor: colors.lightPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },
-  simpleNavButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
   navButtonText: {
-    color: colors.primary,
+    color: colors.white,
     fontWeight: '600',
+    padding: 0,
+    alignItems: 'center',
   },
   disabledNavButton: {
+    padding: 16,
+    alignItems: 'center',
     opacity: 0.5,
   },
   progressDotsContainer: {
@@ -1843,7 +1862,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginHorizontal: 4,
-    backgroundColor: colors.grayLight,
+    backgroundColor: colors.gray,
   },
   activeProgressDot: {
     backgroundColor: colors.primary,
@@ -1974,7 +1993,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: colors.blackDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
