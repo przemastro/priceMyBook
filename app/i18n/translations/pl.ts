@@ -301,5 +301,5 @@ export default {
         uniqueness: "UNIKATOWOŚĆ KSIĄŻKI",
         marketFactors: "CZYNNIKI RYNKOWE",
         addToCollection: "DODAJ DO KSIĘGOZBIORU"
-    }
+    },
 }

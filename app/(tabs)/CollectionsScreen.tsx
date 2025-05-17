@@ -27,7 +27,7 @@ import { Easing } from 'react-native-reanimated';
 // Components
 import CollectionCarousel from '../components/collectionsScreen/CollectionCarousel';
 import BooksCarousel from '../components/collectionsScreen/BooksCarousel';
-import AddCollectionModal from '../components/collectionsScreen/AddCollectionModal';
+import AddCollectionModal from '../components/commonScreen/modals/AddCollectionModal';
 import EditCollectionModal from '../components/collectionsScreen/EditCollectionModal';
 import ImportPreviewModal from '../components/collectionsScreen/ImportPreviewModal';
 import ListingModal from '../components/collectionsScreen/ListingModal';

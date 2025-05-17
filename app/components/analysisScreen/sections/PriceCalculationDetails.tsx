@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/styles';
+import { styles } from './styles';
 
 interface PriceCalculation {
     basePrice: number;
@@ -149,124 +150,5 @@ const PriceCalculationDetails = ({
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        zIndex: 1000,
-        elevation: 5,
-    },
-    averagePriceContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 8,
-        padding: 12,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        marginBottom: 8,
-    },
-    averagePriceLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    averagePriceIcon: {
-        marginRight: 8,
-    },
-    averagePriceLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    averagePriceValue: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: colors.black,
-    },
-    noDataText: {
-        fontSize: 14,
-        color: colors.gray,
-        fontStyle: 'italic',
-    },
-    detailsContainer: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 1,
-    },
-    detailSection: {
-        marginBottom: 16,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    detailLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    detailLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-        marginLeft: 8,
-    },
-    detailValue: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.black,
-        marginLeft: 8,
-        textAlign: 'right',
-    },
-    positiveValue: {
-        color: colors.primary,
-    },
-    negativeValue: {
-        color: colors.error,
-    },
-    tagsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginTop: 6,
-    },
-    tag: {
-        backgroundColor: 'rgba(255,59,48,0.1)',
-        borderRadius: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        marginRight: 6,
-        marginBottom: 6,
-    },
-    positiveTag: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
-    },
-    tagText: {
-        fontSize: 12,
-        color: colors.error,
-    },
-    positiveTagText: {
-        color: colors.primary,
-    },
-    marketFactors: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 8,
-        padding: 10,
-        marginTop: 6,
-    },
-    marketFactor: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    marketFactorLabel: {
-        fontSize: 12,
-        color: colors.grayDark,
-    },
-    marketFactorValue: {
-        fontSize: 12,
-        fontWeight: '500',
-        color: colors.black,
-    },
-});
 
 export default PriceCalculationDetails;

@@ -1,0 +1,105 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '@/styles/styles';
+
+export const styles = StyleSheet.create({
+    defectItemContainer: {
+        width: '30%',
+        marginBottom: 12,
+        borderRadius: 12,
+        overflow: 'hidden',
+        height: 120,
+        backgroundColor: 'white', // Dodaj białe tło
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    selectedDefect: {
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    defectItemGradient: {
+        width: '100%',
+        height: '100%',
+        padding: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+    },
+    defectIconContainer: {
+        marginBottom: 4,
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 20,
+        padding: 8,
+    },
+    defectName: {
+        color: colors.secondary,
+        textAlign: 'center',
+        fontSize: 12,
+        lineHeight: 14,
+        height: 28,
+        marginBottom: 4,
+    },
+    selectedDefectName: {
+        color: colors.primary,
+        fontWeight: '500',
+    },
+    defectCountBadge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: colors.primary,
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    defectCountBadgeText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    collectionButton: {
+        width: '48%',
+        borderRadius: 12,
+        marginBottom: 16,
+        overflow: 'hidden',
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    collectionButtonGradient: {
+        padding: 16,
+        alignItems: 'center',
+    },
+    selectedCollectionButton: {
+        shadowColor: 'rgba(0,0,0,0.03)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    collectionIconContainer: {
+        marginBottom: 8,
+    },
+    collectionName: {
+        fontSize: 16,
+        fontWeight: '500',
+        textAlign: 'center',
+        color: colors.secondary,
+        marginBottom: 4,
+    },
+    selectedCollectionName: {
+        color: colors.primary,
+    },
+    collectionBookCount: {
+        fontSize: 14,
+        color: colors.black,
+    },
+});
