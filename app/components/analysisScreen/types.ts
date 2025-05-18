@@ -125,3 +125,9 @@ export interface IncludedMarketFactors {
     includeDemand: boolean;
     includeSupply: boolean;
 }
+
+export interface BookCollection {
+    name: string;
+    icon: string;
+    categories?: string[];
+}

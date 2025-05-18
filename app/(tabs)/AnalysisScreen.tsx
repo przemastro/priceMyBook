@@ -82,7 +82,7 @@ export default function AnalysisScreen() {
   const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
   const [bookImage, setBookImage] = useState<string | null>(null);
   const {
-    collections,
+    collections, // collections jest teraz tablicą obiektów {name: string, icon: string}
     addBookToCollection,
     removeBookFromCollection,
     updateBookInCollection,
@@ -145,6 +145,7 @@ export default function AnalysisScreen() {
     includeDemand: true,
     includeSupply: true
   });
+  const [searchQuery, setSearchQuery] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const animValue = useRef(new Animated.Value(0)).current;
@@ -301,7 +302,7 @@ export default function AnalysisScreen() {
 
   useEffect(() => {
     if (collections.length > 0) {
-      const initialCollection = editMode && collectionName ? collectionName : collections[0];
+      const initialCollection = editMode && collectionName ? collectionName : collections[0].name;
       setSelectedCollection(initialCollection);
     }
   }, [collections, editMode, collectionName]);
@@ -539,10 +540,48 @@ export default function AnalysisScreen() {
     setEditingIsbn(false);
   };
 
-  const handleAddCollection = (name: string) => {
-    addCollection(name);
+  const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
+    addCollection(name, icon); // Dodaj przekazanie ikony
     setSelectedCollection(name);
     setShowAddCollectionModal(false);
+  };
+  const handleAddToCollection = (collection: string) => {
+    const priceValue = finalPrice.toFixed(2);
+    const currentIsbn = editingIsbn ? isbnInput : isbn;
+    const currentTitle = editingTitle ? titleInput : title;
+    const defaultListingStatus: ListingStatus = {
+      status: 'notListed',
+      platforms: []
+    };
+
+    const bookData = {
+      isbn: currentIsbn,
+      title: currentTitle,
+      authors,
+      price: priceValue,
+      displayPrice: formatCurrency({ price: priceValue, exchangeRate }),
+      foundInApi: params.fromHistory !== 'true',
+      originalPrice,
+      defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
+        ...acc,
+        [defect.id]: {
+          selected: true,
+          reduction: defect.priceReduction,
+          count: defect.count
+        }
+      }), {}),
+      rating: bookRating,
+      ageInfo,
+      uniqueness,
+      marketFactors,
+      listingStatus: editMode && collectionName && bookIndex !== null
+          ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
+          : defaultListingStatus
+    };
+
+    addBookToCollection(collection, bookData);
+    Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${collection}`);
+    router.back();
   };
 
   const handleSaveBook = () => {
@@ -707,6 +746,9 @@ export default function AnalysisScreen() {
                   selectedCollection={selectedCollection}
                   onSelectCollection={setSelectedCollection}
                   onAddCollection={() => setShowAddCollectionModal(true)}
+                  onAddToCollection={handleAddToCollection}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
               />
             </Animated.View>
         );

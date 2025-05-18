@@ -38,6 +38,11 @@ import CategoriesManager from '../components/collectionsScreen/CategoriesManager
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
 import { BookAgeInfo } from "@/app/components/scanScreen/types";
 
+interface Collection {
+    name: string;
+    icon: string;
+}
+
 const CollectionsScreen = () => {
     const router = useRouter();
     const { t } = useTranslation();
@@ -90,6 +95,9 @@ const CollectionsScreen = () => {
     const defaultAgeInfo: BookAgeInfo = { years: 0 };
     const defaultListingStatus: ListingStatus = { status: 'notListed', platforms: [] };
 
+    // Helper function to get collection names as strings
+    const getCollectionNames = (): string[] => collections.map(c => c.name);
+
     // Animation handlers
     const animateSlide = (direction: 'forward' | 'backward') => {
         slideAnim.setValue(direction === 'forward' ? -50 : 50);
@@ -123,7 +131,7 @@ const CollectionsScreen = () => {
         const loadSelected = async () => {
             try {
                 const saved = await AsyncStorage.getItem('@selectedCollection');
-                if (saved && collections.includes(saved)) {
+                if (saved && getCollectionNames().includes(saved)) {
                     setSelectedCollection(saved);
                 }
             } catch (error) {
@@ -134,9 +142,9 @@ const CollectionsScreen = () => {
     }, [collections]);
 
     // Collection management
-    const handleAddCollection = (name: string, categories: string[] = []) => {
+    const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
         if (!name.trim()) return;
-        addCollection(name);
+        addCollection(name, icon);
         categories.forEach(category => addCategoryToCollection(name, category));
         setShowAddModal(false);
     };
@@ -428,39 +436,41 @@ const CollectionsScreen = () => {
         }
     };
 
-    const calculateCollectionTotal = (collection: string) => {
-        return (books[collection] || []).reduce((sum, book) => sum + parseFloat(book.price || '0'), 0);
+    const calculateCollectionTotal = (collectionName: string): number => {
+        return (books[collectionName] || []).reduce((sum: number, book: BookData) => sum + parseFloat(book.price || '0'), 0);
     };
 
-    const calculateTotalValue = () => {
-        return collections.reduce((total, collection) => total + calculateCollectionTotal(collection), 0);
+
+    const calculateTotalValue = (): number => {
+        return collections.reduce((total: number, collection: {name: string; icon: string}) =>
+            total + calculateCollectionTotal(collection.name), 0);
     };
 
-    const calculateActiveValue = () => {
-        return collections.reduce((total, collection) => {
-            return total + (books[collection] || []).reduce((sum, book) => {
+    const calculateActiveValue = (): number => {
+        return collections.reduce((total: number, collection: {name: string; icon: string}) => {
+            return total + (books[collection.name] || []).reduce((sum: number, book: BookData) => {
                 const status = book.listingStatus?.status || 'notListed';
                 return status !== 'sold' ? sum + parseFloat(book.price || '0') : sum;
             }, 0);
         }, 0);
     };
 
-    const calculateSoldValue = () => {
-        return collections.reduce((total, collection) => {
-            return total + (books[collection] || []).reduce((sum, book) => {
+    const calculateSoldValue = (): number => {
+        return collections.reduce((total: number, collection: {name: string; icon: string}) => {
+            return total + (books[collection.name] || []).reduce((sum: number, book: BookData) => {
                 const status = book.listingStatus?.status || 'notListed';
                 return status === 'sold' ? sum + parseFloat(book.price || '0') : sum;
             }, 0);
         }, 0);
     };
 
-    const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined) => {
+    const formatDefectsSummary = (defects: Record<string, BookDefect> | undefined): string => {
         if (!defects) return t('labels.noDefects');
         const defectList = Object.keys(defects).filter(key => defects[key].selected).map(key => `${t(`defects.${key}`)} (${defects[key].count}x)`);
         return defectList.length > 0 ? defectList.join(', ') : t('labels.noDefects');
     };
 
-    const formatUniquenessSummary = (uniqueness: BookUniqueness | undefined) => {
+    const formatUniquenessSummary = (uniqueness: BookUniqueness | undefined): string => {
         if (!uniqueness) return t('labels.standardEdition');
         const uniqueFeatures = [];
         if (uniqueness.isFirstEdition) uniqueFeatures.push(t('labels.firstEdition'));
@@ -471,7 +481,7 @@ const CollectionsScreen = () => {
         return uniqueFeatures.length > 0 ? uniqueFeatures.join(', ') : t('labels.standardEdition');
     };
 
-    const formatMarketFactorsSummary = (marketFactors: MarketFactors | undefined) => {
+    const formatMarketFactorsSummary = (marketFactors: MarketFactors | undefined): string => {
         if (!marketFactors) return '';
         return `${t(`labels.${marketFactors.demand}`)} ${t('labels.demand')}, ${t(`labels.${marketFactors.supply}`)} ${t('labels.supply')}`;
     };
@@ -490,11 +500,11 @@ const CollectionsScreen = () => {
         }
     };
 
-    const handleCollectionPress = (collection: string) => {
-        if (collection === 'new') {
+    const handleCollectionPress = (collectionName: string) => {
+        if (collectionName === 'new') {
             setShowAddModal(true);
         } else {
-            setSelectedCollection(collection);
+            setSelectedCollection(collectionName);
         }
     };
 
@@ -568,10 +578,10 @@ const CollectionsScreen = () => {
                                                     collections={collections}
                                                     books={books}
                                                     selectedCollection={selectedCollection}
-                                                    onSelectCollection={handleCollectionPress}
+                                                    onSelectCollection={(collectionName) => setSelectedCollection(collectionName)}
                                                     calculateCollectionTotal={calculateCollectionTotal}
-                                                    onEditCollection={async (collection, newName) => {
-                                                        await handleEditCollection(collection, newName);
+                                                    onEditCollection={async (collectionName, newName) => {
+                                                        await handleEditCollection(collectionName, newName);
                                                     }}
                                                     onDeleteCollection={handleDeleteCollection}
                                                     onExportCollection={handleExportCSV}
@@ -662,7 +672,7 @@ const CollectionsScreen = () => {
             <AddCollectionModal
                 visible={showAddModal}
                 onClose={() => setShowAddModal(false)}
-                onConfirm={handleAddCollection}
+                onConfirm={(name, categories, icon) => handleAddCollection(name, categories, icon)}
             />
             <EditCollectionModal
                 visible={showEditModal}

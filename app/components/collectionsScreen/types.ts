@@ -52,17 +52,17 @@ export interface BookData {
 }
 
 export interface CollectionCarouselProps {
-    collections: string[];
+    collections: {name: string; icon: string}[];
     books: Record<string, BookData[]>;
     selectedCollection: string | null;
-    onSelectCollection: (collection: string | 'new') => void;
-    calculateCollectionTotal: (collection: string) => number;
-    onEditCollection: (oldName: string, newName: string) => Promise<void>;
-    onDeleteCollection: (collection: string) => void;
-    onExportCollection: (collection: string) => void;
+    onSelectCollection: (collectionName: string) => void;
+    calculateCollectionTotal: (collectionName: string) => number;
+    onEditCollection: (collectionName: string, newName: string) => Promise<void>;
+    onDeleteCollection: (collectionName: string) => void;
+    onExportCollection: (collectionName: string) => void;
+    getBookWord: (count: number, lang: string) => string;
+    formatCurrency: (price: string) => string;
     onImportCollection: () => void;
-    getBookWord: (count: number, language: string) => string;
-    formatCurrency: (value: string) => string;
 }
 
 export interface ExportToPDFButtonProps {

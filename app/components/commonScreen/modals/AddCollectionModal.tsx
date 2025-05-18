@@ -1,20 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, FlatList } from 'react-native';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import CategoriesManager from '../../collectionsScreen/CategoriesManager';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface AddCollectionModalProps {
     visible: boolean;
     onClose: () => void;
-    onConfirm: (name: string, categories: string[]) => void;
+    onConfirm: (name: string, categories: string[], icon: string) => void;
 }
+
+// Lista bezpiecznych ikon dla różnych kategorii książek
+const BOOK_ICONS = [
+    'book', 'menu-book', 'auto-stories', 'library-books', 'school',
+    'history-edu', 'science', 'psychology', 'biotech', 'computer',
+    'calculate', 'functions', 'public', 'language', 'travel-explore',
+    'map', 'landscape', 'nature', 'pets', 'spa',
+    'sports-baseball', 'sports-basketball', 'sports-football', 'sports-soccer', 'sports-tennis',
+    'music-note', 'theater-comedy', 'palette', 'brush', 'colorize',
+    'star', 'favorite', 'celebration', 'cake', 'restaurant',
+    'local-cafe', 'nightlife', 'hotel', 'home', 'apartment',
+    'work', 'business-center', 'account-balance', 'attach-money', 'savings',
+    'health-and-safety', 'fitness-center', 'medical-services', 'healing', 'spa',
+    'directions-car', 'flight', 'train', 'directions-boat', 'motorcycle'
+];
 
 const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClose, onConfirm }) => {
     const { t } = useTranslation();
     const [localCollectionName, setLocalCollectionName] = useState('');
     const [categories, setCategories] = useState<string[]>([]);
+    const [selectedIcon, setSelectedIcon] = useState('book');
+    const [showIcons, setShowIcons] = useState(false);
 
     const handleAddCategory = (collectionName: string, category: string) => {
         setCategories([...categories, category]);
@@ -26,11 +44,31 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
 
     const handleConfirm = () => {
         if (!localCollectionName.trim()) return;
-        onConfirm(localCollectionName, categories);
+        onConfirm(localCollectionName, categories, selectedIcon); // Dodaj przekazanie ikony
         setLocalCollectionName('');
         setCategories([]);
+        setSelectedIcon('book');
         onClose();
     };
+
+    const renderIconItem = ({ item }: { item: string }) => (
+        <TouchableOpacity
+            style={[
+                styles.iconItem,
+                selectedIcon === item && styles.selectedIconItem
+            ]}
+            onPress={() => {
+                setSelectedIcon(item);
+                setShowIcons(false);
+            }}
+        >
+            <MaterialIcons
+                name={item as any}
+                size={24}
+                color={selectedIcon === item ? colors.primary : colors.secondary}
+            />
+        </TouchableOpacity>
+    );
 
     return (
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
@@ -57,6 +95,40 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             onChangeText={setLocalCollectionName}
                             autoFocus
                         />
+
+                        {/* Icon Selection */}
+                        <TouchableOpacity
+                            style={styles.iconSelector}
+                            onPress={() => setShowIcons(!showIcons)}
+                        >
+                            <View style={styles.iconPreview}>
+                                <MaterialIcons
+                                    name={selectedIcon as any}
+                                    size={24}
+                                    color={colors.primary}
+                                />
+                                <Text style={styles.iconSelectorText}>
+                                    {t('labels.selectIcon')}
+                                </Text>
+                            </View>
+                            <MaterialIcons
+                                name={showIcons ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                                size={24}
+                                color={colors.secondary}
+                            />
+                        </TouchableOpacity>
+
+                        {showIcons && (
+                            <View style={styles.iconsContainer}>
+                                <FlatList
+                                    data={BOOK_ICONS}
+                                    renderItem={renderIconItem}
+                                    keyExtractor={(item) => item}
+                                    numColumns={5}
+                                    contentContainerStyle={styles.iconsList}
+                                />
+                            </View>
+                        )}
 
                         <CategoriesManager
                             collectionName="new"
@@ -118,6 +190,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 5,
+        maxHeight: '80%',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -155,6 +228,50 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
+    },
+    iconSelector: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.2)',
+        borderRadius: 8,
+        marginBottom: 20,
+        backgroundColor: 'white',
+    },
+    iconPreview: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconSelectorText: {
+        marginLeft: 10,
+        color: colors.secondary,
+    },
+    iconsContainer: {
+        maxHeight: 150,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+        borderRadius: 8,
+        padding: 10,
+    },
+    iconsList: {
+        justifyContent: 'center',
+    },
+    iconItem: {
+        width: 50,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 5,
+        borderRadius: 8,
+        backgroundColor: colors.whiteBlue,
+    },
+    selectedIconItem: {
+        backgroundColor: colors.primary,
+        borderWidth: 1,
+        borderColor: colors.primary,
     },
     modalButtons: {
         flexDirection: 'row',

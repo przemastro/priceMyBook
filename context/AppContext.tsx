@@ -58,8 +58,8 @@ interface BookData {
 interface AppContextType {
     isbn: string | null;
     setISBN: (isbn: string | null) => void;
-    collections: string[];
-    addCollection: (name: string) => void;
+    collections: {name: string, icon: string}[];
+    addCollection: (name: string, icon?: string) => void;
     removeCollection: (name: string) => void;
     books: { [key: string]: BookData[] };
     collectionCategories: { [key: string]: string[] };
@@ -119,7 +119,7 @@ const defaultAgeInfo: BookAgeInfo = {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isbn, setISBN] = useState<string | null>(null);
-    const [collections, setCollections] = useState<string[]>([]);
+    const [collections, setCollections] = useState<{name: string, icon: string}[]>([]);
     const [books, setBooks] = useState<{ [key: string]: BookData[] }>({});
     const [collectionCategories, setCollectionCategories] = useState<{ [key: string]: string[] }>({});
     const [exchangeRate, setExchangeRate] = useState<number>(3.8);
@@ -128,6 +128,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
     const [updateTrigger, setUpdateTrigger] = useState(0);
     const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+
 
 
     const forceUpdateCollections = useCallback(() => {
@@ -214,10 +215,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return `$${usdPrice.toFixed(2)}`;
     }, [exchangeRate]);
 
-    const addCollection = useCallback((name: string) => {
+    const addCollection = useCallback((name: string, icon: string = 'book') => {
         if (!name.trim()) return;
 
-        setCollections(prev => [...prev, name]);
+        setCollections(prev => [...prev, {name, icon}]);
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
         setCollectionCategories(prev => ({ ...prev, [name]: prev[name] || [] }));
     }, []);
@@ -225,7 +226,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const renameCollection = useCallback((oldName: string, newName: string) => {
         if (!newName.trim() || oldName === newName) return;
 
-        setCollections(prev => prev.map(name => name === oldName ? newName : name));
+        setCollections(prev => prev.map(collection =>
+            collection.name === oldName ? {...collection, name: newName} : collection
+        ));
         setBooks(prev => {
             const newBooks = {...prev};
             if (newBooks[oldName]) {
@@ -246,7 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, [forceUpdateCollections]);
 
     const removeCollection = useCallback((name: string) => {
-        setCollections(prev => prev.filter(c => c !== name));
+        setCollections(prev => prev.filter(c => c.name !== name));
         setBooks(prev => {
             const newBooks = { ...prev };
             delete newBooks[name];
