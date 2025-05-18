@@ -4,38 +4,30 @@ import {
   Alert,
   Animated,
   Easing,
-  FlatList,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  Image
 } from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {colors} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
-import {Ionicons, MaterialIcons} from '@expo/vector-icons';
-import i18n from "i18next";
+import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import MarketChart from '../components/analysisScreen/charts/MarketChart';
 import PriceCalculationDetails from '../components/analysisScreen/sections/PriceCalculationDetails';
 import ScanDefectModal from '../components/analysisScreen/modals/ScanDefectModal';
 import AddCollectionModal from '../components/commonScreen/modals/AddCollectionModal';
 import {EditBookDetailsModal} from '../components/analysisScreen/modals/EditBookDetailsModal';
-import { BasicBookInfo } from '../components/analysisScreen/sections/BasicBookInfo';
+import { BasicInfoSection } from '../components/analysisScreen/sections/BasicInfoSection';
 import { RatingSection } from '../components/analysisScreen/sections/RatingSection';
 import { NavigationButtons } from '../components/analysisScreen/buttons/NavigationButtons';
-import DefectItem from '../components/analysisScreen/items/DefectItem';
-import UniquenessItem from '../components/analysisScreen/items/UniquenessItem';
-import MarketFactorItem from '../components/analysisScreen/items/MarketFactorItem';
-import CollectionItem from '../components/analysisScreen/items/CollectionItem';
+import ScanButton from '../components/analysisScreen/buttons/ScanButton';
+import CollectionsSection from '../components/analysisScreen/sections/CollectionsSection';
+
 
 import {
   BookDefect,
@@ -45,11 +37,13 @@ import {
   BookUniqueness,
   MarketFactors,
   DEFECT_TYPES,
-  UNIQUENESS_TYPES,
   MARKET_FACTOR_TOGGLES,
   IncludedMarketFactors
 } from '../components/analysisScreen/types';
 import { formatCurrency } from '../utils/currency';
+import DefectsSection from "@/app/components/analysisScreen/sections/DefectsSection";
+import UniquenessSection from "@/app/components/analysisScreen/sections/UniquenessSection";
+import MarketFactorsSection from "@/app/components/analysisScreen/sections/MarketFactorsSection";
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
   try {
@@ -76,17 +70,6 @@ const getDefaultReduction = (id: string): number => {
   return reductions[id] || 10;
 };
 
-const getBookWord = (count: number, language: string) => {
-  if (language === 'pl') {
-    if (count === 1) return 'labels.book_one';
-    if (count % 100 >= 12 && count % 100 <= 14) return 'labels.book_many';
-    if ([2,3,4].includes(count % 10)) return 'labels.book_few';
-    return 'labels.book_many';
-  } else {
-    return count === 1 ? 'labels.book_one' : 'labels.book_other';
-  }
-};
-
 export default function AnalysisScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -104,7 +87,6 @@ export default function AnalysisScreen() {
     removeBookFromCollection,
     updateBookInCollection,
     exchangeRate,
-    exchangeRateError,
     books,
     addCollection
   } = useAppContext();
@@ -169,13 +151,6 @@ export default function AnalysisScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const totalSteps = 5;
-
-  const formatPrice = (price: number) => {
-    return formatCurrency({
-      price: price.toString(),
-      exchangeRate
-    });
-  };
 
   const openEditModal = () => setShowEditModal(true);
   const closeEditModal = () => setShowEditModal(false);
@@ -539,13 +514,6 @@ export default function AnalysisScreen() {
     }));
   };
 
-  const toggleEditOriginalPrice = () => {
-    setEditingOriginalPrice(!editingOriginalPrice);
-    if (!editingOriginalPrice) {
-      setOriginalPriceInput(originalPrice);
-    }
-  };
-
   const saveOriginalPrice = () => {
     if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
       Alert.alert(t('alerts.error'), t('alerts.enterValidPrice'));
@@ -653,7 +621,7 @@ export default function AnalysisScreen() {
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[0]}</Text>
-                <BasicBookInfo
+                <BasicInfoSection
                     bookImage={bookImage}
                     title={title}
                     titleInput={titleInput}
@@ -665,30 +633,11 @@ export default function AnalysisScreen() {
                     formatPrice={(price) => formatCurrency({ price, exchangeRate })}
                 />
 
-                <View style={styles.scanButtonContainer}>
-                  <TouchableOpacity
-                      style={styles.scanButtonWrapper}
-                      onPress={startScanning}
-                      disabled={isScanning || isLoading}
-                      activeOpacity={0.7}
-                  >
-                    <LinearGradient
-                        colors={isScanning || isLoading ?
-                            [colors.buttonSelected1, colors.buttonSelected2] :
-                            [colors.lightPrimary, colors.primary]}
-                        style={styles.scanButtonGradient}
-                    >
-                      <Ionicons
-                          name="scan-sharp"
-                          size={50}
-                          color={isScanning || isLoading ? colors.gray : 'white'}
-                      />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  <Text style={styles.scanButtonLabel}>
-                    {t('buttons.startScanning')}
-                  </Text>
-                </View>
+                <ScanButton
+                    onPress={startScanning}
+                    isScanning={isScanning}
+                    isLoading={isLoading}
+                />
               </View>
               <EditBookDetailsModal
                   visible={showEditModal}
@@ -717,118 +666,48 @@ export default function AnalysisScreen() {
       case 1:
         return (
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
-              <View style={styles.combinedSection}>
-                <Text style={styles.stepTitle}>{stepTitles[1]}</Text>
-                <FlatList
-                    data={defects}
-                    renderItem={({ item }) => (
-                        <DefectItem
-                            item={item}
-                            onPress={() => toggleDefectSelection(item.id)}
-                        />
-                    )}
-                    keyExtractor={item => item.id}
-                    numColumns={3}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                />
-              </View>
+              <DefectsSection
+                  defects={defects}
+                  onToggleDefect={toggleDefectSelection}
+              />
             </Animated.View>
         );
 
       case 2:
         return (
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
-              <View style={styles.combinedSection}>
-                <Text style={styles.stepTitle}>{stepTitles[2]}</Text>
-                <FlatList
-                    data={UNIQUENESS_TYPES}
-                    renderItem={({ item }) => (
-                        <UniquenessItem
-                            item={item}
-                            selected={uniqueness[item.id as keyof BookUniqueness]}
-                            onPress={() => toggleUniquenessSelection(item.id as keyof BookUniqueness)}
-                        />
-                    )}
-                    keyExtractor={item => item.id}
-                    numColumns={3}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                />
-              </View>
+              <UniquenessSection
+                  uniqueness={uniqueness}
+                  onToggleUniqueness={toggleUniquenessSelection}
+              />
             </Animated.View>
         );
 
       case 3:
         return (
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
-              <View style={styles.combinedSection}>
-                <Text style={styles.stepTitle}>{stepTitles[3]}</Text>
-                <FlatList
-                    data={MARKET_FACTOR_TOGGLES}
-                    renderItem={({ item }) => (
-                        <MarketFactorItem
-                            item={item}
-                            selected={includedMarketFactors[item.id]}
-                            onPress={() => setIncludedMarketFactors(prev => ({
-                              ...prev,
-                              [item.id]: !prev[item.id]
-                            }))}
-                        />
-                    )}
-                    keyExtractor={item => item.id}
-                    numColumns={3}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                />
-                {marketData && <MarketChart marketData={marketData} />}
-              </View>
+              <MarketFactorsSection
+                  marketFactors={MARKET_FACTOR_TOGGLES}
+                  includedMarketFactors={includedMarketFactors}
+                  onToggleMarketFactor={(id) => setIncludedMarketFactors(prev => ({
+                    ...prev,
+                    [id]: !prev[id]
+                  }))}
+                  marketData={marketData}
+              />
             </Animated.View>
         );
 
       case 4:
         return (
             <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
-              <View style={styles.combinedSection}>
-                <Text style={styles.stepTitle}>{stepTitles[4]}</Text>
-                <View style={styles.collectionsGrid}>
-                  {collections.map((collection) => {
-                    const bookCount = books[collection]?.length || 0;
-                    return (
-                        <CollectionItem
-                            key={collection}
-                            collection={collection}
-                            bookCount={bookCount}
-                            selected={selectedCollection === collection}
-                            onPress={() => setSelectedCollection(collection)}
-                        />
-                    );
-                  })}
-
-                  {/* Przycisk dodawania nowej kolekcji */}
-                  <TouchableOpacity
-                      style={styles.addCollectionButton}
-                      onPress={() => setShowAddCollectionModal(true)}
-                      activeOpacity={0.7}
-                  >
-                    <LinearGradient
-                        colors={[colors.white, colors.whiteBlue]}
-                        style={styles.addCollectionGradient}
-                    >
-                      <View style={styles.collectionIconContainer}>
-                        <Ionicons
-                            name="add-circle"
-                            size={24}
-                            color={colors.primary}
-                        />
-                      </View>
-                      <Text style={styles.addCollectionText}>
-                        {t('buttons.createNewCollection')}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <CollectionsSection
+                  collections={collections}
+                  books={books}
+                  selectedCollection={selectedCollection}
+                  onSelectCollection={setSelectedCollection}
+                  onAddCollection={() => setShowAddCollectionModal(true)}
+              />
             </Animated.View>
         );
 
@@ -947,33 +826,6 @@ export default function AnalysisScreen() {
             editMode={editMode}
         />
 
-        <Modal
-            visible={showMarketModal}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setShowMarketModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.marketModalContainer}>
-              <View style={styles.modalHeader}>
-                <TouchableOpacity
-                    style={styles.closeModalButton}
-                    onPress={() => setShowMarketModal(false)}
-                    activeOpacity={0.7}
-                >
-                  <Ionicons name="close" size={24} color={colors.primary} />
-                </TouchableOpacity>
-              </View>
-
-              {marketData && (
-                  <>
-                    <MarketChart marketData={marketData} />
-                  </>
-              )}
-            </View>
-          </View>
-        </Modal>
-
         <AddCollectionModal
             visible={showAddCollectionModal}
             onClose={() => setShowAddCollectionModal(false)}
@@ -996,95 +848,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.grayLight,
   },
-  priceLabel: {
-    fontSize: 14,
-    color: colors.grayDark,
-    marginLeft: 8,
-  },
   priceValue: {
     fontSize: 16,
     color: colors.black,
     fontWeight: '500',
-  },
-  bookCoverPlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editButton: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.buttonSelected1,
-  },
-  closeModalButton: {
-    padding: 4,
-  },
-  modalBookCoverPlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    padding: 12,
-    marginRight: 8,
-    borderRadius: 8,
-    backgroundColor: colors.buttonSelected1,
-  },
-  saveButton: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    minWidth: 100,
-  },
-  scanButtonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30,
-    marginBottom: 20,
-  },
-  scanButtonWrapper: {
-    borderRadius: 50,
-    width: 80,
-    height: 80,
-    shadowColor: colors.lightPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  scanButtonGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanButtonLabel: {
-    marginTop: 10,
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    marginBottom: 12,
   },
   selectedDefect: {
     shadowColor: colors.blackDark, // Zmień kolor cienia na niebieski
@@ -1213,61 +980,11 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
   },
-  marketModalContainer: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  collectionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  collectionButton: {
-    width: '48%',
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: colors.blackDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  collectionButtonGradient: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  collectionIconContainer: {
-    marginBottom: 8,
-  },
   collectionName: {
     fontSize: 16,
     fontWeight: '500',
     textAlign: 'center',
     color: colors.secondary,
     marginBottom: 4,
-  },
-  addCollectionButton: {
-    width: '48%',
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-  },
-  addCollectionGradient: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  addCollectionText: {
-    fontSize: 14,
-    color: colors.primary,
-    textAlign: 'center',
-    marginTop: 8,
   },
 });

@@ -1,4 +1,4 @@
-// components/analysisScreen/BasicBookInfo.tsx
+// components/analysisScreen/BasicInfoSection.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +18,7 @@ interface BasicBookInfoProps {
     formatPrice: (price: string) => string;
 }
 
-export const BasicBookInfo: React.FC<BasicBookInfoProps> = ({
+export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                 bookImage,
                                                                 title,
                                                                 titleInput,
