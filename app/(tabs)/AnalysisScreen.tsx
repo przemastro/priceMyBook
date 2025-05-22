@@ -24,7 +24,6 @@ import AddCollectionModal from '../components/commonScreen/modals/AddCollectionM
 import {EditBookDetailsModal} from '../components/analysisScreen/modals/EditBookDetailsModal';
 import { BasicInfoSection } from '../components/analysisScreen/sections/BasicInfoSection';
 import { RatingSection } from '../components/analysisScreen/sections/RatingSection';
-import { NavigationButtons } from '../components/analysisScreen/buttons/NavigationButtons';
 import ScanButton from '../components/analysisScreen/buttons/ScanButton';
 import CollectionsSection from '../components/analysisScreen/sections/CollectionsSection';
 
@@ -44,6 +43,7 @@ import { formatCurrency } from '../utils/currency';
 import DefectsSection from "@/app/components/analysisScreen/sections/DefectsSection";
 import UniquenessSection from "@/app/components/analysisScreen/sections/UniquenessSection";
 import MarketFactorsSection from "@/app/components/analysisScreen/sections/MarketFactorsSection";
+import {LinearGradient} from "expo-linear-gradient";
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
   try {
@@ -71,7 +71,7 @@ const getDefaultReduction = (id: string): number => {
 };
 
 export default function AnalysisScreen() {
-  const { t } = useTranslation();
+  const {t} = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const [permission, requestPermission] = useCameraPermissions();
@@ -97,7 +97,7 @@ export default function AnalysisScreen() {
     count: 0,
     icon: defect.icon
   })));
-  const [ageInfo] = useState<BookAgeInfo>({ years: 0 });
+  const [ageInfo] = useState<BookAgeInfo>({years: 0});
   const initialUniqueness = parseParam<BookUniqueness>(params.uniqueness) || {
     isMassMarket: true,
     isFirstEdition: false,
@@ -110,7 +110,7 @@ export default function AnalysisScreen() {
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
     supply: 'medium',
-    publicationYear: parseParam<{publicationYear?: number}>(params.marketFactors)?.publicationYear ||
+    publicationYear: parseParam<{ publicationYear?: number }>(params.marketFactors)?.publicationYear ||
         new Date().getFullYear() - Math.floor(Math.random() * 10)
   };
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
@@ -158,7 +158,7 @@ export default function AnalysisScreen() {
 
   const pickImage = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(t('alerts.error'), t('status.noPhotoLibraryAccess'));
         return;
@@ -222,12 +222,15 @@ export default function AnalysisScreen() {
             supply: amazonFactors.supply,
             priceRange: bookInfo.amazonData.data.priceRange,
             priceHistory: [
-              { date: '2023-01-01', price: bookInfo.amazonData.data.priceRange[0] * 0.9 },
-              { date: '2023-04-01', price: bookInfo.amazonData.data.priceRange[1] * 1.1 },
-              { date: '2023-07-01', price: (bookInfo.amazonData.data.priceRange[0] + bookInfo.amazonData.data.priceRange[1]) / 2 },
-              { date: '2023-10-01', price: bookInfo.amazonData.data.priceRange[0] * 0.95 },
-              { date: '2024-01-01', price: bookInfo.amazonData.data.priceRange[1] * 1.05 },
-              { date: new Date().toISOString(), price: parseFloat(originalPriceParam) }
+              {date: '2023-01-01', price: bookInfo.amazonData.data.priceRange[0] * 0.9},
+              {date: '2023-04-01', price: bookInfo.amazonData.data.priceRange[1] * 1.1},
+              {
+                date: '2023-07-01',
+                price: (bookInfo.amazonData.data.priceRange[0] + bookInfo.amazonData.data.priceRange[1]) / 2
+              },
+              {date: '2023-10-01', price: bookInfo.amazonData.data.priceRange[0] * 0.95},
+              {date: '2024-01-01', price: bookInfo.amazonData.data.priceRange[1] * 1.05},
+              {date: new Date().toISOString(), price: parseFloat(originalPriceParam)}
             ],
             lastUpdated: new Date(),
             source: 'amazon'
@@ -239,12 +242,12 @@ export default function AnalysisScreen() {
             supply: 'medium',
             priceRange: [parseFloat(originalPriceParam) * 0.8, parseFloat(originalPriceParam) * 1.2],
             priceHistory: [
-              { date: '2023-01-01', price: parseFloat(originalPriceParam) * 0.9 },
-              { date: '2023-04-01', price: parseFloat(originalPriceParam) * 1.1 },
-              { date: '2023-07-01', price: parseFloat(originalPriceParam) * 1.0 },
-              { date: '2023-10-01', price: parseFloat(originalPriceParam) * 0.95 },
-              { date: '2024-01-01', price: parseFloat(originalPriceParam) * 1.05 },
-              { date: new Date().toISOString(), price: parseFloat(originalPriceParam) }
+              {date: '2023-01-01', price: parseFloat(originalPriceParam) * 0.9},
+              {date: '2023-04-01', price: parseFloat(originalPriceParam) * 1.1},
+              {date: '2023-07-01', price: parseFloat(originalPriceParam) * 1.0},
+              {date: '2023-10-01', price: parseFloat(originalPriceParam) * 0.95},
+              {date: '2024-01-01', price: parseFloat(originalPriceParam) * 1.05},
+              {date: new Date().toISOString(), price: parseFloat(originalPriceParam)}
             ],
             lastUpdated: new Date(),
             source: 'simulated'
@@ -258,7 +261,9 @@ export default function AnalysisScreen() {
       }
     };
     loadMarketData();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [originalPriceParam]);
 
   const toggleExpanded = () => {
@@ -273,7 +278,11 @@ export default function AnalysisScreen() {
 
   useEffect(() => {
     if (editMode) {
-      const bookDefects = parseParam<Record<string, {selected: boolean, reduction: number, count: number}>>(params.defects) || {};
+      const bookDefects = parseParam<Record<string, {
+        selected: boolean,
+        reduction: number,
+        count: number
+      }>>(params.defects) || {};
       const bookUniqueness = parseParam<BookUniqueness>(params.uniqueness) || initialUniqueness;
       const bookMarketFactors = parseParam<MarketFactors>(params.marketFactors) || initialMarketFactors;
       const updatedDefects = DEFECT_TYPES.map(defect => {
@@ -336,7 +345,7 @@ export default function AnalysisScreen() {
   };
 
   const calculateAgeModifier = (ageInfo: BookAgeInfo, isMassMarket: boolean): number => {
-    const { years } = ageInfo;
+    const {years} = ageInfo;
     if (isMassMarket) {
       if (years <= 2) return 0;
       if (years <= 5) return 5;
@@ -420,7 +429,7 @@ export default function AnalysisScreen() {
     setIsLoading(true);
     try {
       if (!permission) {
-        const { status } = await requestPermission();
+        const {status} = await requestPermission();
         if (status !== 'granted') {
           Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
           return;
@@ -559,7 +568,7 @@ export default function AnalysisScreen() {
       title: currentTitle,
       authors,
       price: priceValue,
-      displayPrice: formatCurrency({ price: priceValue, exchangeRate }),
+      displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
       originalPrice,
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
@@ -597,7 +606,7 @@ export default function AnalysisScreen() {
       title: currentTitle,
       authors,
       price: priceValue,
-      displayPrice: formatCurrency({ price: priceValue, exchangeRate }),
+      displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
       originalPrice,
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
@@ -654,10 +663,10 @@ export default function AnalysisScreen() {
       t('stepTitles.addToCollection')
     ];
 
-    switch(currentStep) {
+    switch (currentStep) {
       case 0:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
+            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
               <View style={styles.combinedSection}>
                 <Text style={styles.stepTitle}>{stepTitles[0]}</Text>
                 <BasicInfoSection
@@ -669,7 +678,7 @@ export default function AnalysisScreen() {
                     originalPrice={originalPrice}
                     onPickImage={pickImage}
                     onEditPress={openEditModal}
-                    formatPrice={(price) => formatCurrency({ price, exchangeRate })}
+                    formatPrice={(price) => formatCurrency({price, exchangeRate})}
                 />
 
                 <ScanButton
@@ -704,7 +713,7 @@ export default function AnalysisScreen() {
 
       case 1:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
+            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
               <DefectsSection
                   defects={defects}
                   onToggleDefect={toggleDefectSelection}
@@ -714,7 +723,7 @@ export default function AnalysisScreen() {
 
       case 2:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
+            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
               <UniquenessSection
                   uniqueness={uniqueness}
                   onToggleUniqueness={toggleUniquenessSelection}
@@ -724,7 +733,7 @@ export default function AnalysisScreen() {
 
       case 3:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
+            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
               <MarketFactorsSection
                   marketFactors={MARKET_FACTOR_TOGGLES}
                   includedMarketFactors={includedMarketFactors}
@@ -739,7 +748,7 @@ export default function AnalysisScreen() {
 
       case 4:
         return (
-            <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1 }}>
+            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
               <CollectionsSection
                   collections={collections}
                   books={books}
@@ -761,7 +770,7 @@ export default function AnalysisScreen() {
   if (!permission) {
     return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary}/>
         </View>
     );
   }
@@ -782,14 +791,14 @@ export default function AnalysisScreen() {
                   onPress={stopScanning}
                   activeOpacity={0.7}
               >
-                <Ionicons name="close" size={32} color="white" />
+                <Ionicons name="close" size={32} color="white"/>
               </TouchableOpacity>
 
-              <Animated.View style={[styles.scanFrame, { transform: [{ scale: pulseAnim }] }]}>
-                <View style={styles.scanFrameTopLeft} />
-                <View style={styles.scanFrameTopRight} />
-                <View style={styles.scanFrameBottomLeft} />
-                <View style={styles.scanFrameBottomRight} />
+              <Animated.View style={[styles.scanFrame, {transform: [{scale: pulseAnim}]}]}>
+                <View style={styles.scanFrameTopLeft}/>
+                <View style={styles.scanFrameTopRight}/>
+                <View style={styles.scanFrameBottomLeft}/>
+                <View style={styles.scanFrameBottomRight}/>
               </Animated.View>
 
               <View style={styles.bottomControls}>
@@ -797,7 +806,7 @@ export default function AnalysisScreen() {
                     style={styles.scanButton}
                     onPress={takePictureAndAnalyze}
                 >
-                  <Ionicons name="scan" size={24} color="white" />
+                  <Ionicons name="scan" size={24} color="white"/>
                   <Text style={styles.scanButtonText}>
                     {t('labels.scanningDefects')}
                   </Text>
@@ -832,9 +841,9 @@ export default function AnalysisScreen() {
   }
 
   return (
-      <View style={{ flex: 1 }}>
+      <View style={{flex: 1}}>
         <ScrollView
-            contentContainerStyle={[styles.container, { paddingBottom: 80 }]}
+            contentContainerStyle={[styles.container, {paddingBottom: 80}]}
             showsVerticalScrollIndicator={false}
         >
           <RatingSection
@@ -844,7 +853,7 @@ export default function AnalysisScreen() {
               expanded={expanded}
               toggleExpanded={toggleExpanded}
               onShowMarketAnalysis={() => setShowMarketModal(true)}
-              formatPrice={(price) => formatCurrency({ price: price.toString(), exchangeRate })}
+              formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
           >
             <PriceCalculationDetails
                 calculation={priceCalculation}
@@ -853,20 +862,59 @@ export default function AnalysisScreen() {
                 marketFactors={marketFactors}
                 onShowMarketAnalysis={() => setShowMarketModal(true)}
                 averageUsedPrice={averageUsedPrice}
-                formatPrice={(price) => formatCurrency({ price: price.toString(), exchangeRate })}
+                formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
             />
           </RatingSection>
-          {renderStep()}
+
+          <View style={styles.stepContainer}>
+            {/* Lewa strzałka - zawsze renderowana */}
+            <View style={styles.navArrowContainer}>
+              {currentStep > 0 ? (
+                  <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
+                    <Ionicons name="chevron-back" size={32} color={colors.primary}/>
+                  </TouchableOpacity>
+              ) : (
+                  <Ionicons name="chevron-back" size={32} color={colors.gray}/>
+              )}
+            </View>
+
+            {/* Główna zawartość kroku */}
+            <View style={styles.stepContent}>
+              <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1, width: '100%'}}>
+                {renderStep()}
+              </Animated.View>
+            </View>
+
+            {/* Prawa strzałka - zawsze renderowana */}
+            <View style={styles.navArrowContainer}>
+              {currentStep < totalSteps - 1 ? (
+                  <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
+                    <Ionicons name="chevron-forward" size={32} color={colors.primary}/>
+                  </TouchableOpacity>
+              ) : (
+                  <Ionicons name="chevron-forward" size={32} color={colors.gray}/>
+              )}
+            </View>
+          </View>
         </ScrollView>
 
-        <NavigationButtons
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            onPrev={goToPrevStep}
-            onNext={currentStep === totalSteps - 1 ? handleSaveBook : goToNextStep}
-            isLastStep={currentStep === totalSteps - 1}
-            editMode={editMode}
-        />
+        {/* Przycisk zapisu na ostatnim kroku */}
+        {currentStep === totalSteps - 1 && (
+            <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveBook}
+                activeOpacity={0.7}
+            >
+              <LinearGradient
+                  colors={[colors.lightPrimary, colors.primary]}
+                  style={styles.saveButtonGradient}
+              >
+                <Text style={styles.saveButtonText}>
+                  {editMode ? t('buttons.save') : t('buttons.add')}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+        )}
 
         <AddCollectionModal
             visible={showAddCollectionModal}
@@ -1028,5 +1076,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.secondary,
     marginBottom: 4,
+  },
+  navArrowLeft: {
+    padding: 10,
+    marginRight: 0,
+    marginLeft: -10
+  },
+  navArrowRight: {
+    padding: 10,
+    marginLeft: 0,
+    marginRight: -10,
+  },
+  saveButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  saveButtonGradient: {
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start', // Zmienione na flex-start dla lepszego ułożenia
+    justifyContent: 'space-between',
+    minHeight: 400, // Zwiększona wysokość dla czynników rynkowych
+    width: '100%',
+    marginTop: 20,
+  },
+  navArrowContainer: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20, // Dodany padding dla lepszego wyrównania
+  },
+  stepContent: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    minHeight: 400, // Dopasowane do kontenera
+  },
+  // Dla MarketFactorsSection dodaj:
+  marketFactorsContainer: {
+    width: '100%',
+    paddingHorizontal: 10,
   },
 });
