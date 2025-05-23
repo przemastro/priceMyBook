@@ -309,4 +309,8 @@ export default {
         marketFactors: "MARKET FACTORS",
         addToCollection: "ADD TO COLLECTION"
     },
+    modals: {
+        addToCollectionTitle: "Add Book To the Collection",
+        addToCollectionConfirm: "You can view your book collections and their contents in the Collections tab"
+    }
 }

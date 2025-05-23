@@ -17,7 +17,7 @@ import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {colors} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
-import {Ionicons} from '@expo/vector-icons';
+import {Ionicons, MaterialIcons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import PriceCalculationDetails from '../components/analysisScreen/sections/PriceCalculationDetails';
 import ScanDefectModal from '../components/analysisScreen/modals/ScanDefectModal';
@@ -934,31 +934,56 @@ export default function AnalysisScreen() {
               >
                 <View style={styles.modalOverlay}>
                   <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>
-                      {t('modals.addToCollectionTitle')}
-                    </Text>
-                    <Text style={styles.modalText}>
-                      {t('modals.addToCollectionConfirm', {
-                        collection: selectedCollection
-                      })}
-                    </Text>
-                    <View style={styles.modalButtons}>
-                      <Pressable
-                          style={[styles.modalButton, styles.modalButtonCancel]}
+                    <View style={styles.modalContent}>
+                      {/* Icon preview */}
+                      <View style={styles.iconPreviewContainer}>
+                        <View style={styles.iconPreviewCircle}>
+                          <MaterialIcons
+                              name="book"
+                              size={62}
+                              color={colors.primary}
+                          />
+                        </View>
+                      </View>
+
+                      <Text style={styles.modalTitle}>
+                        {t('modals.addToCollectionTitle')}
+                      </Text>
+                      <Text style={styles.modalText}>
+                        {t('modals.addToCollectionConfirm', {
+                          collection: selectedCollection
+                        })}
+                      </Text>
+
+                      {/* Close button */}
+                      <TouchableOpacity
+                          style={styles.closeButton}
                           onPress={() => setShowConfirmModal(false)}
+                          activeOpacity={0.7}
                       >
-                        <Text style={styles.modalButtonTextCancel}>
-                          {t('buttons.cancel')}
-                        </Text>
-                      </Pressable>
-                      <Pressable
-                          style={[styles.modalButton, styles.modalButtonConfirm]}
-                          onPress={handleAddConfirmed}
-                      >
-                        <Text style={styles.modalButtonTextConfirm}>
-                          {t('buttons.confirm')}
-                        </Text>
-                      </Pressable>
+                        <View style={styles.closeButtonCircle}>
+                          <Text style={styles.closeButtonText}>×</Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      {/* Buttons - Make sure all text is wrapped in Text components */}
+                      <View style={styles.buttonRow}>
+
+                        <TouchableOpacity
+                            style={[styles.actionButton, styles.confirmButton]}
+                            onPress={handleAddConfirmed}
+                            activeOpacity={0.7}
+                        >
+                          <LinearGradient
+                              colors={[colors.primary, colors.primary]}
+                              style={styles.buttonGradient}
+                          >
+                            <Text style={styles.confirmButtonText}>
+                              {t('buttons.confirm')}
+                            </Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -1025,15 +1050,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     padding: 20,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
-    borderRadius: 20,
-    padding: 10,
-    backgroundColor: 'transparent',
   },
   scanFrame: {
     position: 'absolute',
@@ -1180,31 +1196,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 10,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContainer: {
-    width: '80%',
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.black,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  modalText: {
-    fontSize: 16,
-    color: colors.grayDark,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1231,5 +1222,102 @@ const styles = StyleSheet.create({
   modalButtonTextConfirm: {
     color: colors.white,
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalContent: {
+    padding: 24,
+    paddingTop: 32,
+    alignItems: 'center',
+  },
+  iconPreviewContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  iconPreviewCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 60,
+    backgroundColor: colors.whiteBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(74,108,247,0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.black,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    color: colors.grayDark,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+  },
+  closeButtonCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(74,108,247,0.1)',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: colors.primary,
+    lineHeight: 24,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 16,
+  },
+  actionButton: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    width: '100%',
+    height: 50
+  },
+  confirmButton: {
+    backgroundColor: colors.primary,
+  },
+  buttonGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingVertical: 0,
   },
 });

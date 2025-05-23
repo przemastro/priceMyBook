@@ -302,4 +302,8 @@ export default {
         marketFactors: "CZYNNIKI RYNKOWE",
         addToCollection: "DODAJ DO KSIĘGOZBIORU"
     },
+    modals: {
+        addToCollectionTitle: "Dodaj książkę do księgozbioru",
+        addToCollectionConfirm: "Możesz przeglądać swoje księgozbiory i ich zawartość w zakładce Księgozbiory"
+    }
 }
