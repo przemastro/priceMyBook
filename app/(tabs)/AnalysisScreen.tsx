@@ -4,6 +4,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -140,6 +141,7 @@ export default function AnalysisScreen() {
   const [showMarketModal, setShowMarketModal] = useState(false);
   const [editingYear, setEditingYear] = useState(false);
   const [yearInput, setYearInput] = useState(marketFactors.publicationYear?.toString() || '');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [includedMarketFactors, setIncludedMarketFactors] = useState<IncludedMarketFactors>({
     includePublicationYear: true,
     includeDemand: true,
@@ -182,6 +184,15 @@ export default function AnalysisScreen() {
       console.error('Error picking image:', error);
       Alert.alert(t('alerts.error'), t('alerts.imageUploadError'));
     }
+  };
+
+  const handleConfirm = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleAddConfirmed = () => {
+    handleSaveBook(); // Twoja istniejąca funkcja zapisu
+    setShowConfirmModal(false);
   };
 
   const animateSlide = (direction: 'forward' | 'backward') => {
@@ -753,9 +764,8 @@ export default function AnalysisScreen() {
                   collections={collections}
                   books={books}
                   selectedCollection={selectedCollection}
-                  onSelectCollection={setSelectedCollection}
+                  onSelectCollection={setSelectedCollection} // Tylko zaznacza kolekcję
                   onAddCollection={() => setShowAddCollectionModal(true)}
-                  onAddToCollection={handleAddToCollection}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
               />
@@ -900,20 +910,60 @@ export default function AnalysisScreen() {
 
         {/* Przycisk zapisu na ostatnim kroku */}
         {currentStep === totalSteps - 1 && (
-            <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSaveBook}
-                activeOpacity={0.7}
-            >
-              <LinearGradient
-                  colors={[colors.lightPrimary, colors.primary]}
-                  style={styles.saveButtonGradient}
+            <>
+              <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={handleConfirm} // Teraz pokazuje modal zamiast bezpośrednio zapisywać
+                  activeOpacity={0.7}
               >
-                <Text style={styles.saveButtonText}>
-                  {editMode ? t('buttons.save') : t('buttons.add')}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                    colors={[colors.lightPrimary, colors.primary]}
+                    style={styles.saveButtonGradient}
+                >
+                  <Text style={styles.saveButtonText}>
+                    {editMode ? t('buttons.save') : t('buttons.add')}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <Modal
+                  animationType="fade"
+                  transparent={true}
+                  visible={showConfirmModal}
+                  onRequestClose={() => setShowConfirmModal(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>
+                      {t('modals.addToCollectionTitle')}
+                    </Text>
+                    <Text style={styles.modalText}>
+                      {t('modals.addToCollectionConfirm', {
+                        collection: selectedCollection
+                      })}
+                    </Text>
+                    <View style={styles.modalButtons}>
+                      <Pressable
+                          style={[styles.modalButton, styles.modalButtonCancel]}
+                          onPress={() => setShowConfirmModal(false)}
+                      >
+                        <Text style={styles.modalButtonTextCancel}>
+                          {t('buttons.cancel')}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                          style={[styles.modalButton, styles.modalButtonConfirm]}
+                          onPress={handleAddConfirmed}
+                      >
+                        <Text style={styles.modalButtonTextConfirm}>
+                          {t('buttons.confirm')}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+            </>
         )}
 
         <AddCollectionModal
@@ -1111,10 +1161,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     minHeight: 400, // Zwiększona wysokość dla czynników rynkowych
     width: '100%',
-    marginTop: 20,
+    marginTop: 0,
   },
   navArrowContainer: {
-    width: 40,
+    width: 30,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 20, // Dodany padding dla lepszego wyrównania
@@ -1129,5 +1179,57 @@ const styles = StyleSheet.create({
   marketFactorsContainer: {
     width: '100%',
     paddingHorizontal: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.black,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    color: colors.grayDark,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.gray,
+    marginRight: 10,
+  },
+  modalButtonConfirm: {
+    backgroundColor: colors.primary,
+  },
+  modalButtonTextCancel: {
+    color: colors.grayDark,
+    fontWeight: '500',
+  },
+  modalButtonTextConfirm: {
+    color: colors.white,
+    fontWeight: '500',
   },
 });

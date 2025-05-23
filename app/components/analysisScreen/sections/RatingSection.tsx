@@ -33,22 +33,22 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
             colors={[colors.buttonSelected1, colors.buttonSelected2]}
             start={[0, 0]}
             end={[1, 1]}
-            style={styles.ratingOuterContainer}
+            style={[styles.ratingOuterContainer, { paddingVertical: 12 }]}
         >
-            <View style={styles.ratingContainer}>
-                <View style={styles.ratingHeader}>
+            <View style={[styles.ratingContainer, { gap: 10 }]}>
+                <View style={[styles.ratingHeader, { gap: 6 }]}>
                     <Text style={styles.ratingTitle}>Stan książki</Text>
                     <View style={styles.ratingStars}>
                         {[...Array(10)].map((_, i) => (
                             <Ionicons
                                 key={i}
                                 name={i < bookRating ? 'star' : 'star-outline'}
-                                size={20}
+                                size={18}
                                 color={i < bookRating ? colors.primary : colors.grayLight}
                             />
                         ))}
                     </View>
-                    <Text style={styles.ratingText}>
+                    <Text style={[styles.ratingText, { fontSize: 14 }]}>
                         {`${bookRating}/10 - ${
                             bookRating >= 8 ? 'Doskonały' :
                                 bookRating >= 6 ? 'Dobry' :
@@ -65,36 +65,36 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                 >
                     <LinearGradient
                         colors={[colors.white, colors.whiteBlue]}
-                        style={styles.priceSummaryGradient}
+                        style={[styles.priceSummaryGradient, { paddingVertical: 10 }]}
                     >
-                        <View style={styles.priceRow}>
+                        <View style={[styles.priceRow, { marginBottom: 6 }]}>
                             <View style={styles.priceLabelContainer}>
-                                <Ionicons name="book-outline" size={16} color={colors.secondary} />
-                                <Text style={styles.priceLabel}>
+                                <Ionicons name="book-outline" size={14} color={colors.secondary} />
+                                <Text style={[styles.priceLabel, { fontSize: 13 }]}>
                                     Średnia cena używana:
                                 </Text>
                             </View>
-                            <Text style={styles.priceValue}>
+                            <Text style={[styles.priceValue, { fontSize: 13 }]}>
                                 {averageUsedPrice ? formatPrice(averageUsedPrice) : 'Brak danych'}
                             </Text>
                         </View>
 
-                        <View style={styles.separator} />
+                        <View style={[styles.separator, { marginVertical: 6 }]} />
 
                         <View style={styles.priceRow}>
                             <View style={styles.priceLabelContainer}>
-                                <Ionicons name="cash-outline" size={16} color={colors.primary} />
-                                <Text style={[styles.priceLabel, styles.estimatedPriceLabel]}>
+                                <Ionicons name="cash-outline" size={14} color={colors.primary} />
+                                <Text style={[styles.priceLabel, styles.estimatedPriceLabel, { fontSize: 13 }]}>
                                     Szacowana wartość:
                                 </Text>
                             </View>
                             <View style={styles.estimatedPriceContainer}>
-                                <Text style={[styles.priceValue, styles.estimatedPriceValue]}>
+                                <Text style={[styles.priceValue, styles.estimatedPriceValue, { fontSize: 13 }]}>
                                     {formatPrice(finalPrice)}
                                 </Text>
                                 <Ionicons
                                     name={expanded ? "chevron-up" : "chevron-down"}
-                                    size={16}
+                                    size={14}
                                     color={colors.primary}
                                     style={styles.expandIcon}
                                 />

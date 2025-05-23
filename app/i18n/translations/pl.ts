@@ -296,7 +296,7 @@ export default {
         error: "Błąd podczas sprawdzania limitu"
     },
     stepTitles: {
-        scanForDefects: "SKANUJ W POSZUKIWANIU WAD",
+        scanForDefects: "WYSZUKAJ WADY KSIĄŻKI",
         detectedDefects: "WYKRYTE WADY KSIĄŻKI",
         uniqueness: "UNIKATOWOŚĆ KSIĄŻKI",
         marketFactors: "CZYNNIKI RYNKOWE",

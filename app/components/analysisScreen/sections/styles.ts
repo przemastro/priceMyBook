@@ -202,7 +202,7 @@ export const styles = StyleSheet.create({
     priceSummarySection: {
         borderRadius: 16,
         overflow: 'hidden',
-        marginTop: 16,
+        marginTop: 0,
         shadowColor: colors.lightPrimary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -216,7 +216,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 0,
     },
     priceLabelContainer: {
         flexDirection: 'row',
