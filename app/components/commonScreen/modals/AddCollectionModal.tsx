@@ -12,19 +12,69 @@ interface AddCollectionModalProps {
     onConfirm: (name: string, categories: string[], icon: string) => void;
 }
 
-// Lista bezpiecznych ikon dla różnych kategorii książek
 const BOOK_ICONS = [
+    // Podstawowe ikony książek
     'book', 'menu-book', 'auto-stories', 'library-books', 'school',
-    'history-edu', 'science', 'psychology', 'biotech', 'computer',
-    'calculate', 'functions', 'public', 'language', 'travel-explore',
-    'map', 'landscape', 'nature', 'pets', 'spa',
+
+    // Nauki ścisłe
+    'science', 'biotech', 'calculate', 'functions', 'psychology',
+    'memory', 'data-usage', 'insights',
+
+    // Technologia i informatyka
+    'computer', 'code', 'developer-mode', 'terminal', 'smartphone',
+    'wifi', 'settings', 'storage', 'security', 'cloud',
+
+    // Przyroda i środowisko
+    'nature', 'pets', 'spa', 'grass', 'forest',
+    'water', 'eco', 'bug-report',
+
+    // Medycyna i zdrowie
+    'medical-services', 'healing', 'fitness-center', 'health-and-safety', 'sanitizer',
+    'vaccines', 'medication', 'monitor-heart', 'elderly', 'accessible',
+
+    // Sztuka i kultura
+    'palette', 'brush', 'colorize', 'music-note', 'theater-comedy',
+    'mic', 'movie', 'photo-camera', 'museum', 'draw',
+
+    // Sport i rekreacja
     'sports-baseball', 'sports-basketball', 'sports-football', 'sports-soccer', 'sports-tennis',
-    'music-note', 'theater-comedy', 'palette', 'brush', 'colorize',
-    'star', 'favorite', 'celebration', 'cake', 'restaurant',
-    'local-cafe', 'nightlife', 'hotel', 'home', 'apartment',
-    'work', 'business-center', 'account-balance', 'attach-money', 'savings',
-    'health-and-safety', 'fitness-center', 'medical-services', 'healing', 'spa',
-    'directions-car', 'flight', 'train', 'directions-boat', 'motorcycle'
+    'sports-volleyball', 'sports-golf', 'sports-handball', 'sports-kabaddi', 'sports-martial-arts',
+
+    // Podróże i geografia
+    'travel-explore', 'map', 'public', 'language', 'flight',
+    'train', 'directions-boat', 'directions-car', 'motorcycle', 'commute',
+
+    // Historia i archeologia
+    'history-edu', 'castle', 'account-balance', 'temple-buddhist',
+    'temple-hindu', 'mosque', 'church', 'synagogue', 'fort',
+
+    // Biznes i finanse
+    'business-center', 'work', 'attach-money', 'savings', 'trending-up',
+    'account-balance-wallet', 'euro', 'currency-exchange', 'receipt', 'credit-card',
+
+    // Kulinaria
+    'restaurant', 'local-cafe', 'nightlife', 'cake', 'wine-bar',
+    'bakery-dining', 'icecream', 'set-meal', 'ramen-dining', 'rice-bowl',
+
+    // Dom i ogród
+    'home', 'apartment', 'yard', 'balcony', 'bathtub',
+    'bed', 'chair', 'flatware', 'kitchen', 'light',
+
+    // Fantasy i sci-fi
+    'auto-awesome', 'star', 'rocket', 'public-off', 'visibility-off',
+    'sunny', 'thunderstorm', 'whatshot', 'flare',
+
+    // Kryminały i thrillery
+    'fingerprint', 'search', 'gavel', 'policy', 'security',
+    'visibility', 'remove-red-eye', 'lock', 'vpn-key', 'shield',
+
+    // Romans i literatura obyczajowa
+    'favorite', 'celebration', 'mood', 'sentiment-satisfied', 'heart-broken',
+    'diamond', 'spa', 'hotel',
+
+    // Literatura dziecięca
+    'child-friendly', 'toys', 'crib', 'school', 'face',
+    'emoji-people', 'cake', 'park',
 ];
 
 const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClose, onConfirm }) => {
@@ -44,7 +94,7 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
 
     const handleConfirm = () => {
         if (!localCollectionName.trim()) return;
-        onConfirm(localCollectionName, categories, selectedIcon); // Dodaj przekazanie ikony
+        onConfirm(localCollectionName, categories, selectedIcon);
         setLocalCollectionName('');
         setCategories([]);
         setSelectedIcon('book');
@@ -74,19 +124,18 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContainer}>
-                    <LinearGradient
-                        colors={['#f5f7ff', '#e8ecff']}
-                        start={[0, 0]}
-                        end={[1, 1]}
-                        style={styles.modalHeader}
-                    >
-                        <Text style={styles.modalTitle}>{t('labels.addNewCollection')}</Text>
-                        <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-                            <Text style={styles.closeButton}>×</Text>
-                        </TouchableOpacity>
-                    </LinearGradient>
-
                     <View style={styles.modalContent}>
+                        {/* Icon preview at the top */}
+                        <View style={styles.iconPreviewContainer}>
+                            <View style={styles.iconPreviewCircle}>
+                                <MaterialIcons
+                                    name={selectedIcon as any}
+                                    size={62}
+                                    color={colors.primary}
+                                />
+                            </View>
+                        </View>
+
                         <TextInput
                             style={styles.modalInput}
                             placeholder={t('placeholders.enterCollectionName')}
@@ -137,35 +186,33 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             onRemoveCategory={handleRemoveCategory}
                         />
 
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={onClose}
-                                activeOpacity={0.7}
+                        {/* Close button with border radius 20 */}
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={onClose}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.closeButtonCircle}>
+                                <Text style={styles.closeButtonText}>×</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* Full width confirm button */}
+                        <TouchableOpacity
+                            style={[styles.confirmButton, !localCollectionName.trim() && styles.disabledButton]}
+                            onPress={handleConfirm}
+                            disabled={!localCollectionName.trim()}
+                            activeOpacity={0.7}
+                        >
+                            <LinearGradient
+                                colors={!localCollectionName.trim() ?
+                                    [colors.primary, colors.primary] :
+                                    [colors.primary, colors.primary]}
+                                style={styles.buttonGradient}
                             >
-                                <LinearGradient
-                                    colors={['#f5f7ff', '#e8ecff']}
-                                    style={styles.buttonGradient}
-                                >
-                                    <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.confirmButton}
-                                onPress={handleConfirm}
-                                disabled={!localCollectionName.trim()}
-                                activeOpacity={0.7}
-                            >
-                                <LinearGradient
-                                    colors={!localCollectionName.trim() ?
-                                        ['#e0e4ff', '#d5daff'] :
-                                        ['#4a6cf7', colors.primary]}
-                                    style={styles.buttonGradient}
-                                >
-                                    <Text style={styles.confirmButtonText}>{t('buttons.add')}</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        </View>
+                                <Text style={styles.confirmButtonText}>{t('buttons.add')}</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -183,7 +230,7 @@ const styles = StyleSheet.create({
     modalContainer: {
         width: '90%',
         backgroundColor: 'white',
-        borderRadius: 8,
+        borderRadius: 12,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -192,32 +239,29 @@ const styles = StyleSheet.create({
         elevation: 5,
         maxHeight: '80%',
     },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(74,108,247,0.1)',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-    },
-    closeButton: {
-        fontSize: 24,
-        color: colors.primary,
-        paddingHorizontal: 10,
-    },
     modalContent: {
-        padding: 16,
+        padding: 24,
+        paddingTop: 32,
+    },
+    iconPreviewContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    iconPreviewCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 60,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
     },
     modalInput: {
         height: 50,
         borderWidth: 1,
         borderColor: 'rgba(74,108,247,0.2)',
-        borderRadius: 8,
+        borderRadius: 10,
         paddingHorizontal: 16,
         backgroundColor: 'white',
         marginBottom: 20,
@@ -236,7 +280,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderWidth: 1,
         borderColor: 'rgba(74,108,247,0.2)',
-        borderRadius: 8,
+        borderRadius: 10,
         marginBottom: 20,
         backgroundColor: 'white',
     },
@@ -253,7 +297,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         borderWidth: 1,
         borderColor: 'rgba(74,108,247,0.1)',
-        borderRadius: 8,
+        borderRadius: 10,
         padding: 10,
     },
     iconsList: {
@@ -273,30 +317,37 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.primary,
     },
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: 16,
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
     },
-    cancelButton: {
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginRight: 12,
+    closeButtonCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 24,
+        color: colors.primary,
     },
     confirmButton: {
-        borderRadius: 8,
+        borderRadius: 10,
         overflow: 'hidden',
+        marginTop: 16,
+    },
+    disabledButton: {
+        opacity: 0.7,
     },
     buttonGradient: {
-        paddingVertical: 12,
-        paddingHorizontal: 24,
+        paddingVertical: 14,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    cancelButtonText: {
-        color: colors.primary,
-        fontSize: 16,
-        fontWeight: '500',
     },
     confirmButtonText: {
         color: 'white',

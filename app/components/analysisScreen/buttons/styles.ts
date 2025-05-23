@@ -63,7 +63,7 @@ export const styles = StyleSheet.create({
     scanButtonContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 30,
+        marginTop: 60,
         marginBottom: 20,
     },
     scanButtonWrapper: {

@@ -884,7 +884,7 @@ export default function AnalysisScreen() {
                     <Ionicons name="chevron-back" size={32} color={colors.primary}/>
                   </TouchableOpacity>
               ) : (
-                  <Ionicons name="chevron-back" size={32} color={colors.gray}/>
+                  <Ionicons name="chevron-back" size={32} color={colors.white}/>
               )}
             </View>
 
@@ -902,7 +902,7 @@ export default function AnalysisScreen() {
                     <Ionicons name="chevron-forward" size={32} color={colors.primary}/>
                   </TouchableOpacity>
               ) : (
-                  <Ionicons name="chevron-forward" size={32} color={colors.gray}/>
+                  <Ionicons name="chevron-forward" size={32} color={colors.white}/>
               )}
             </View>
           </View>
@@ -917,7 +917,7 @@ export default function AnalysisScreen() {
                   activeOpacity={0.7}
               >
                 <LinearGradient
-                    colors={[colors.lightPrimary, colors.primary]}
+                    colors={[colors.primary, colors.primary]}
                     style={styles.saveButtonGradient}
                 >
                   <Text style={styles.saveButtonText}>

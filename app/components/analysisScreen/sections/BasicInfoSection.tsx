@@ -59,19 +59,19 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
             <View style={styles.bookDetailsColumn}>
                 <View style={styles.detailRow}>
                     <Text style={styles.detailValue} numberOfLines={2} ellipsizeMode="tail">
-                        Tytuł: {titleInput || title}
+                        {titleInput || title}
                     </Text>
                 </View>
 
                 <View style={styles.detailRow}>
                     <Text style={styles.detailValue}>
-                        ISBN: {isbnInput || isbn || 'Brak ISBN'}
+                        {isbnInput || isbn || 'Brak ISBN'}
                     </Text>
                 </View>
 
                 <View style={styles.detailRow}>
                     <Text style={styles.detailValue}>
-                        Cena oryginalna: {formatPrice(originalPrice)}
+                        {formatPrice(originalPrice)}
                     </Text>
                 </View>
 

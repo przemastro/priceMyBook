@@ -26,7 +26,7 @@ const ScanButton = ({ onPress, isScanning = false, isLoading = false }: ScanButt
                 <LinearGradient
                     colors={isScanning || isLoading
                         ? [colors.buttonSelected1, colors.buttonSelected2]
-                        : [colors.lightPrimary, colors.primary]}
+                        : [colors.primary, colors.primary]}
                     style={styles.scanButtonGradient}
                 >
                     <Ionicons
