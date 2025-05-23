@@ -139,7 +139,8 @@ export default {
         includeSupply: "Podaż",
         estimatedValue: "Cena szacowana",
         demandVsSupply: "Popyt vs Podaż",
-        priceHistory: "Historia ceny książki"
+        priceHistory: "Historia ceny książki",
+        selectIcon: "Wybierz ikonkę"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -193,13 +194,15 @@ export default {
         save: 'ZAPISZ',
         collections: 'KSIĘGOZBIORY',
         books: 'KSIĄŻKI',
+        addCategory: "Dodaj kategorię"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
         enterPrice: 'Wprowadź cenę ręcznie',
         searchHistory: 'Szukaj po ISBN/tytule',
         enterISBN: 'Wprowadź numer ISBN',
-        enterPricePLN: 'Wprowadź cenę'
+        enterPricePLN: 'Wprowadź cenę',
+        searchCollections: "Wyszukaj księgozbiór"
     },
     status: {
         requestingPermission: 'Proszę czekać...',

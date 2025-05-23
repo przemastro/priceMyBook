@@ -1,17 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Easing,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
@@ -23,28 +11,18 @@ import PriceCalculationDetails from '../components/analysisScreen/sections/Price
 import ScanDefectModal from '../components/analysisScreen/modals/ScanDefectModal';
 import AddCollectionModal from '../components/commonScreen/modals/AddCollectionModal';
 import {EditBookDetailsModal} from '../components/analysisScreen/modals/EditBookDetailsModal';
-import { BasicInfoSection } from '../components/analysisScreen/sections/BasicInfoSection';
-import { RatingSection } from '../components/analysisScreen/sections/RatingSection';
+import {BasicInfoSection} from '../components/analysisScreen/sections/BasicInfoSection';
+import {RatingSection} from '../components/analysisScreen/sections/RatingSection';
 import ScanButton from '../components/analysisScreen/buttons/ScanButton';
 import CollectionsSection from '../components/analysisScreen/sections/CollectionsSection';
-
-
-import {
-  BookDefect,
-  MarketData,
-  ListingStatus,
-  BookAgeInfo,
-  BookUniqueness,
-  MarketFactors,
-  DEFECT_TYPES,
-  MARKET_FACTOR_TOGGLES,
-  IncludedMarketFactors
-} from '../components/analysisScreen/types';
-import { formatCurrency } from '../utils/currency';
+import {BookDefect, MarketData, ListingStatus, BookAgeInfo, BookUniqueness, MarketFactors, DEFECT_TYPES, MARKET_FACTOR_TOGGLES, IncludedMarketFactors} from '../components/analysisScreen/types';
+import {formatCurrency} from '../utils/currency';
 import DefectsSection from "@/app/components/analysisScreen/sections/DefectsSection";
 import UniquenessSection from "@/app/components/analysisScreen/sections/UniquenessSection";
 import MarketFactorsSection from "@/app/components/analysisScreen/sections/MarketFactorsSection";
 import {LinearGradient} from "expo-linear-gradient";
+import {CustomAlertModal} from "@/app/components/alerts/CustomAlertModal";
+
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
   try {
@@ -82,15 +60,7 @@ export default function AnalysisScreen() {
   const [hasScanned, setHasScanned] = useState(false);
   const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
   const [bookImage, setBookImage] = useState<string | null>(null);
-  const {
-    collections, // collections jest teraz tablicą obiektów {name: string, icon: string}
-    addBookToCollection,
-    removeBookFromCollection,
-    updateBookInCollection,
-    exchangeRate,
-    books,
-    addCollection
-  } = useAppContext();
+  const {collections, addBookToCollection, removeBookFromCollection, updateBookInCollection, exchangeRate, books, addCollection} = useAppContext();
   const [defects, setDefects] = useState<BookDefect[]>(DEFECT_TYPES.map(defect => ({
     id: defect.id,
     selected: false,
@@ -111,8 +81,7 @@ export default function AnalysisScreen() {
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
     supply: 'medium',
-    publicationYear: parseParam<{ publicationYear?: number }>(params.marketFactors)?.publicationYear ||
-        new Date().getFullYear() - Math.floor(Math.random() * 10)
+    publicationYear: parseParam<{ publicationYear?: number }>(params.marketFactors)?.publicationYear || new Date().getFullYear() - Math.floor(Math.random() * 10)
   };
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
   const [marketData, setMarketData] = useState<MarketData | null>(null);
@@ -141,15 +110,9 @@ export default function AnalysisScreen() {
   const [editingYear, setEditingYear] = useState(false);
   const [yearInput, setYearInput] = useState(marketFactors.publicationYear?.toString() || '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [authors, setAuthors] = useState(
-      Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown')
-  );
-  const [publisher, setPublisher] = useState(
-      bookInfo?.publisher || ''
-  );
-  const [description, setDescription] = useState(
-      bookInfo?.description || ''
-  );
+  const [authors, setAuthors] = useState(Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown'));
+  const [publisher, setPublisher] = useState(bookInfo?.publisher || '');
+  const [description, setDescription] = useState(bookInfo?.description || '');
   const [includedMarketFactors, setIncludedMarketFactors] = useState<IncludedMarketFactors>({
     includePublicationYear: true,
     includeDemand: true,
@@ -162,6 +125,24 @@ export default function AnalysisScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const totalSteps = 5;
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalTitle, setErrorModalTitle] = useState('');
+  const [errorModalMessage, setErrorModalMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalTitle, setSuccessModalTitle] = useState('');
+  const [successModalMessage, setSuccessModalMessage] = useState('');
+
+  const showAlert = (title: string, message: string, type: 'error' | 'success' = 'error') => {
+    if (type === 'error') {
+      setErrorModalTitle(title);
+      setErrorModalMessage(message);
+      setShowErrorModal(true);
+    } else {
+      setSuccessModalTitle(title);
+      setSuccessModalMessage(message);
+      setShowSuccessModal(true);
+    }
+  };
 
   const openEditModal = () => setShowEditModal(true);
   const closeEditModal = () => setShowEditModal(false);
@@ -170,7 +151,7 @@ export default function AnalysisScreen() {
     try {
       const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('alerts.error'), t('status.noPhotoLibraryAccess'));
+        showAlert(t('alerts.error'), t('status.noPhotoLibraryAccess'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -183,14 +164,14 @@ export default function AnalysisScreen() {
         const response = await fetch(result.assets[0].uri);
         const blob = await response.blob();
         if (blob.size > 200 * 1024) {
-          Alert.alert(t('alerts.error'), t('alerts.imageSizeLimit'));
+          showAlert(t('alerts.error'), t('alerts.imageSizeLimit'));
           return;
         }
         setBookImage(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert(t('alerts.error'), t('alerts.imageUploadError'));
+      showAlert(t('alerts.error'), t('alerts.imageUploadError'));
     }
   };
 
@@ -199,7 +180,7 @@ export default function AnalysisScreen() {
   };
 
   const handleAddConfirmed = () => {
-    handleSaveBook(); // Twoja istniejąca funkcja zapisu
+    handleSaveBook();
     setShowConfirmModal(false);
   };
 
@@ -243,10 +224,7 @@ export default function AnalysisScreen() {
             priceHistory: [
               {date: '2023-01-01', price: bookInfo.amazonData.data.priceRange[0] * 0.9},
               {date: '2023-04-01', price: bookInfo.amazonData.data.priceRange[1] * 1.1},
-              {
-                date: '2023-07-01',
-                price: (bookInfo.amazonData.data.priceRange[0] + bookInfo.amazonData.data.priceRange[1]) / 2
-              },
+              {date: '2023-07-01', price: (bookInfo.amazonData.data.priceRange[0] + bookInfo.amazonData.data.priceRange[1]) / 2},
               {date: '2023-10-01', price: bookInfo.amazonData.data.priceRange[0] * 0.95},
               {date: '2024-01-01', price: bookInfo.amazonData.data.priceRange[1] * 1.05},
               {date: new Date().toISOString(), price: parseFloat(originalPriceParam)}
@@ -297,11 +275,7 @@ export default function AnalysisScreen() {
 
   useEffect(() => {
     if (editMode) {
-      const bookDefects = parseParam<Record<string, {
-        selected: boolean,
-        reduction: number,
-        count: number
-      }>>(params.defects) || {};
+      const bookDefects = parseParam<Record<string, {selected: boolean, reduction: number, count: number}>>(params.defects) || {};
       const bookUniqueness = parseParam<BookUniqueness>(params.uniqueness) || initialUniqueness;
       const bookMarketFactors = parseParam<MarketFactors>(params.marketFactors) || initialMarketFactors;
       const updatedDefects = DEFECT_TYPES.map(defect => {
@@ -450,7 +424,7 @@ export default function AnalysisScreen() {
       if (!permission) {
         const {status} = await requestPermission();
         if (status !== 'granted') {
-          Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+          showAlert(t('alerts.error'), t('status.noCameraAccess'));
           return;
         }
       }
@@ -458,7 +432,7 @@ export default function AnalysisScreen() {
         setIsScanning(true);
         setScanProgress(0);
       } else {
-        Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+        showAlert(t('alerts.error'), t('status.noCameraAccess'));
       }
     } finally {
       setIsLoading(false);
@@ -506,7 +480,7 @@ export default function AnalysisScreen() {
       simulateDefectDetection();
     } catch (error) {
       console.error('Failed to take picture:', error);
-      Alert.alert(t('alerts.error'), t('alerts.cameraError'));
+      showAlert(t('alerts.error'), t('alerts.cameraError'));
     }
   };
 
@@ -545,10 +519,9 @@ export default function AnalysisScreen() {
 
   const saveAuthors = () => {
     if (!authors.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterAuthor'));
+      showAlert(t('alerts.error'), t('alerts.enterAuthor'));
       return;
     }
-    // Ewentualna dodatkowa logika
   };
 
   const savePublisher = () => {
@@ -561,7 +534,7 @@ export default function AnalysisScreen() {
 
   const saveOriginalPrice = () => {
     if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
-      Alert.alert(t('alerts.error'), t('alerts.enterValidPrice'));
+      showAlert(t('alerts.error'), t('alerts.enterValidPrice'));
       return;
     }
     setOriginalPrice(originalPriceInput);
@@ -570,7 +543,7 @@ export default function AnalysisScreen() {
 
   const saveTitle = () => {
     if (!titleInput.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterTitle'));
+      showAlert(t('alerts.error'), t('alerts.enterTitle'));
       return;
     }
     setEditingTitle(false);
@@ -578,17 +551,18 @@ export default function AnalysisScreen() {
 
   const saveIsbn = () => {
     if (!isbnInput.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterISBN'));
+      showAlert(t('alerts.error'), t('alerts.enterISBN'));
       return;
     }
     setEditingIsbn(false);
   };
 
   const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
-    addCollection(name, icon); // Dodaj przekazanie ikony
+    addCollection(name, icon);
     setSelectedCollection(name);
     setShowAddCollectionModal(false);
   };
+
   const handleAddToCollection = (collection: string) => {
     const priceValue = finalPrice.toFixed(2);
     const currentIsbn = editingIsbn ? isbnInput : isbn;
@@ -625,28 +599,25 @@ export default function AnalysisScreen() {
     };
 
     addBookToCollection(collection, bookData);
-    Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${collection}`);
-    router.back();
+    showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${collection}`, 'success');
   };
 
   const handleSaveBook = () => {
     const priceValue = finalPrice.toFixed(2);
-    const currentIsbn = editingIsbn ? isbnInput : isbn;
-    const currentTitle = editingTitle ? titleInput : title;
     const defaultListingStatus: ListingStatus = {
       status: 'notListed',
       platforms: []
     };
     const bookData = {
-      isbn: isbnInput, // Używamy zawsze aktualnej wartości z inputa
-      title: titleInput, // Używamy zawsze aktualnej wartości z inputa
-      authors: authors, // Nowa wartość
-      publisher: publisher, // Nowa wartość
+      isbn: isbnInput,
+      title: titleInput,
+      authors: authors,
+      publisher: publisher,
       price: priceValue,
       displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
       originalPrice: originalPriceInput,
-      description: description, // Nowa wartość
+      description: description,
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
         ...acc,
         [defect.id]: {
@@ -663,11 +634,11 @@ export default function AnalysisScreen() {
           ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
           : defaultListingStatus
     };
+
     if (editMode && collectionName && bookIndex !== null) {
       if (selectedCollection === collectionName) {
         updateBookInCollection(collectionName, bookIndex, bookData);
-        Alert.alert(t('alerts.success'), t('alerts.bookUpdated'));
-        router.back();
+        showAlert(t('alerts.success'), t('alerts.bookUpdated'), 'success');
       } else {
         const bookToMove = books[collectionName][bookIndex];
         addBookToCollection(selectedCollection, {
@@ -675,20 +646,18 @@ export default function AnalysisScreen() {
           listingStatus: bookToMove.listingStatus || defaultListingStatus
         });
         removeBookFromCollection(collectionName, bookIndex);
-        Alert.alert(t('alerts.success'), t('alerts.bookMoved', {
+        showAlert(t('alerts.success'), t('alerts.bookMoved', {
           oldCollection: collectionName,
           newCollection: selectedCollection
-        }));
-        router.back();
+        }), 'success');
       }
     } else {
       if (!selectedCollection) {
-        Alert.alert(t('alerts.error'), t('alerts.selectCollection'));
+        showAlert(t('alerts.error'), t('alerts.selectCollection'));
         return;
       }
       addBookToCollection(selectedCollection, bookData);
-      Alert.alert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`);
-      router.back();
+      showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`, 'success');
     }
   };
 
@@ -732,21 +701,15 @@ export default function AnalysisScreen() {
                   titleInput={titleInput}
                   setTitleInput={setTitleInput}
                   authors={authors}
-                  setAuthors={(text) => setAuthors(text)} // Dodane
-                  publisher={bookInfo?.publisher || ''}
-                  setPublisher={(text) => { // Dodane
-                    // Jeśli potrzebujesz zachować oryginalne dane z bookInfo
-                    // możesz dodać logikę aktualizacji
-                    // np. setBookInfo({...bookInfo, publisher: text})
-                  }}
+                  setAuthors={setAuthors}
+                  publisher={publisher}
+                  setPublisher={setPublisher}
                   isbnInput={isbnInput}
                   setIsbnInput={setIsbnInput}
                   originalPriceInput={originalPriceInput}
                   setOriginalPriceInput={setOriginalPriceInput}
-                  description={bookInfo?.description || ''}
-                  setDescription={(text) => { // Dodane
-                    // Analogiczna aktualizacja jak dla wydawcy
-                  }}
+                  description={description}
+                  setDescription={setDescription}
                   onPickImage={pickImage}
                   onSave={() => {
                     saveTitle();
@@ -800,7 +763,7 @@ export default function AnalysisScreen() {
                   collections={collections}
                   books={books}
                   selectedCollection={selectedCollection}
-                  onSelectCollection={setSelectedCollection} // Tylko zaznacza kolekcję
+                  onSelectCollection={setSelectedCollection}
                   onAddCollection={() => setShowAddCollectionModal(true)}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
@@ -841,49 +804,49 @@ export default function AnalysisScreen() {
               </TouchableOpacity>
 
               <Animated.View style={[styles.scanFrame, {transform: [{scale: pulseAnim}]}]}>
-                <View style={styles.scanFrameTopLeft}/>
+                  <View style={styles.scanFrameTopLeft}/>
                 <View style={styles.scanFrameTopRight}/>
-                <View style={styles.scanFrameBottomLeft}/>
-                <View style={styles.scanFrameBottomRight}/>
-              </Animated.View>
+              <View style={styles.scanFrameBottomLeft}/>
+              <View style={styles.scanFrameBottomRight}/>
+            </Animated.View>
 
-              <View style={styles.bottomControls}>
-                <Pressable
-                    style={styles.scanButton}
-                    onPress={takePictureAndAnalyze}
-                >
-                  <Ionicons name="scan" size={24} color="white"/>
-                  <Text style={styles.scanButtonText}>
-                    {t('labels.scanningDefects')}
-                  </Text>
-                </Pressable>
+            <View style={styles.bottomControls}>
+              <Pressable
+                  style={styles.scanButton}
+                  onPress={takePictureAndAnalyze}
+              >
+                <Ionicons name="scan" size={24} color="white"/>
+                <Text style={styles.scanButtonText}>
+                  {t('labels.scanningDefects')}
+                </Text>
+              </Pressable>
 
-                {isAnalyzing && (
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressBar}>
-                        <View style={{
-                          width: `${scanProgress}%`,
-                          backgroundColor: colors.primary,
-                          height: '100%'
-                        }}/>
-                      </View>
-                      <Text style={styles.scanningText}>
-                        {scanProgress}%
-                      </Text>
+              {isAnalyzing && (
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <View style={{
+                        width: `${scanProgress}%`,
+                        backgroundColor: colors.primary,
+                        height: '100%'
+                      }}/>
                     </View>
-                )}
-              </View>
+                    <Text style={styles.scanningText}>
+                      {scanProgress}%
+                    </Text>
+                  </View>
+              )}
             </View>
-          </CameraView>
-
-          <ScanDefectModal
-              visible={showDefectModal}
-              defect={scannedDefect}
-              onAccept={acceptDefect}
-              onReject={rejectDefect}
-          />
         </View>
-    );
+  </CameraView>
+
+    <ScanDefectModal
+        visible={showDefectModal}
+        defect={scannedDefect}
+        onAccept={acceptDefect}
+        onReject={rejectDefect}
+    />
+  </View>
+  );
   }
 
   return (
@@ -913,7 +876,6 @@ export default function AnalysisScreen() {
           </RatingSection>
 
           <View style={styles.stepContainer}>
-            {/* Lewa strzałka - zawsze renderowana */}
             <View style={styles.navArrowContainer}>
               {currentStep > 0 ? (
                   <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
@@ -924,14 +886,12 @@ export default function AnalysisScreen() {
               )}
             </View>
 
-            {/* Główna zawartość kroku */}
             <View style={styles.stepContent}>
               <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1, width: '100%'}}>
                 {renderStep()}
               </Animated.View>
             </View>
 
-            {/* Prawa strzałka - zawsze renderowana */}
             <View style={styles.navArrowContainer}>
               {currentStep < totalSteps - 1 ? (
                   <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
@@ -944,12 +904,11 @@ export default function AnalysisScreen() {
           </View>
         </ScrollView>
 
-        {/* Przycisk zapisu na ostatnim kroku */}
         {currentStep === totalSteps - 1 && (
             <>
               <TouchableOpacity
                   style={styles.saveButton}
-                  onPress={handleConfirm} // Teraz pokazuje modal zamiast bezpośrednio zapisywać
+                  onPress={handleConfirm}
                   activeOpacity={0.7}
               >
                 <LinearGradient
@@ -971,7 +930,6 @@ export default function AnalysisScreen() {
                 <View style={styles.modalOverlay}>
                   <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                      {/* Icon preview */}
                       <View style={styles.iconPreviewContainer}>
                         <View style={styles.iconPreviewCircle}>
                           <MaterialIcons
@@ -991,7 +949,6 @@ export default function AnalysisScreen() {
                         })}
                       </Text>
 
-                      {/* Close button */}
                       <TouchableOpacity
                           style={styles.closeButton}
                           onPress={() => setShowConfirmModal(false)}
@@ -1002,9 +959,7 @@ export default function AnalysisScreen() {
                         </View>
                       </TouchableOpacity>
 
-                      {/* Buttons - Make sure all text is wrapped in Text components */}
                       <View style={styles.buttonRow}>
-
                         <TouchableOpacity
                             style={[styles.actionButton, styles.confirmButton]}
                             onPress={handleAddConfirmed}
@@ -1026,6 +981,27 @@ export default function AnalysisScreen() {
               </Modal>
             </>
         )}
+
+        <CustomAlertModal
+            visible={showErrorModal}
+            title={errorModalTitle}
+            message={errorModalMessage}
+            type="error"
+            onConfirm={() => setShowErrorModal(false)}
+        />
+
+        <CustomAlertModal
+            visible={showSuccessModal}
+            title={successModalTitle}
+            message={successModalMessage}
+            type="success"
+            onConfirm={() => {
+              setShowSuccessModal(false);
+              if (successModalTitle === t('alerts.success') && successModalMessage.includes(t('alerts.bookAdded'))) {
+                router.back();
+              }
+            }}
+        />
 
         <AddCollectionModal
             visible={showAddCollectionModal}
@@ -1055,7 +1031,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectedDefect: {
-    shadowColor: colors.blackDark, // Zmień kolor cienia na niebieski
+    shadowColor: colors.blackDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -1210,9 +1186,9 @@ const styles = StyleSheet.create({
   },
   stepContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start', // Zmienione na flex-start dla lepszego ułożenia
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    minHeight: 400, // Zwiększona wysokość dla czynników rynkowych
+    minHeight: 400,
     width: '100%',
     marginTop: 0,
   },
@@ -1220,15 +1196,14 @@ const styles = StyleSheet.create({
     width: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 20, // Dodany padding dla lepszego wyrównania
+    paddingTop: 20,
   },
   stepContent: {
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    minHeight: 400, // Dopasowane do kontenera
+    minHeight: 400,
   },
-  // Dla MarketFactorsSection dodaj:
   marketFactorsContainer: {
     width: '100%',
     paddingHorizontal: 10,

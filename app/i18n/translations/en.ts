@@ -141,7 +141,8 @@ export default {
         includeSupply: "Supply",
         estimatedValue: "Estimated value",
         demandVsSupply: "Demand vs Supply",
-        priceHistory: "Price History"
+        priceHistory: "Price History",
+        selectIcon: "Select Icon"
     },
     titles: {
         scan: 'Scan ISBN',
@@ -194,14 +195,16 @@ export default {
         next: 'NEXT',
         save: 'SAVE',
         collections: 'COLLECTIONS',
-        books: 'BOOKS'
+        books: 'BOOKS',
+        addCategory: "Add Category"
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
         enterPrice: 'Enter price manually',
         searchHistory: 'Search by ISBN/title',
         enterISBN: 'Enter ISBN number',
-        enterPriceUSD: 'Enter price'
+        enterPriceUSD: 'Enter price',
+        searchCollections: "Search Collection"
     },
     status: {
         requestingPermission: 'Requesting camera permission...',

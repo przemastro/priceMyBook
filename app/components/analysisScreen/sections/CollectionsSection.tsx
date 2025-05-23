@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Dimensions } from 'react-native';
+import {View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Dimensions, ScrollView} from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
@@ -141,15 +141,18 @@ const CollectionsSection = ({
             </View>
 
             {filteredCollections.length > 0 ? (
-                <View style={[styles.listContainer, { height: height * 0.35 }]}>
+                <ScrollView
+                    style={[styles.listContainer, { height: height * 0.35 }]}
+                    nestedScrollEnabled={true}
+                >
                     <FlatList
+                        scrollEnabled={false}
                         data={filteredCollections}
                         renderItem={renderItem}
                         keyExtractor={(item) => item.name}
                         contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
                     />
-                </View>
+                </ScrollView>
             ) : (
                 <View style={styles.noCollectionsContainer}>
                     <Text style={styles.noCollectionsText}>{t('labels.noCollectionsFound')}</Text>

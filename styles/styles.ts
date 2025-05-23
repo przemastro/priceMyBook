@@ -14,6 +14,7 @@ export const colors = {
     grayDark: '#b6b5b5',
     error: '#e74c3c', // Kolor błędów
     success: '#2ecc71', // Kolor sukcesu
+    warning: "#FFC300",
     black: '#696767',
     grayLight: '#fafafa',
     buttonSelected1: '#e6f1ff',
