@@ -130,7 +130,6 @@ export default function AnalysisScreen() {
   const isbn = Array.isArray(params.isbn) ? params.isbn[0] : params.isbn || '';
   const originalPriceParam = Array.isArray(params.originalPrice) ? params.originalPrice[0] : params.originalPrice || '0';
   const title = Array.isArray(params.title) ? params.title[0] : params.title || t('bookInfo.unknownTitle');
-  const authors = Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown');
   const editMode = Array.isArray(params.editMode) ? params.editMode[0] === 'true' : params.editMode === 'true';
   const collectionName = Array.isArray(params.collectionName) ? params.collectionName[0] : params.collectionName;
   const bookIndex = params.bookIndex ? parseInt(Array.isArray(params.bookIndex) ? params.bookIndex[0] : params.bookIndex) : null;
@@ -142,6 +141,15 @@ export default function AnalysisScreen() {
   const [editingYear, setEditingYear] = useState(false);
   const [yearInput, setYearInput] = useState(marketFactors.publicationYear?.toString() || '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [authors, setAuthors] = useState(
+      Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown')
+  );
+  const [publisher, setPublisher] = useState(
+      bookInfo?.publisher || ''
+  );
+  const [description, setDescription] = useState(
+      bookInfo?.description || ''
+  );
   const [includedMarketFactors, setIncludedMarketFactors] = useState<IncludedMarketFactors>({
     includePublicationYear: true,
     includeDemand: true,
@@ -535,6 +543,22 @@ export default function AnalysisScreen() {
     }));
   };
 
+  const saveAuthors = () => {
+    if (!authors.trim()) {
+      Alert.alert(t('alerts.error'), t('alerts.enterAuthor'));
+      return;
+    }
+    // Ewentualna dodatkowa logika
+  };
+
+  const savePublisher = () => {
+    // Logika walidacji jeśli potrzebna
+  };
+
+  const saveDescription = () => {
+    // Logika walidacji jeśli potrzebna
+  };
+
   const saveOriginalPrice = () => {
     if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
       Alert.alert(t('alerts.error'), t('alerts.enterValidPrice'));
@@ -575,9 +599,10 @@ export default function AnalysisScreen() {
     };
 
     const bookData = {
-      isbn: currentIsbn,
-      title: currentTitle,
-      authors,
+      isbn: isbnInput,
+      title: titleInput,
+      authors: authors,
+      publisher: publisher,
       price: priceValue,
       displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
@@ -613,13 +638,15 @@ export default function AnalysisScreen() {
       platforms: []
     };
     const bookData = {
-      isbn: currentIsbn,
-      title: currentTitle,
-      authors,
+      isbn: isbnInput, // Używamy zawsze aktualnej wartości z inputa
+      title: titleInput, // Używamy zawsze aktualnej wartości z inputa
+      authors: authors, // Nowa wartość
+      publisher: publisher, // Nowa wartość
       price: priceValue,
       displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
-      originalPrice,
+      originalPrice: originalPriceInput,
+      description: description, // Nowa wartość
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
         ...acc,
         [defect.id]: {
@@ -705,12 +732,21 @@ export default function AnalysisScreen() {
                   titleInput={titleInput}
                   setTitleInput={setTitleInput}
                   authors={authors}
-                  publisher={bookInfo?.publisher}
+                  setAuthors={(text) => setAuthors(text)} // Dodane
+                  publisher={bookInfo?.publisher || ''}
+                  setPublisher={(text) => { // Dodane
+                    // Jeśli potrzebujesz zachować oryginalne dane z bookInfo
+                    // możesz dodać logikę aktualizacji
+                    // np. setBookInfo({...bookInfo, publisher: text})
+                  }}
                   isbnInput={isbnInput}
                   setIsbnInput={setIsbnInput}
                   originalPriceInput={originalPriceInput}
                   setOriginalPriceInput={setOriginalPriceInput}
-                  description={bookInfo?.description}
+                  description={bookInfo?.description || ''}
+                  setDescription={(text) => { // Dodane
+                    // Analogiczna aktualizacja jak dla wydawcy
+                  }}
                   onPickImage={pickImage}
                   onSave={() => {
                     saveTitle();
@@ -797,7 +833,7 @@ export default function AnalysisScreen() {
           >
             <View style={styles.cameraOverlay}>
               <TouchableOpacity
-                  style={styles.closeButton}
+                  style={styles.closeButtonScanScreen}
                   onPress={stopScanning}
                   activeOpacity={0.7}
               >
@@ -1110,7 +1146,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    borderRadius: 2,
+    borderRadius: 8,
     marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1159,6 +1195,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     borderRadius: 10,
+    height: 50,
     overflow: 'hidden',
   },
   saveButtonGradient: {
@@ -1277,6 +1314,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
+  },
+  closeButtonScanScreen: {
+    position: 'absolute',
+    top: 46,
+    left: 16,
   },
   closeButtonCircle: {
     width: 32,
