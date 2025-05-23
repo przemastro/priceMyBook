@@ -139,8 +139,9 @@ export default {
         includePublicationYear: "Publication Year",
         includeDemand: "Demand",
         includeSupply: "Supply",
-        estimatedValue: "Estimated value"
-
+        estimatedValue: "Estimated value",
+        demandVsSupply: "Demand vs Supply",
+        priceHistory: "Price History"
     },
     titles: {
         scan: 'Scan ISBN',

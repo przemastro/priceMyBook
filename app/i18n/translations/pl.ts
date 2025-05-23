@@ -137,7 +137,9 @@ export default {
         includePublicationYear: "Data wydania",
         includeDemand: "Popyt",
         includeSupply: "Podaż",
-        estimatedValue: "Cena szacowana"
+        estimatedValue: "Cena szacowana",
+        demandVsSupply: "Popyt vs Podaż",
+        priceHistory: "Historia ceny książki"
     },
     titles: {
         scan: 'Skanuj ISBN',
