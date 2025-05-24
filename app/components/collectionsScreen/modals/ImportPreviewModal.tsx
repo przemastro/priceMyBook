@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
-import { BookData } from './types';
+import { BookData } from '../types';
 
 interface ImportPreviewModalProps {
     importPreview: {

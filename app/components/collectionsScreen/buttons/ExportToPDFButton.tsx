@@ -1,12 +1,12 @@
 // app/components/ExportToPDFButton.tsx
 import React from 'react';
-import { TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import {TouchableOpacity, Alert, StyleSheet, ViewStyle, TextStyle} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from './types';
+import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import * as Print from 'expo-print';
 
 
@@ -16,6 +16,9 @@ interface ExportToPDFButtonProps {
     formatUniquenessSummary: (uniqueness: BookUniqueness | undefined) => string;
     formatMarketFactorsSummary: (marketFactors: MarketFactors | undefined) => string;
     formatListingStatus: (status?: ListingStatus) => string;
+    style?: ViewStyle;
+    iconStyle?: ViewStyle;
+    textStyle?: TextStyle;
 }
 
 const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({

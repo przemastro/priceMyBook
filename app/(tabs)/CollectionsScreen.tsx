@@ -11,7 +11,7 @@ import {
     TextInput,
     Animated
 } from 'react-native';
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import {Feather, FontAwesome5, Ionicons, MaterialIcons} from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
@@ -25,14 +25,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Easing } from 'react-native-reanimated';
 
 // Components
-import CollectionCarousel from '../components/collectionsScreen/CollectionCarousel';
-import BooksCarousel from '../components/collectionsScreen/BooksCarousel';
+import CollectionCarousel from '../components/collectionsScreen/sections/CollectionCarousel';
+import BooksCarousel from '../components/collectionsScreen/sections/BooksCarousel';
 import AddCollectionModal from '../components/commonScreen/modals/AddCollectionModal';
-import EditCollectionModal from '../components/collectionsScreen/EditCollectionModal';
-import ImportPreviewModal from '../components/collectionsScreen/ImportPreviewModal';
-import ListingModal from '../components/collectionsScreen/ListingModal';
-import StatusChangeModal from '../components/collectionsScreen/StatusChangeModal';
-import CategoriesManager from '../components/collectionsScreen/CategoriesManager';
+import EditCollectionModal from '../components/collectionsScreen/modals/EditCollectionModal';
+import ImportPreviewModal from '../components/collectionsScreen/modals/ImportPreviewModal';
+import ListingModal from '../components/collectionsScreen/modals/ListingModal';
+import StatusChangeModal from '../components/collectionsScreen/modals/StatusChangeModal';
+import CategoriesCarousel from '../components/collectionsScreen/sections/CategoriesCarousel';
 
 // Types
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
@@ -45,9 +45,8 @@ interface Collection {
 
 const CollectionsScreen = () => {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [isImporting, setIsImporting] = useState(false);
-    const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [importPreview, setImportPreview] = useState<{
         collectionName: string;
@@ -60,6 +59,9 @@ const CollectionsScreen = () => {
     const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
     const [editingCollection, setEditingCollection] = useState<string | null>(null);
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
 
     const carouselRef = useRef<ICarouselInstance>(null);
     const { width } = Dimensions.get('window');
@@ -195,6 +197,7 @@ const CollectionsScreen = () => {
         }
 
         addCategoryToCollection(collectionName, category.trim());
+        setNewCategoryName('');
     };
 
     const handleRemoveCategory = (collectionName: string, category: string) => {
@@ -425,7 +428,8 @@ const CollectionsScreen = () => {
         }
     };
 
-    const getBookWord = (count: number, language: string) => {
+    const getBookWord = (count: number) => {
+        const language = i18n.language;
         if (language === 'pl') {
             if (count === 1) return t('labels.book_one');
             if (count % 100 >= 12 && count % 100 <= 14) return t('labels.book_many');
@@ -439,7 +443,6 @@ const CollectionsScreen = () => {
     const calculateCollectionTotal = (collectionName: string): number => {
         return (books[collectionName] || []).reduce((sum: number, book: BookData) => sum + parseFloat(book.price || '0'), 0);
     };
-
 
     const calculateTotalValue = (): number => {
         return collections.reduce((total: number, collection: {name: string; icon: string}) =>
@@ -511,7 +514,7 @@ const CollectionsScreen = () => {
     return (
         <View style={{ flex: 1 }}>
             <ScrollView
-                contentContainerStyle={[styles.scrollContainer, { paddingBottom: 80 }]}
+                contentContainerStyle={[styles.scrollContainer, { paddingBottom: 20 }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Total value section */}
@@ -562,10 +565,32 @@ const CollectionsScreen = () => {
                                 {index === 0 ? (
                                     <>
                                         <View style={styles.titleContainer}>
+                                            <TouchableOpacity
+                                                onPress={handlePrevSlide}
+                                                disabled={currentSlide === 0}
+                                                style={styles.navArrow}
+                                            >
+                                                <Feather
+                                                    name="chevron-left"
+                                                    size={24}
+                                                    color={currentSlide === 0 ? colors.grayLight : colors.primary}
+                                                />
+                                            </TouchableOpacity>
                                             <Text style={styles.slideTitle}>{t('labels.yourCollections')}</Text>
+                                            <TouchableOpacity
+                                                onPress={handleNextSlide}
+                                                disabled={!selectedCollection}
+                                                style={styles.navArrow}
+                                            >
+                                                <Feather
+                                                    name="chevron-right"
+                                                    size={24}
+                                                    color={!selectedCollection ? colors.grayLight : colors.primary}
+                                                />
+                                            </TouchableOpacity>
                                         </View>
                                         {selectedCollection && (
-                                            <CategoriesManager
+                                            <CategoriesCarousel
                                                 collectionName={selectedCollection}
                                                 collectionCategories={collectionCategories}
                                                 onAddCategory={handleAddCategory}
@@ -578,16 +603,25 @@ const CollectionsScreen = () => {
                                                     collections={collections}
                                                     books={books}
                                                     selectedCollection={selectedCollection}
-                                                    onSelectCollection={(collectionName) => setSelectedCollection(collectionName)}
+                                                    onSelectCollection={(collectionName) => {
+                                                        setSelectedCollection(collectionName);
+                                                        // Dodajemy możliwość przejścia do książek przez kliknięcie strzałki
+                                                    }}
                                                     calculateCollectionTotal={calculateCollectionTotal}
                                                     onEditCollection={async (collectionName, newName) => {
                                                         await handleEditCollection(collectionName, newName);
                                                     }}
                                                     onDeleteCollection={handleDeleteCollection}
+                                                    onAddCollection={() => setShowAddCollectionModal(true)}
                                                     onExportCollection={handleExportCSV}
                                                     getBookWord={getBookWord}
                                                     formatCurrency={formatCurrency}
                                                     onImportCollection={handleImportCollection}
+                                                    onNavigateToBooks={() => {
+                                                        if (selectedCollection) {
+                                                            handleNextSlide();
+                                                        }
+                                                    }}
                                                 />
                                             </>
                                         ) : (
@@ -598,6 +632,26 @@ const CollectionsScreen = () => {
                                     </>
                                 ) : (
                                     <>
+                                        <View style={styles.titleContainer}>
+                                            <TouchableOpacity
+                                                onPress={handlePrevSlide}
+                                                style={styles.navArrow}
+                                            >
+                                                <Feather name="chevron-left" size={24} color={colors.primary} />
+                                            </TouchableOpacity>
+                                            <Text style={styles.slideTitle}>{t('labels.yourBooks')}</Text>
+                                            <TouchableOpacity
+                                                onPress={handleNextSlide}
+                                                disabled={currentSlide === 1}
+                                                style={styles.navArrow}
+                                            >
+                                                <Feather
+                                                    name="chevron-right"
+                                                    size={24}
+                                                    color={currentSlide === 1 ? colors.grayLight : colors.primary}
+                                                />
+                                            </TouchableOpacity>
+                                        </View>
                                         {selectedCollection && (
                                             <View style={styles.collectionDetails}>
                                                 {books[selectedCollection]?.length === 0 ? (
@@ -605,22 +659,17 @@ const CollectionsScreen = () => {
                                                         <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
                                                     </View>
                                                 ) : (
-                                                    <>
-                                                        <View style={styles.titleContainer}>
-                                                            <Text style={styles.slideTitle}>{t('labels.yourBooks')}</Text>
-                                                        </View>
-                                                        <BooksCarousel
-                                                            books={books[selectedCollection]}
-                                                            collectionName={selectedCollection}
-                                                            onEditBook={(index) => handleEditBook(selectedCollection, index)}
-                                                            onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
-                                                            onListBook={(index) => handleListBook(selectedCollection, index)}
-                                                            formatDefectsSummary={formatDefectsSummary}
-                                                            formatUniquenessSummary={formatUniquenessSummary}
-                                                            formatMarketFactorsSummary={formatMarketFactorsSummary}
-                                                            formatListingStatus={formatListingStatus}
-                                                        />
-                                                    </>
+                                                    <BooksCarousel
+                                                        books={books[selectedCollection]}
+                                                        collectionName={selectedCollection}
+                                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
+                                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
+                                                        onListBook={(index) => handleListBook(selectedCollection, index)}
+                                                        formatDefectsSummary={formatDefectsSummary}
+                                                        formatUniquenessSummary={formatUniquenessSummary}
+                                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                                        formatListingStatus={formatListingStatus}
+                                                    />
                                                 )}
                                             </View>
                                         )}
@@ -634,44 +683,10 @@ const CollectionsScreen = () => {
                 </View>
             </ScrollView>
 
-            {/* Navigation buttons */}
-            <View style={styles.fixedNavigationContainer}>
-                <TouchableOpacity
-                    onPress={handlePrevSlide}
-                    disabled={currentSlide === 0}
-                    style={[
-                        styles.navButton,
-                        styles.backButton,
-                        currentSlide === 0 && styles.disabledNavButton
-                    ]}
-                >
-                    <Text style={styles.navButtonText}>{t('buttons.collections')}</Text>
-                </TouchableOpacity>
-
-                <View style={styles.progressDotsContainer}>
-                    <View style={[styles.progressDot, currentSlide === 0 && styles.activeProgressDot]} />
-                    <View style={[styles.progressDot, currentSlide === 1 && styles.activeProgressDot]} />
-                </View>
-
-                <TouchableOpacity
-                    onPress={handleNextSlide}
-                    disabled={currentSlide === 1 || !selectedCollection}
-                    style={[
-                        styles.navButton,
-                        styles.nextButton,
-                        (currentSlide === 1 || !selectedCollection) && styles.disabledNavButton
-                    ]}
-                >
-                    <Text style={[styles.navButtonText, styles.nextButtonText]}>
-                        {currentSlide === 1 ? t('buttons.done') : t('buttons.books')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
             {/* Modals */}
             <AddCollectionModal
-                visible={showAddModal}
-                onClose={() => setShowAddModal(false)}
+                visible={showAddCollectionModal}
+                onClose={() => setShowAddCollectionModal(false)}
                 onConfirm={(name, categories, icon) => handleAddCollection(name, categories, icon)}
             />
             <EditCollectionModal
@@ -799,13 +814,20 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     titleContainer: {
-        marginBottom: 0,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10,
+    },
+    navArrow: {
+        padding: 8,
+        marginHorizontal: 10,
     },
     slideTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: colors.primary,
+        marginHorizontal: 10,
     },
     emptyContainer: {
         justifyContent: 'center',
@@ -839,63 +861,6 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 6,
         backgroundColor: colors.white,
-    },
-    fixedNavigationContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'white',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderTopWidth: 1,
-        borderTopColor: colors.grayLight,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    navButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        minWidth: 100,
-        alignItems: 'center',
-    },
-    backButton: {
-        backgroundColor: 'white',
-        color: colors.primary,
-        borderWidth: 0,
-        borderColor: colors.primary,
-    },
-    nextButton: {
-        backgroundColor: colors.white,
-    },
-    navButtonText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: colors.primary,
-    },
-    nextButtonText: {
-        color: colors.primary,
-    },
-    disabledNavButton: {
-        opacity: 0.5,
-    },
-    progressDotsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    progressDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: colors.grayDark,
-        marginHorizontal: 4,
-    },
-    activeProgressDot: {
-        backgroundColor: colors.primary,
-        width: 8,
     },
 });
 

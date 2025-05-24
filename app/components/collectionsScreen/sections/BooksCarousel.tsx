@@ -1,4 +1,3 @@
-// app/components/BooksCarousel.tsx
 import React, { useRef } from 'react';
 import {
     View,
@@ -6,17 +5,19 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
-    Alert,
+    Image, ViewStyle, TextStyle,
 } from 'react-native';
 import { FontAwesome, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
-import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from './types';
-import ExportToPDFButton from './ExportToPDFButton';
+import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
+import ExportToPDFButton from '../buttons/ExportToPDFButton';
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
+const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58; // Zwiększona wysokość
+const ACTION_BUTTONS_WIDTH = 60;
 
 interface BooksCarouselProps {
     books: BookData[];
@@ -44,75 +45,58 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
     const { t } = useTranslation();
     const carouselRef = useRef<any>(null);
 
-    const goToFirstSlide = () => {
-        carouselRef.current?.scrollTo({ index: 0, animated: true });
-    };
-
-    const goToLastSlide = () => {
-        carouselRef.current?.scrollTo({ index: books.length - 1, animated: true });
-    };
-
-    const goToNextSlide = () => {
-        carouselRef.current?.next();
-    };
-
-    const goToPrevSlide = () => {
-        carouselRef.current?.prev();
-    };
-
     const renderListingButton = (bookIndex: number) => {
         const book = books[bookIndex];
         const listingStatus = book.listingStatus || { status: 'notListed', platforms: [] };
         const buttonConfig = {
-            notListed: { icon: 'upload', color: colors.primary, text: t('buttons.list'), bgColor: 'rgba(74, 108, 247, 0.1)' },
-            listed: { icon: 'check', color: colors.success, text: t('listingStatus.listed', { platforms: listingStatus.platforms?.map(p => t(`platforms.${p}`)).join(', ') || '' }), bgColor: 'rgba(76, 175, 80, 0.1)' },
-            sold: { icon: 'check-double', color: colors.grayDark, text: t('buttons.sold'), bgColor: 'rgba(158, 158, 158, 0.1)' }
+            notListed: { icon: 'upload', color: colors.primary, text: t('buttons.list') },
+            listed: { icon: 'check', color: colors.success, text: t('listingStatus.listed') },
+            sold: { icon: 'check-double', color: colors.grayDark, text: t('buttons.sold') }
         };
-        const {icon, color, text, bgColor} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
+        const {icon, color, text} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
+
         return (
-            <View style={styles.listingButtonContainer}>
-                <TouchableOpacity
-                    style={[styles.iconContainer, { backgroundColor: bgColor, borderColor: color, marginLeft: 32 }]}
-                    onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}
-                >
+            <TouchableOpacity
+                style={styles.actionButton}
+                onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}
+            >
+                <View style={[styles.actionIconContainer, { backgroundColor: `${color}20` }]}>
                     <FontAwesome5 name={icon} size={20} color={color}/>
-                </TouchableOpacity>
-                <Text style={[styles.listingButtonText]} numberOfLines={2} ellipsizeMode="tail">{text}</Text>
-            </View>
+                </View>
+                <Text style={styles.actionButtonText}>{text}</Text>
+            </TouchableOpacity>
         );
     };
 
     const renderActionButtons = (bookIndex: number) => {
         const book = books[bookIndex];
         return (
-            <View style={styles.actionButtonsContainer}>
+            <View style={styles.actionsColumn}>
                 <ExportToPDFButton
                     book={book}
                     formatDefectsSummary={formatDefectsSummary}
                     formatUniquenessSummary={formatUniquenessSummary}
                     formatMarketFactorsSummary={formatMarketFactorsSummary}
                     formatListingStatus={formatListingStatus}
+                    style={styles.actionButton as ViewStyle}
+                    iconStyle={styles.actionIconContainer as ViewStyle}
+                    textStyle={styles.actionButtonText as TextStyle}
                 />
 
                 <TouchableOpacity
-                    style={[styles.iconContainer, styles.editButton]}
+                    style={styles.actionButton}
                     onPress={(e) => {
                         e.stopPropagation();
                         onEditBook(bookIndex);
                     }}
                 >
-                    <Ionicons name="create" size={20} color={colors.primary} />
+                    <View style={[styles.actionIconContainer, { backgroundColor: `${colors.primary}20` }]}>
+                        <Ionicons name="create" size={20} color={colors.primary} />
+                    </View>
+                    <Text style={styles.actionButtonText}>{t('buttons.edit')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.iconContainer, styles.deleteButton]}
-                    onPress={(e) => {
-                        e.stopPropagation();
-                        onDeleteBook(bookIndex);
-                    }}
-                >
-                    <FontAwesome name="trash" size={20} color={colors.error} />
-                </TouchableOpacity>
+                {renderListingButton(bookIndex)}
             </View>
         );
     };
@@ -131,31 +115,47 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         });
 
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={styles.bookItemContainer}>
                 <Animated.View style={[styles.bookCard, animatedStyle]}>
-                    <View style={styles.bookCardHeader}>
-                        <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
-                        <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                    {/* Przycisk usuwania w prawym górnym rogu */}
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            onDeleteBook(index);
+                        }}
+                        hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                    >
+                        <FontAwesome name="times" size={20} color={colors.error} />
+                    </TouchableOpacity>
+
+                    {/* Placeholder na obrazek książki */}
+                    <View style={styles.bookImagePlaceholder}>
+                        <Ionicons name="book" size={60} color={colors.grayLight} />
                     </View>
 
                     <View style={styles.bookCardContent}>
-                        <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
-                        <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
-                        <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+                        <View style={styles.bookCardHeader}>
+                            <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
+                            <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                        </View>
 
-                        <View style={styles.bookCardDetails}>
-                            <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
-                            {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
-                            {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
-                            {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
+                        <View style={styles.bookDetails}>
+                            <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
+                            <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
+                            <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+
+                            <View style={styles.bookCardDetails}>
+                                <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
+                                {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
+                                {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
+                                {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
+                            </View>
                         </View>
                     </View>
-
-                    <View style={styles.bookCardFooter}>
-                        {renderListingButton(index)}
-                        {renderActionButtons(index)}
-                    </View>
                 </Animated.View>
+
+                {renderActionButtons(index)}
             </View>
         );
     };
@@ -166,33 +166,12 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 ref={carouselRef}
                 loop={false}
                 style={styles.booksCarousel}
-                width={BOOK_CARD_WIDTH}
-                height={400}
+                width={BOOK_CARD_WIDTH + ACTION_BUTTONS_WIDTH}
+                height={BOOK_CARD_HEIGHT}
                 data={books}
                 renderItem={({ index, animationValue }) => <BookItem index={index} animationValue={animationValue} />}
                 scrollAnimationDuration={800}
             />
-
-            {/* Navigation buttons */}
-            {books.length > 1 && (
-                <View style={styles.navigationContainer}>
-                    <TouchableOpacity onPress={goToFirstSlide} style={styles.navButton}>
-                        <Ionicons name="play-skip-back" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={goToPrevSlide} style={styles.navButton}>
-                        <Ionicons name="play-back" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={goToNextSlide} style={styles.navButton}>
-                        <Ionicons name="play-forward" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={goToLastSlide} style={styles.navButton}>
-                        <Ionicons name="play-skip-forward" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
-            )}
         </View>
     );
 };
@@ -204,36 +183,22 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         backgroundColor: colors.white,
     },
-    booksCarouselTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.black,
-        marginBottom: 10,
-        textAlign: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray
-    },
     booksCarousel: {
         width: '100%',
     },
-    navigationContainer: {
+    bookItemContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
-    },
-    navButton: {
-        padding: 10,
-        marginHorizontal: 5,
-        borderRadius: 20,
-        backgroundColor: 'rgba(74,108,247,0.1)',
+        width: '100%',
     },
     bookCard: {
-        width: BOOK_CARD_WIDTH - 40,
+        width: BOOK_CARD_WIDTH - 20,
+        height: BOOK_CARD_HEIGHT - 40,
         backgroundColor: colors.white,
-        borderRadius: 8,
+        borderRadius: 12,
         padding: 16,
-        marginHorizontal: 10,
+        marginLeft: 10,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
@@ -241,9 +206,35 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        overflow: 'hidden',
+    },
+    deleteButton: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 10,
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    bookImagePlaceholder: {
+        height: '30%',
+        backgroundColor: colors.background,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: colors.grayLight,
+    },
+    bookCardContent: {
+        flex: 1,
     },
     bookCardHeader: {
-        marginBottom: 12,
+        marginBottom: 8,
     },
     bookCardTitle: {
         fontSize: 18,
@@ -255,8 +246,8 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.grayDark,
     },
-    bookCardContent: {
-        marginBottom: 12,
+    bookDetails: {
+        flex: 1,
     },
     bookCardIsbn: {
         fontSize: 14,
@@ -301,50 +292,29 @@ const styles = StyleSheet.create({
         marginBottom: 4,
         fontStyle: 'italic',
     },
-    bookCardFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 12,
-    },
-    actionButtonsContainer: {
-        flexDirection: 'row',
-    },
-    listingButtonContainer: {
-        width: 100,
-        minHeight: 80,
+    actionsColumn: {
+        width: ACTION_BUTTONS_WIDTH,
         alignItems: 'center',
         justifyContent: 'center',
+        marginLeft: 10,
     },
-    listingButtonText: {
-        fontSize: 12,
-        textAlign: 'center',
+    actionButton: {
+        alignItems: 'center',
+        marginBottom: 16,
         width: '100%',
-        paddingHorizontal: 2,
-        lineHeight: 16,
-        flexWrap: 'wrap',
-        marginLeft: 32,
-        color: colors.primary
     },
-    iconContainer: {
+    actionIconContainer: {
         width: 40,
         height: 40,
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
         marginBottom: 4,
     },
-    editButton: {
-        padding: 8,
-        marginRight: 4,
-        borderColor: colors.primary,
-        backgroundColor: 'rgba(74, 108, 247, 0.1)',
-    },
-    deleteButton: {
-        padding: 8,
-        borderColor: colors.error,
-        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    actionButtonText: {
+        fontSize: 12,
+        textAlign: 'center',
+        color: colors.grayDark,
     },
 });
 
