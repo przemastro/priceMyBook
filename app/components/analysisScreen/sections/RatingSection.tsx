@@ -35,8 +35,8 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
             end={[1, 1]}
             style={[styles.ratingOuterContainer, { paddingVertical: 12 }]}
         >
-            <View style={[styles.ratingContainer, { gap: 10 }]}>
-                <View style={[styles.ratingHeader, { gap: 6 }]}>
+            <View style={[styles.ratingContainer, { gap: 0 }]}>
+                <View style={[styles.ratingHeader, { gap: 0 }]}>
                     <Text style={styles.ratingTitle}>Stan książki</Text>
                     <View style={styles.ratingStars}>
                         {[...Array(10)].map((_, i) => (
@@ -48,14 +48,6 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                             />
                         ))}
                     </View>
-                    <Text style={[styles.ratingText, { fontSize: 14 }]}>
-                        {`${bookRating}/10 - ${
-                            bookRating >= 8 ? 'Doskonały' :
-                                bookRating >= 6 ? 'Dobry' :
-                                    bookRating >= 4 ? 'Średni' :
-                                        'Słaby'
-                        }`}
-                    </Text>
                 </View>
 
                 <TouchableOpacity
@@ -67,6 +59,26 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                         colors={[colors.white, colors.whiteBlue]}
                         style={[styles.priceSummaryGradient, { paddingVertical: 10 }]}
                     >
+
+                        <View style={[styles.priceRowCentered, { marginBottom: 6 }]}>
+                            <View style={styles.priceLabelContainer}>
+                                <Ionicons name="book-outline" size={14} color={colors.secondary} />
+                                <Text style={[styles.priceLabel, { fontSize: 13 }]}>
+                                    Stan:
+                                </Text>
+                            </View>
+                            <Text style={[styles.ratingText, { fontSize: 14 }]}>
+                                {`${bookRating}/10 - ${
+                                    bookRating >= 8 ? 'Doskonały' :
+                                        bookRating >= 6 ? 'Dobry' :
+                                            bookRating >= 4 ? 'Średni' :
+                                                'Słaby'
+                                }`}
+                            </Text>
+                        </View>
+
+                        <View style={[styles.separator, { marginVertical: 6 }]} />
+
                         <View style={[styles.priceRow, { marginBottom: 6 }]}>
                             <View style={styles.priceLabelContainer}>
                                 <Ionicons name="book-outline" size={14} color={colors.secondary} />

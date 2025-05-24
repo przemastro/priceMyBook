@@ -173,7 +173,6 @@ export default {
         saveChanges: "Zapisz zmiany",
         selectImage: 'Wybierz zdjęcie',
         analyzeImage: 'Analizuj',
-        startScanning: 'SKANUJ W POSZUKIWANIU WAD',
         stopScanning: 'Zatrzymaj skanowanie',
         simulateDefect: 'Symuluj wadę',
         confirmDefect: 'POTWIERDŹ',
@@ -194,7 +193,10 @@ export default {
         save: 'ZAPISZ',
         collections: 'KSIĘGOZBIORY',
         books: 'KSIĄŻKI',
-        addCategory: "Dodaj kategorię"
+        addCategory: "Dodaj kategorię",
+        edit: "Edytuj",
+        clear: "Wyczyść",
+        startScanning: 'Skanuj',
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',

@@ -175,7 +175,6 @@ export default {
         saveChanges: "Save Changes",
         selectImage: 'Select Image',
         analyzeImage: 'Analyze',
-        startScanning: 'SCAN FOR DEFECTS',
         stopScanning: 'Stop Scanning',
         simulateDefect: 'Simulate Defect',
         confirmDefect: 'CONFIRM',
@@ -196,7 +195,10 @@ export default {
         save: 'SAVE',
         collections: 'COLLECTIONS',
         books: 'BOOKS',
-        addCategory: "Add Category"
+        addCategory: "Add Category",
+        edit: "Edit",
+        clear: "Clear",
+        startScanning: 'Scan',
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',

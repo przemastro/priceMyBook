@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList } from 'react-native';
+import {View, Text, FlatList, Dimensions} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import DefectItem from '../items/DefectItem';
 import { styles } from './styles';

@@ -685,13 +685,9 @@ export default function AnalysisScreen() {
                     originalPrice={originalPrice}
                     onPickImage={pickImage}
                     onEditPress={openEditModal}
+                    onScanPress={startScanning} // Przekazujemy funkcję skanowania
+                    isScanning={isScanning} // Przekazujemy stan skanowania
                     formatPrice={(price) => formatCurrency({price, exchangeRate})}
-                />
-
-                <ScanButton
-                    onPress={startScanning}
-                    isScanning={isScanning}
-                    isLoading={isLoading}
                 />
               </View>
               <EditBookDetailsModal

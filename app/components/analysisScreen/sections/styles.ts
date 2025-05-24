@@ -178,11 +178,11 @@ export const styles = StyleSheet.create({
     },
     ratingContainer: {
         padding: 24,
-        paddingBottom: 16,
+        paddingBottom: 6,
     },
     ratingHeader: {
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 0,
     },
     ratingTitle: {
         fontSize: 18,
@@ -192,7 +192,7 @@ export const styles = StyleSheet.create({
     },
     ratingStars: {
         flexDirection: 'row',
-        marginBottom: 8,
+        marginBottom: 16,
     },
     ratingText: {
         fontSize: 16,
@@ -213,6 +213,12 @@ export const styles = StyleSheet.create({
         padding: 16,
     },
     priceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 0,
+    },
+    priceRowCentered: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -349,6 +355,8 @@ export const styles = StyleSheet.create({
     columnWrapper: {
         justifyContent: 'space-between',
         marginBottom: 12,
+        marginLeft: 10,
+        marginRight: 10
     },
     defectItemContainer: {
         width: '30%',

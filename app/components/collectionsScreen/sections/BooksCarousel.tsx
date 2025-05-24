@@ -62,12 +62,12 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}
             >
                 <LinearGradient
-                    colors={[`${color}20`, `${color}10`]}
+                    colors={[`${color}`, `${color}`]}
                     style={styles.actionIconContainer}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <FontAwesome5 name={icon} size={20} color={color}/>
+                    <FontAwesome5 name={icon} size={20} color={colors.white}/>
                 </LinearGradient>
                 <Text style={styles.actionButtonText}>{text}</Text>
             </TouchableOpacity>
