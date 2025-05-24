@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Alert } from 'react-native';
-import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
+import React, { useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Alert, Modal } from 'react-native';
+import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ interface CollectionCarouselProps {
     formatCurrency: (price: string) => string;
     onImportCollection: () => void;
     onAddCollection: () => void;
-    onNavigateToBooks: () => void; // Nowa prop do nawigacji do książek
+    onNavigateToBooks: () => void;
 }
 
 const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
@@ -38,8 +38,13 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                                                                }) => {
     const { t, i18n } = useTranslation();
     const [searchQuery, setSearchQuery] = React.useState('');
-    const { width } = Dimensions.get('window');
-    const { height } = Dimensions.get('window');
+    const [menuVisible, setMenuVisible] = useState<string | null>(null);
+    const [menuPosition, setMenuPosition] = useState({
+        x: 0,
+        y: 0,
+        opensUpward: false
+    });
+    const { width, height } = Dimensions.get('window');
 
     const filteredCollections = useMemo(() => {
         if (!searchQuery) return collections;
@@ -48,8 +53,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         );
     }, [collections, searchQuery]);
 
-    const handleDeletePress = (collectionName: string, event: any) => {
-        event.stopPropagation();
+    const handleDeletePress = (collectionName: string) => {
         Alert.alert(
             t('alerts.confirmDeleteTitle'),
             t('alerts.confirmDeleteMessage', {
@@ -65,6 +69,23 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                 }
             ]
         );
+        setMenuVisible(null);
+    };
+
+    const showMenu = (collectionName: string, event: any) => {
+        const { pageX, pageY } = event.nativeEvent;
+        const opensUpward = pageY > height * 0.6; // Otwieraj w górę jeśli jesteśmy w dolnych 60% ekranu
+
+        setMenuPosition({
+            x: pageX,
+            y: pageY,
+            opensUpward
+        });
+        setMenuVisible(collectionName);
+    };
+
+    const hideMenu = () => {
+        setMenuVisible(null);
     };
 
     const renderItem = ({ item }: { item: { name: string; icon: string } }) => {
@@ -72,78 +93,71 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         const isSelected = selectedCollection === item.name;
 
         return (
-            <TouchableOpacity
-                style={[
-                    styles.collectionItem,
-                    isSelected && styles.selectedCollectionItem,
-                    { width: width * 0.8 }
-                ]}
-                onPress={() => onSelectCollection(item.name)}
-                activeOpacity={0.7}
-            >
-                <LinearGradient
-                    colors={isSelected
-                        ? [colors.buttonSelected1, colors.buttonSelected2]
-                        : [colors.white, colors.whiteBlue]}
-                    style={styles.collectionItemGradient}
+            <View style={styles.itemContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.collectionCard,
+                        isSelected && styles.selectedCollectionCard,
+                    ]}
+                    onPress={() => onSelectCollection(item.name)}
+                    activeOpacity={0.7}
                 >
-                    <View style={[
-                        styles.collectionIconContainer,
-                        isSelected && styles.selectedCollectionIcon
-                    ]}>
-                        <MaterialIcons
-                            name={item.icon as any}
-                            size={24}
-                            color={isSelected ? colors.primary : colors.secondary}
-                        />
-                    </View>
-                    <View style={styles.collectionTextContainer}>
-                        <Text style={[
-                            styles.collectionName,
-                            isSelected && styles.selectedCollectionName
-                        ]}>
-                            {item.name}
-                        </Text>
-                        <Text style={styles.collectionBookCount}>
-                            {bookCount} {t(getBookWord(bookCount, i18n.language))}
-                        </Text>
-                        <Text style={styles.collectionValue}>
-                            {formatCurrency(calculateCollectionTotal(item.name).toString())}
-                        </Text>
-                    </View>
-
-                    {/* Strzałka do nawigacji do książek */}
-                    <TouchableOpacity
-                        style={styles.navigateButton}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            onSelectCollection(item.name);
-                            onNavigateToBooks();
-                        }}
-                        activeOpacity={0.7}
+                    <LinearGradient
+                        colors={isSelected
+                            ? [colors.buttonSelected1, colors.buttonSelected2]
+                            : [colors.white, colors.whiteBlue]}
+                        style={styles.cardGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                     >
-                        <Feather name="chevron-right" size={24} color={isSelected ? colors.primary : colors.secondary} />
-                    </TouchableOpacity>
+                        <View style={styles.cardContent}>
+                            <View style={[
+                                styles.collectionIcon,
+                                isSelected && styles.selectedCollectionIcon
+                            ]}>
+                                <MaterialIcons
+                                    name={item.icon as any}
+                                    size={24}
+                                    color={isSelected ? colors.primary : colors.secondary}
+                                />
+                            </View>
 
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={(e) => handleDeletePress(item.name, e)}
-                        activeOpacity={0.5}
-                        hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-                    >
-                        <MaterialIcons
-                            name="close"
-                            size={18}
-                            color={isSelected ? colors.primary : colors.grayDark}
-                        />
-                    </TouchableOpacity>
-                </LinearGradient>
-            </TouchableOpacity>
+                            <View style={styles.textContainer}>
+                                <Text style={[
+                                    styles.collectionName,
+                                    isSelected && styles.selectedCollectionName
+                                ]} numberOfLines={1}>
+                                    {item.name}
+                                </Text>
+                                <Text style={styles.collectionBookCount}>
+                                    {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                                </Text>
+                                <Text style={styles.collectionValue}>
+                                    {formatCurrency(calculateCollectionTotal(item.name).toString())}
+                                </Text>
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.menuButton}
+                                onPress={(e) => showMenu(item.name, e)}
+                                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                            >
+                                <Ionicons
+                                    name="ellipsis-vertical"
+                                    size={20}
+                                    color={isSelected ? colors.primary : colors.grayDark}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
         );
     };
 
     return (
-        <View style={[styles.combinedSection, { width: width * 0.9 }]}>
+        <View style={styles.container}>
+            {/* Search and add section */}
             <View style={styles.searchHeader}>
                 <View style={styles.searchContainer}>
                     <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
@@ -156,15 +170,15 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                     />
                 </View>
 
-                <View style={styles.actionButtonsContainer}>
+                <View style={styles.headerButtons}>
                     <TouchableOpacity
                         onPress={onAddCollection}
-                        style={styles.actionButton}
+                        style={styles.headerButton}
                         activeOpacity={0.7}
                     >
                         <LinearGradient
                             colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                            style={styles.actionButtonGradient}
+                            style={styles.headerButtonGradient}
                         >
                             <Ionicons name="add" size={20} color={colors.primary} />
                         </LinearGradient>
@@ -172,12 +186,12 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
                     <TouchableOpacity
                         onPress={onImportCollection}
-                        style={[styles.actionButton, { marginLeft: 8 }]}
+                        style={[styles.headerButton, { marginLeft: 8 }]}
                         activeOpacity={0.7}
                     >
                         <LinearGradient
                             colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                            style={styles.actionButtonGradient}
+                            style={styles.headerButtonGradient}
                         >
                             <Ionicons name="download" size={20} color={colors.primary} />
                         </LinearGradient>
@@ -185,11 +199,12 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                 </View>
             </View>
 
-            {filteredCollections.length > 0 ? (
-                <ScrollView
-                    style={[styles.listContainer, { height: height * 0.35 }]}
-                    nestedScrollEnabled={true}
-                >
+            {/* Collections list */}
+            <ScrollView
+                style={styles.listContainer}
+                nestedScrollEnabled={true}
+            >
+                {filteredCollections.length > 0 ? (
                     <FlatList
                         scrollEnabled={false}
                         data={filteredCollections}
@@ -197,30 +212,110 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                         keyExtractor={(item) => item.name}
                         contentContainerStyle={styles.listContent}
                     />
-                </ScrollView>
-            ) : (
-                <View style={styles.noCollectionsContainer}>
-                    <Text style={styles.noCollectionsText}>{t('labels.noCollectionsFound')}</Text>
-                </View>
-            )}
+                ) : (
+                    <View style={styles.noCollectionsContainer}>
+                        <Text style={styles.noCollectionsText}>{t('labels.noCollectionsFound')}</Text>
+                    </View>
+                )}
+            </ScrollView>
+
+            {/* Menu Modal */}
+            <Modal
+                visible={!!menuVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={hideMenu}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={hideMenu}
+                >
+                    <View style={[
+                        styles.menuContainer,
+                        {
+                            top: menuPosition.opensUpward
+                                ? menuPosition.y - 180 // Otwiera się w górę
+                                : menuPosition.y + 10, // Otwiera się w dół
+                            left: Math.max(10, Math.min(menuPosition.x - 80, width - 170))
+                        }
+                    ]}>
+                        <View style={[
+                            styles.menuTriangle,
+                            menuPosition.opensUpward
+                                ? styles.menuTriangleBottom
+                                : styles.menuTriangleTop
+                        ]} />
+
+                        <View style={styles.menuContent}>
+                            <TouchableOpacity
+                                style={styles.menuOption}
+                                onPress={() => {
+                                    if (menuVisible) {
+                                        onEditCollection(menuVisible, menuVisible);
+                                        hideMenu();
+                                    }
+                                }}
+                            >
+                                <Ionicons name="create-outline" size={18} color={colors.blackDark} />
+                                <Text style={styles.menuOptionText}>{t('buttons.edit')}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.menuOption}
+                                onPress={() => {
+                                    if (menuVisible) {
+                                        onExportCollection(menuVisible);
+                                        hideMenu();
+                                    }
+                                }}
+                            >
+                                <FontAwesome5 name="file-export" size={16} color={colors.blackDark} />
+                                <Text style={styles.menuOptionText}>{t('buttons.export')}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.menuOption}
+                                onPress={() => {
+                                    onNavigateToBooks();
+                                    hideMenu();
+                                }}
+                            >
+                                <Feather name="book-open" size={16} color={colors.blackDark} />
+                                <Text style={styles.menuOptionText}>{t('buttons.books')}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.menuOption, styles.deleteOption]}
+                                onPress={() => {
+                                    if (menuVisible) {
+                                        handleDeletePress(menuVisible);
+                                    }
+                                }}
+                            >
+                                <MaterialIcons name="delete-outline" size={18} color={colors.blackDark} />
+                                <Text style={[styles.menuOptionText, styles.deleteText]}>{t('buttons.delete')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    combinedSection: {
-        backgroundColor: colors.white,
-        borderRadius: 0,
-        paddingTop: 10,
-        marginBottom: 0,
+    container: {
         flex: 1,
-        alignSelf: 'center',
+        backgroundColor: colors.white,
+        marginRight: 30
     },
     searchHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 16,
         paddingHorizontal: 16,
+        paddingTop: 10,
     },
     searchContainer: {
         flex: 1,
@@ -230,9 +325,10 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        marginRight: 10,
         borderWidth: 1,
         borderColor: colors.buttonSelected1,
+        marginRight: 5,
+        marginLeft: 5
     },
     searchIcon: {
         marginRight: 8,
@@ -242,48 +338,53 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: colors.black,
     },
-    actionButtonsContainer: {
+    headerButtons: {
         flexDirection: 'row',
     },
-    actionButton: {
+    headerButton: {
         width: 40,
         height: 40,
         borderRadius: 20,
         overflow: 'hidden',
     },
-    actionButtonGradient: {
+    headerButtonGradient: {
         width: '100%',
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    collectionItem: {
-        borderRadius: 12,
+    itemContainer: {
         marginBottom: 12,
-        marginHorizontal: 16,
+    },
+    collectionCard: {
+        borderRadius: 12,
         overflow: 'hidden',
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        marginRight: 5,
+        marginLeft: 5
     },
-    selectedCollectionItem: {
+    selectedCollectionCard: {
         shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
     },
-    collectionItemGradient: {
-        padding: 16,
+    cardGradient: {
+        flex: 1,
+        padding: 12,
+    },
+    cardContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        position: 'relative',
     },
-    collectionIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    collectionIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         backgroundColor: 'rgba(0,0,0,0.03)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -292,39 +393,35 @@ const styles = StyleSheet.create({
     selectedCollectionIcon: {
         backgroundColor: 'rgba(74,108,247,0.1)',
     },
-    collectionTextContainer: {
+    textContainer: {
         flex: 1,
     },
     collectionName: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600',
         color: colors.secondary,
-        marginBottom: 2,
+        marginBottom: 4,
     },
     selectedCollectionName: {
         color: colors.primary,
-        fontWeight: '600',
     },
     collectionBookCount: {
-        fontSize: 14,
+        fontSize: 13,
         color: colors.grayDark,
     },
     collectionValue: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: colors.primary,
-        marginTop: 4,
+        marginTop: 2,
     },
-    deleteButton: {
-        position: 'absolute',
-        right: 12,
-        top: 12,
-        padding: 4,
-        borderRadius: 12,
+    menuButton: {
+        padding: 8,
+        marginLeft: 8,
     },
     listContainer: {
-        width: '100%',
-        maxHeight: 300,
+        flex: 1,
+        paddingHorizontal: 16,
     },
     listContent: {
         paddingBottom: 20,
@@ -339,12 +436,63 @@ const styles = StyleSheet.create({
         color: colors.grayDark,
         textAlign: 'center',
     },
-    navigateButton: {
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0)',
+    },
+    menuContainer: {
         position: 'absolute',
-        right: 40,
-        top: '50%',
-        marginTop: -12,
-        padding: 4,
+        backgroundColor: colors.white,
+        borderRadius: 8,
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 10,
+        minWidth: 160,
+    },
+    menuTriangle: {
+        position: 'absolute',
+        width: 0,
+        height: 0,
+        borderLeftWidth: 8,
+        borderRightWidth: 8,
+        borderBottomWidth: 8,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderBottomColor: colors.white,
+    },
+    menuTriangleTop: {
+        top: -8,
+        right: 12,
+    },
+    menuTriangleBottom: {
+        bottom: -8,
+        right: 12,
+        transform: [{ rotate: '180deg' }],
+    },
+    menuContent: {
+        paddingVertical: 4,
+    },
+    menuOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+    },
+    menuOptionText: {
+        fontSize: 14,
+        marginLeft: 8,
+        color: colors.blackDark,
+    },
+    deleteOption: {
+        borderTopWidth: 1,
+        borderTopColor: colors.grayLight,
+    },
+    deleteText: {
+        fontSize: 14,
+        marginLeft: 8,
+        color: colors.blackDark,
     },
 });
 

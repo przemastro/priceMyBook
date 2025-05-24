@@ -633,7 +633,6 @@ const CollectionsScreen = () => {
                                                     selectedCollection={selectedCollection}
                                                     onSelectCollection={(collectionName) => {
                                                         setSelectedCollection(collectionName);
-                                                        // Dodajemy możliwość przejścia do książek przez kliknięcie strzałki
                                                     }}
                                                     calculateCollectionTotal={calculateCollectionTotal}
                                                     onEditCollection={async (collectionName, newName) => {
@@ -763,10 +762,12 @@ const styles = StyleSheet.create({
         marginVertical: 8,
     },
     slidesContainer: {
-        minHeight: 600,
+        minHeight: 450,
+        maxHeight: 450
     },
     slide: {
         flex: 1,
+        width: '100%'
     },
     titleContainer: {
         flexDirection: 'row',
