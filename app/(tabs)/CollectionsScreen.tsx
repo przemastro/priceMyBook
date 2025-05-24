@@ -37,6 +37,7 @@ import CategoriesCarousel from '../components/collectionsScreen/sections/Categor
 // Types
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
 import { BookAgeInfo } from "@/app/components/scanScreen/types";
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Collection {
     name: string;
@@ -517,34 +518,61 @@ const CollectionsScreen = () => {
                 contentContainerStyle={[styles.scrollContainer, { paddingBottom: 20 }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Total value section */}
-                <View style={styles.totalValueContainer}>
-                    <View style={styles.totalValueContent}>
-                        <Text style={styles.totalValueLabel}>{t('labels.totalValue')}</Text>
-                        <View style={styles.valueRow}>
-                            <TouchableOpacity
-                                style={styles.coinIconContainer}
-                                onPress={() => router.push({ pathname: '/settings', params: { initialTab: 'algorithm' } })}
-                                activeOpacity={0.7}
-                            >
-                                <FontAwesome5 name="coins" size={20} color={colors.primary} />
-                            </TouchableOpacity>
-                            <View style={styles.priceContainer}>
-                                <Text style={styles.totalValueAmount}>{formatCurrency(calculateTotalValue().toString())}</Text>
-                            </View>
+                <LinearGradient
+                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                    start={[0, 0]}
+                    end={[1, 1]}
+                    style={styles.ratingOuterContainer}
+                >
+                    <View style={styles.ratingContainer}>
+                        {/* Nagłówek */}
+                        <View style={styles.ratingHeader}>
+                            <Text style={styles.ratingTitle}>Wartość kolekcji</Text>
                         </View>
-                        <View style={styles.valueBreakdownContainer}>
-                            <View style={styles.valueBreakdownRow}>
-                                <Text style={styles.valueBreakdownLabel}>{t('labels.activeValue')}:</Text>
-                                <Text style={[styles.valueBreakdownAmount, styles.activeValue]}>{formatCurrency(calculateActiveValue().toString())}</Text>
-                            </View>
-                            <View style={styles.valueBreakdownRow}>
-                                <Text style={styles.valueBreakdownLabel}>{t('labels.soldValue')}:</Text>
-                                <Text style={[styles.valueBreakdownAmount, styles.soldValue]}>{formatCurrency(calculateSoldValue().toString())}</Text>
-                            </View>
+
+                        {/* Główna wartość z cieniem */}
+                        <View style={styles.priceSummarySection}>
+                            <LinearGradient
+                                colors={[colors.white, colors.whiteBlue]}
+                                style={[styles.priceSummaryGradient, styles.withShadow]}
+                            >
+                                {/* Wartość całkowita */}
+                                <View style={styles.priceRow}>
+                                    <View style={styles.priceLabelContainer}>
+                                        <FontAwesome5 name="coins" size={22} color={colors.primary} />
+                                        <Text style={styles.priceLabelTotal}>Wartość całkowita:</Text>
+                                    </View>
+                                    <Text style={styles.priceValueTotal}>
+                                        {formatCurrency(calculateTotalValue().toString())}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.separator} />
+
+                                {/* Podział wartości */}
+                                <View style={styles.priceRow}>
+                                    <View style={styles.priceLabelContainer}>
+                                        <Ionicons name="book-outline" size={14} color={colors.secondary} />
+                                        <Text style={styles.priceLabel}>Wartość aktywna:</Text>
+                                    </View>
+                                    <Text style={[styles.priceValue, {color: colors.grayDark}]}>
+                                        {formatCurrency(calculateActiveValue().toString())}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.priceRow}>
+                                    <View style={styles.priceLabelContainer}>
+                                        <Ionicons name="cash-outline" size={14} color={colors.primary} />
+                                        <Text style={styles.priceLabelSold}>Wartość sprzedana:</Text>
+                                    </View>
+                                    <Text style={[styles.priceValue, {color: colors.primary}]}>
+                                        {formatCurrency(calculateSoldValue().toString())}
+                                    </Text>
+                                </View>
+                            </LinearGradient>
                         </View>
                     </View>
-                </View>
+                </LinearGradient>
 
                 {/* Carousel with two slides */}
                 <View style={styles.slidesContainer}>
@@ -728,84 +756,11 @@ const styles = StyleSheet.create({
         paddingTop: 6,
         backgroundColor: colors.white,
     },
-    totalValueContainer: {
-        backgroundColor: '#f0f4ff',
-        padding: 20,
-        marginBottom: 20,
-        marginHorizontal: -16,
-        paddingTop: 60,
-        marginTop: -20,
-        borderBottomLeftRadius: 22,
-        borderBottomRightRadius: 22,
-        zIndex: 999,
-        elevation: 4,
-    },
-    totalValueContent: {
-        alignItems: 'center',
-    },
-    totalValueLabel: {
-        fontSize: 16,
-        color: colors.grayDark,
-        marginBottom: 4,
-    },
-    totalValueAmount: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: colors.primary,
-    },
     valueRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginVertical: 8,
-    },
-    coinIconContainer: {
-        backgroundColor: colors.white,
-        borderRadius: 20,
-        width: 45,
-        height: 45,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: colors.primary,
-        zIndex: 1,
-        marginRight: -5,
-    },
-    priceContainer: {
-        backgroundColor: colors.background,
-        borderRadius: 20,
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        paddingLeft: 10,
-        borderWidth: 1,
-        borderColor: colors.background,
-        zIndex: 2,
-    },
-    valueBreakdownContainer: {
-        width: '100%',
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-    valueBreakdownRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 6,
-    },
-    valueBreakdownLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    valueBreakdownAmount: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    activeValue: {
-        color: colors.primary,
-    },
-    soldValue: {
-        color: colors.success,
     },
     slidesContainer: {
         minHeight: 600,
@@ -861,6 +816,201 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 6,
         backgroundColor: colors.white,
+    },
+    totalValueContent: {
+        alignItems: 'center',
+    },
+    coinIconContainer: {
+        borderRadius: 20,
+        width: 45,
+        height: 45,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1,
+        marginRight: 10,
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    coinIconGradient: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    priceContainer: {
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    valueBreakdownContainer: {
+        width: '100%',
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    valueBreakdownRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+        alignItems: 'center',
+    },
+    valueBreakdownLabel: {
+        fontSize: 14,
+        color: colors.white,
+    },
+    valueBreakdownAmount: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    activeValue: {
+        color: colors.white,
+    },
+    soldValue: {
+        color: colors.white,
+    },
+    totalValueContainer: {
+        padding: 24,
+        paddingTop: 60,
+        marginTop: -20,
+        marginBottom: 20,
+        marginHorizontal: -16,
+        borderBottomLeftRadius: 22,
+        borderBottomRightRadius: 22,
+    },
+    mainValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    valueTextContainer: {
+        marginLeft: 12,
+    },
+    totalValueLabel: {
+        fontSize: 14,
+        color: colors.white,
+        opacity: 0.9,
+    },
+    totalValueAmount: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: colors.white,
+    },
+    breakdownRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    breakdownItem: {
+        flex: 1,
+    },
+    breakdownLabel: {
+        fontSize: 13,
+        color: colors.white,
+        opacity: 0.8,
+        marginBottom: 4,
+    },
+    breakdownValue: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    ratingOuterContainer: {
+        padding: 20,
+        marginBottom: 20,
+        marginHorizontal: -16,
+        paddingTop: 60,
+        marginTop: -20,
+        borderBottomLeftRadius: 22,
+        borderBottomRightRadius: 22,
+    },
+    ratingContainer: {
+        gap: 10,
+    },
+    ratingHeader: {
+        marginTop: 20,
+        gap: 6,
+    },
+    ratingTitle: {
+        color: colors.primary,
+        fontSize: 18,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    priceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    priceLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    priceLabel: {
+        fontSize: 14,
+        color: colors.grayDark,
+    },
+    priceLabelTotal: {
+        fontSize: 18,
+        color: colors.primary,
+        marginLeft: 5
+    },
+    priceLabelSold: {
+        fontSize: 14,
+        color: colors.primary,
+    },
+    priceValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.black,
+    },
+    priceValueTotal: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.primary,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: colors.grayLight,
+        marginVertical: 12,
+    },
+    withShadow: {
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    priceSummarySection: {
+        borderRadius: 12,
+        overflow: 'hidden',
+        // Dodajemy margines dla lepszego efektu cienia
+        marginHorizontal: 4,
+        shadowColor: colors.lightPrimary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    priceSummaryGradient: {
+        padding: 16,
+        // Ważne dla działania cienia na Androidzie
+        backgroundColor: colors.white,
+        borderRadius: 12,
     },
 });
 

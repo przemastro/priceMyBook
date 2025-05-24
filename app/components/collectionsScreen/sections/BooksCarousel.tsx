@@ -5,18 +5,19 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
-    Image, ViewStyle, TextStyle,
+    ViewStyle, TextStyle,
 } from 'react-native';
-import { FontAwesome, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import ExportToPDFButton from '../buttons/ExportToPDFButton';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
-const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58; // Zwiększona wysokość
+const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58;
 const ACTION_BUTTONS_WIDTH = 60;
 
 interface BooksCarouselProps {
@@ -60,9 +61,14 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 style={styles.actionButton}
                 onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}
             >
-                <View style={[styles.actionIconContainer, { backgroundColor: `${color}20` }]}>
+                <LinearGradient
+                    colors={[`${color}20`, `${color}10`]}
+                    style={styles.actionIconContainer}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
                     <FontAwesome5 name={icon} size={20} color={color}/>
-                </View>
+                </LinearGradient>
                 <Text style={styles.actionButtonText}>{text}</Text>
             </TouchableOpacity>
         );
@@ -72,16 +78,26 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         const book = books[bookIndex];
         return (
             <View style={styles.actionsColumn}>
-                <ExportToPDFButton
-                    book={book}
-                    formatDefectsSummary={formatDefectsSummary}
-                    formatUniquenessSummary={formatUniquenessSummary}
-                    formatMarketFactorsSummary={formatMarketFactorsSummary}
-                    formatListingStatus={formatListingStatus}
-                    style={styles.actionButton as ViewStyle}
-                    iconStyle={styles.actionIconContainer as ViewStyle}
-                    textStyle={styles.actionButtonText as TextStyle}
-                />
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={(e) => e.stopPropagation()}
+                >
+                    <LinearGradient
+                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
+                        style={styles.actionIconContainer}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
+                        <ExportToPDFButton
+                            book={book}
+                            formatDefectsSummary={formatDefectsSummary}
+                            formatUniquenessSummary={formatUniquenessSummary}
+                            formatMarketFactorsSummary={formatMarketFactorsSummary}
+                            formatListingStatus={formatListingStatus}
+                        />
+                    </LinearGradient>
+                    <Text style={styles.actionButtonText}>{t('buttons.exportPDF')}</Text>
+                </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.actionButton}
@@ -90,9 +106,14 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                         onEditBook(bookIndex);
                     }}
                 >
-                    <View style={[styles.actionIconContainer, { backgroundColor: `${colors.primary}20` }]}>
+                    <LinearGradient
+                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
+                        style={styles.actionIconContainer}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
                         <Ionicons name="create" size={20} color={colors.primary} />
-                    </View>
+                    </LinearGradient>
                     <Text style={styles.actionButtonText}>{t('buttons.edit')}</Text>
                 </TouchableOpacity>
 
@@ -117,42 +138,65 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         return (
             <View style={styles.bookItemContainer}>
                 <Animated.View style={[styles.bookCard, animatedStyle]}>
-                    {/* Przycisk usuwania w prawym górnym rogu */}
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            onDeleteBook(index);
-                        }}
-                        hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                    <LinearGradient
+                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                        style={styles.bookCardGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                     >
-                        <FontAwesome name="times" size={20} color={colors.error} />
-                    </TouchableOpacity>
+                        {/* Delete button */}
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                onDeleteBook(index);
+                            }}
+                            activeOpacity={0.5}
+                            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={18}
+                                color={colors.primary}
+                            />
+                        </TouchableOpacity>
 
-                    {/* Placeholder na obrazek książki */}
-                    <View style={styles.bookImagePlaceholder}>
-                        <Ionicons name="book" size={60} color={colors.grayLight} />
-                    </View>
-
-                    <View style={styles.bookCardContent}>
-                        <View style={styles.bookCardHeader}>
-                            <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
-                            <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                        {/* Book image placeholder */}
+                        <View style={styles.bookImagePlaceholder}>
+                            <LinearGradient
+                                colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
+                                style={styles.collectionIconContainer}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <MaterialIcons
+                                    name="book"
+                                    size={24}
+                                    color={colors.primary}
+                                />
+                            </LinearGradient>
                         </View>
 
-                        <View style={styles.bookDetails}>
-                            <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
-                            <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
-                            <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+                        <View style={styles.bookCardContent}>
+                            <View style={styles.bookCardHeader}>
+                                <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
+                                <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                            </View>
 
-                            <View style={styles.bookCardDetails}>
-                                <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
-                                {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
-                                {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
-                                {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
+                            <View style={styles.bookDetails}>
+                                <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
+                                <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
+                                <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+
+                                <View style={styles.bookCardDetails}>
+                                    <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
+                                    {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
+                                    {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
+                                    {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
+                                </View>
                             </View>
                         </View>
-                    </View>
+                    </LinearGradient>
                 </Animated.View>
 
                 {renderActionButtons(index)}
@@ -195,102 +239,100 @@ const styles = StyleSheet.create({
     bookCard: {
         width: BOOK_CARD_WIDTH - 20,
         height: BOOK_CARD_HEIGHT - 40,
-        backgroundColor: colors.white,
         borderRadius: 12,
-        padding: 16,
         marginLeft: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
         overflow: 'hidden',
+    },
+    bookCardGradient: {
+        flex: 1,
+        padding: 16,
     },
     deleteButton: {
         position: 'absolute',
-        top: 12,
         right: 12,
+        top: 12,
+        padding: 4,
+        borderRadius: 12,
         zIndex: 10,
-        backgroundColor: 'rgba(244, 67, 54, 0.1)',
-        borderRadius: 15,
-        width: 30,
-        height: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     bookImagePlaceholder: {
-        height: '30%',
-        backgroundColor: colors.background,
-        borderRadius: 8,
+        height: 100,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: colors.grayLight,
+        marginBottom: 16,
+    },
+    collectionIconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     bookCardContent: {
         flex: 1,
     },
     bookCardHeader: {
-        marginBottom: 8,
+        marginBottom: 12,
     },
     bookCardTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: colors.black,
+        color: colors.primary,
         marginBottom: 4,
+        textShadowColor: 'rgba(0,0,0,0.1)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
     bookCardAuthors: {
         fontSize: 14,
-        color: colors.grayDark,
+        color: colors.primary,
     },
     bookDetails: {
         flex: 1,
     },
     bookCardIsbn: {
         fontSize: 14,
-        color: colors.grayDark,
+        color: colors.primary,
         marginBottom: 4,
     },
     bookCardPrice: {
-        fontSize: 14,
+        fontSize: 16,
         color: colors.primary,
-        fontWeight: '500',
-        marginBottom: 4,
+        fontWeight: '600',
+        marginBottom: 6,
     },
     bookCardCondition: {
         fontSize: 14,
         color: colors.primary,
-        marginBottom: 8,
+        marginBottom: 12,
     },
     bookCardDetails: {
         marginTop: 8,
     },
     bookCardDefects: {
         fontSize: 12,
-        color: colors.grayDark,
+        color: colors.black,
         marginBottom: 4,
-        fontStyle: 'italic',
     },
     bookCardUniqueness: {
         fontSize: 12,
-        color: colors.grayDark,
+        color: colors.black,
         marginBottom: 4,
-        fontStyle: 'italic',
     },
     bookCardMarket: {
         fontSize: 12,
-        color: colors.grayDark,
+        color: colors.black,
         marginBottom: 4,
-        fontStyle: 'italic',
     },
     bookCardAge: {
         fontSize: 12,
-        color: colors.grayDark,
+        color: colors.black,
         marginBottom: 4,
-        fontStyle: 'italic',
     },
     actionsColumn: {
         width: ACTION_BUTTONS_WIDTH,
@@ -300,13 +342,13 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
         width: '100%',
     },
     actionIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 4,
@@ -315,6 +357,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         textAlign: 'center',
         color: colors.grayDark,
+        fontWeight: '500',
     },
 });
 
