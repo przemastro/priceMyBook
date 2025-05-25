@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Modal } from 'react-native';
 import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 
 interface CollectionCarouselProps {
     collections: { name: string; icon: string }[];
@@ -46,6 +47,12 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
     });
     const { width, height } = Dimensions.get('window');
 
+    // Alert state
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+
     const filteredCollections = useMemo(() => {
         if (!searchQuery) return collections;
         return collections.filter(collection =>
@@ -53,28 +60,22 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         );
     }, [collections, searchQuery]);
 
-    const handleDeletePress = (collectionName: string) => {
-        Alert.alert(
-            t('alerts.confirmDeleteTitle'),
-            t('alerts.confirmDeleteMessage', {
-                collectionName,
-                bookCount: books[collectionName]?.length || 0
-            }),
-            [
-                { text: t('buttons.cancel'), style: 'cancel' },
-                {
-                    text: t('buttons.delete'),
-                    onPress: () => onDeleteCollection(collectionName),
-                    style: 'destructive'
-                }
-            ]
-        );
-        setMenuVisible(null);
+    const showDeleteConfirmation = (collectionName: string) => {
+        setAlertTitle(t('alerts.confirmDeleteTitle'));
+        setAlertMessage(t('alerts.confirmDeleteMessage', {
+            collectionName,
+            bookCount: books[collectionName]?.length || 0
+        }));
+        setConfirmAction(() => () => {
+            onDeleteCollection(collectionName);
+            setMenuVisible(null);
+        });
+        setAlertVisible(true);
     };
 
     const showMenu = (collectionName: string, event: any) => {
         const { pageX, pageY } = event.nativeEvent;
-        const opensUpward = pageY > height * 0.6; // Otwieraj w górę jeśli jesteśmy w dolnych 60% ekranu
+        const opensUpward = pageY > height * 0.6;
 
         setMenuPosition({
             x: pageX,
@@ -235,8 +236,8 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                         styles.menuContainer,
                         {
                             top: menuPosition.opensUpward
-                                ? menuPosition.y - 180 // Otwiera się w górę
-                                : menuPosition.y + 10, // Otwiera się w dół
+                                ? menuPosition.y - 180
+                                : menuPosition.y + 10,
                             left: Math.max(10, Math.min(menuPosition.x - 80, width - 170))
                         }
                     ]}>
@@ -289,7 +290,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                                 style={[styles.menuOption, styles.deleteOption]}
                                 onPress={() => {
                                     if (menuVisible) {
-                                        handleDeletePress(menuVisible);
+                                        showDeleteConfirmation(menuVisible);
                                     }
                                 }}
                             >
@@ -300,6 +301,20 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            <CustomAlertModal
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                type="warning"
+                onConfirm={() => {
+                    confirmAction();
+                    setAlertVisible(false);
+                }}
+                closeButtonStyle={styles.closeButton}
+                closeButtonTextStyle={styles.closeButtonText}
+                buttonFullWidth={true}
+            />
         </View>
     );
 };
@@ -308,7 +323,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.white,
-        marginRight: 30
     },
     searchHeader: {
         flexDirection: 'row',
@@ -493,6 +507,32 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginLeft: 8,
         color: colors.blackDark,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1,
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
+    confirmButton: {
+        width: '100%',
+        borderRadius: 10,
+        overflow: 'hidden',
+        marginTop: 16,
+    },
+    confirmButtonGradient: {
+        padding: 15,
+        alignItems: 'center',
+    },
+    confirmButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

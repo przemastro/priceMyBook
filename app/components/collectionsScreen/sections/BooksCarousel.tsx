@@ -222,8 +222,8 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
 
 const styles = StyleSheet.create({
     booksCarouselContainer: {
-        marginTop: 0,
-        paddingTop: 10,
+        marginTop: 30,
+        paddingTop: 0,
         paddingBottom: 20,
         backgroundColor: colors.white,
     },
@@ -234,13 +234,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        width: '100%',
+        width: '95%',
     },
     bookCard: {
-        width: BOOK_CARD_WIDTH - 20,
-        height: BOOK_CARD_HEIGHT - 40,
+        width: BOOK_CARD_WIDTH - 80,
+        height: BOOK_CARD_HEIGHT - 80,
         borderRadius: 12,
-        marginLeft: 10,
+        marginLeft: 0,
         shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,

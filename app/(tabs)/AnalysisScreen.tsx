@@ -1,5 +1,17 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
 import {useLocalSearchParams, useRouter} from 'expo-router';
@@ -883,7 +895,7 @@ export default function AnalysisScreen() {
             </View>
 
             <View style={styles.stepContent}>
-              <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1, width: '100%'}}>
+              <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1, width: '120%'}}>
                 {renderStep()}
               </Animated.View>
             </View>
@@ -1036,14 +1048,14 @@ const styles = StyleSheet.create({
   combinedSection: {
     backgroundColor: 'white',
     borderRadius: 0,
-    paddingTop: 20,
+    marginTop: 30,
     marginBottom: 0,
   },
   stepTitle: {
     color: colors.primary,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 40,
     textAlign: 'center',
   },
   fullScreenContainer: {
@@ -1187,18 +1199,22 @@ const styles = StyleSheet.create({
     minHeight: 400,
     width: '100%',
     marginTop: 0,
+    marginLeft: 0,
   },
   navArrowContainer: {
-    width: 30,
+    marginLeft: 5,
+    marginRight: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 20,
+    paddingTop: 25,
+    zIndex: 100
   },
   stepContent: {
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
     minHeight: 400,
+    marginTop: 10
   },
   marketFactorsContainer: {
     width: '100%',

@@ -234,7 +234,7 @@ export const styles = StyleSheet.create({
         marginLeft: 8,
     },
     estimatedPriceLabel: {
-        color: colors.primary,
+        color: colors.success,
         fontWeight: '500',
     },
     priceValue: {
@@ -243,7 +243,7 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
     },
     estimatedPriceValue: {
-        color: colors.primary,
+        color: colors.success,
         fontWeight: '600',
     },
     estimatedPriceContainer: {

@@ -11,26 +11,24 @@ interface CustomAlertModalProps {
     title: string;
     message: string;
     confirmText?: string;
-    cancelText?: string;
     onConfirm: () => void;
-    onCancel?: () => void;
-    showCancel?: boolean;
-    icon?: React.ReactNode;
     type?: AlertType;
+    closeButtonStyle?: any;
+    closeButtonTextStyle?: any;
+    buttonFullWidth?: boolean;
 }
 
 export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
-                                                               visible,
-                                                               title,
-                                                               message,
-                                                               confirmText = 'OK',
-                                                               cancelText,
-                                                               onConfirm,
-                                                               onCancel,
-                                                               showCancel = false,
-                                                               icon,
-                                                               type = 'info'
-                                                           }) => {
+                                                                      visible,
+                                                                      title,
+                                                                      message,
+                                                                      confirmText = 'OK',
+                                                                      onConfirm,
+                                                                      type = 'info',
+                                                                      closeButtonStyle,
+                                                                      closeButtonTextStyle,
+                                                                      buttonFullWidth = false,
+                                                                  }) => {
     const getIconColor = () => {
         switch (type) {
             case 'success': return colors.success;
@@ -54,41 +52,42 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
             animationType="fade"
             transparent={true}
             visible={visible}
-            onRequestClose={onCancel}
+            onRequestClose={onConfirm} // Zamknięcie modala po kliknięciu OK lub X
         >
             <View style={styles.alertModalOverlay}>
                 <View style={styles.alertModalContainer}>
+                    {/* Przycisk X w prawym górnym rogu */}
+                    <TouchableOpacity
+                        style={[styles.closeButton, closeButtonStyle]}
+                        onPress={onConfirm}
+                    >
+                        <View style={styles.closeButtonCircle}>
+                            <Text style={[styles.closeButtonText, closeButtonTextStyle]}>×</Text>
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={styles.alertModalContent}>
-                        {icon || defaultIcon()}
+                        {defaultIcon()}
                         <Text style={styles.alertModalTitle}>{title}</Text>
                         <Text style={styles.alertModalMessage}>{message}</Text>
 
-                        <View style={styles.alertModalButtons}>
-                            {showCancel && (
-                                <TouchableOpacity
-                                    style={[styles.alertModalButton, styles.alertModalCancelButton]}
-                                    onPress={onCancel}
-                                >
-                                    <Text style={styles.alertModalCancelButtonText}>
-                                        {cancelText || 'Cancel'}
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-
-                            <TouchableOpacity
-                                style={[styles.alertModalButton, styles.alertModalConfirmButton]}
-                                onPress={onConfirm}
+                        {/* Przycisk OK na dole - jedyny główny przycisk */}
+                        <TouchableOpacity
+                            style={[
+                                styles.alertModalButton,
+                                buttonFullWidth && {width: '100%'}
+                            ]}
+                            onPress={onConfirm}
+                        >
+                            <LinearGradient
+                                colors={[colors.primary, colors.primary]}
+                                style={styles.alertModalButtonGradient}
                             >
-                                <LinearGradient
-                                    colors={[colors.primary, colors.primary]}
-                                    style={styles.alertModalButtonGradient}
-                                >
-                                    <Text style={styles.alertModalConfirmButtonText}>
-                                        {confirmText}
-                                    </Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        </View>
+                                <Text style={styles.alertModalButtonText}>
+                                    {confirmText}
+                                </Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -113,9 +112,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+        position: 'relative',
     },
     alertModalContent: {
         alignItems: 'center',
+        paddingTop: 20,
     },
     alertModalTitle: {
         fontSize: 18,
@@ -138,29 +139,46 @@ const styles = StyleSheet.create({
     alertModalButton: {
         borderRadius: 8,
         overflow: 'hidden',
-        minWidth: 100,
-    },
-    alertModalCancelButton: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.gray,
-        padding: 12,
-        marginRight: 10,
+        width: '100%'
     },
     alertModalConfirmButton: {
         flex: 1,
+        backgroundColor: colors.primary
     },
     alertModalButtonGradient: {
         padding: 12,
         alignItems: 'center',
-    },
-    alertModalCancelButtonText: {
-        color: colors.grayDark,
-        fontWeight: '500',
+        justifyContent: 'center', // Dodaj to jeśli brakuje
+        width: '100%', // Upewnij się że ma pełną szerokość
     },
     alertModalConfirmButtonText: {
         color: colors.white,
         fontWeight: '500',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1,
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
+    alertModalButtonText: {
+        color: colors.white,
+        fontWeight: '600',
     },
 });
 

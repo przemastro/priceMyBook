@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput } from 'react-native';
 import { colors } from '@/styles/styles';
 import Carousel from 'react-native-reanimated-carousel';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 const { width: viewportWidth } = Dimensions.get('window');
@@ -26,8 +26,7 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
     const [isAddingCategory, setIsAddingCategory] = useState(false);
 
     const categories = collectionCategories[collectionName] || [];
-    const showAddButton = categories.length === 0 || isAddingCategory;
-    const carouselItems = showAddButton ? ['add'] : [...categories, 'add'];
+    const carouselItems = [...categories, 'add'];
 
     const handleAddCategory = () => {
         if (newCategoryName.trim()) {
@@ -42,29 +41,34 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
             <Carousel
                 loop={false}
                 style={styles.carousel}
-                width={showAddButton ? viewportWidth - 32 : 120} // Full width when only add button, fixed width for categories
+                width={viewportWidth}
                 height={40}
                 data={carouselItems}
                 scrollAnimationDuration={300}
                 renderItem={({ item }) => (
-                    <View style={styles.itemContainer}>
+                    <View style={[styles.itemContainer, {
+                        width: item === 'add'
+                            ? (isAddingCategory ? 200 : 120)
+                            : Math.max(item.length * 8 + 40, 80) // Minimalna szerokość 80
+                    }]}>
                         {item === 'add' ? (
                             <View style={styles.addContainer}>
-                                {isAddingCategory || categories.length === 0 ? (
-                                    <View style={styles.inputRow}>
+                                {isAddingCategory ? (
+                                    <View style={styles.addCategoryContainer}>
                                         <TextInput
                                             style={styles.input}
+                                            placeholder={t('placeholders.categoryName')}
                                             value={newCategoryName}
                                             onChangeText={setNewCategoryName}
-                                            placeholder={t('labels.addCategoryPlaceholder')}
-                                            autoFocus={true}
+                                            autoFocus
                                             onSubmitEditing={handleAddCategory}
                                         />
                                         <TouchableOpacity
-                                            style={styles.confirmButton}
+                                            style={[styles.confirmButton, !newCategoryName.trim() && styles.disabledButton]}
                                             onPress={handleAddCategory}
+                                            disabled={!newCategoryName.trim()}
                                         >
-                                            <Text style={styles.confirmText}>{t('buttons.add')}</Text>
+                                            <Ionicons name="checkmark" size={16} color="white" />
                                         </TouchableOpacity>
                                     </View>
                                 ) : (
@@ -72,20 +76,18 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
                                         style={styles.addButton}
                                         onPress={() => setIsAddingCategory(true)}
                                     >
+                                        <Ionicons name="add" size={16} color={colors.primary} />
                                         <Text style={styles.addButtonText}>{t('buttons.addCategory')}</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
                         ) : (
                             <View style={styles.categoryItem}>
-                                <Text style={styles.categoryText} numberOfLines={1}>
-                                    {item}
-                                </Text>
+                                <Text style={styles.categoryText}>{item}</Text>
                                 <TouchableOpacity
-                                    style={styles.removeButton}
                                     onPress={() => onRemoveCategory(collectionName, item)}
                                 >
-                                    <MaterialIcons name="close" size={16} color={colors.grayDark} />
+                                    <Ionicons name="close" size={16} color={colors.error} />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -98,78 +100,74 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 10,
+        marginTop: 16,
         paddingHorizontal: 16,
     },
     carousel: {
         width: '100%',
-        height: 50,
+        height: 40,
     },
     itemContainer: {
-        paddingRight: 8,
+        marginRight: 4,
     },
     addContainer: {
         height: 40,
         justifyContent: 'center',
     },
-    inputRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-        borderRadius: 20,
-        paddingHorizontal: 12,
-        height: 40,
-    },
-    input: {
-        flex: 1,
-        fontSize: 14,
-        color: colors.grayDark,
-        height: 40,
-    },
-    confirmButton: {
-        backgroundColor: colors.primary,
-        borderRadius: 16,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        marginLeft: 8,
-    },
-    confirmText: {
-        color: colors.white,
-        fontSize: 14,
-    },
-    addButton: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderStyle: 'dashed',
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-    },
-    addButtonText: {
-        color: colors.primary,
-        fontSize: 14,
-        fontWeight: '500',
-    },
     categoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(74,108,247,0.1)',
-        borderRadius: 20,
+        backgroundColor: colors.grayLight,
+        paddingVertical: 6,
         paddingHorizontal: 12,
-        height: 40,
-        minWidth: 100,
+        borderRadius: 16,
+        height: 32,
     },
     categoryText: {
         fontSize: 14,
         color: colors.grayDark,
-        marginRight: 8,
-        flexShrink: 1,
+        marginRight: 4,
     },
-    removeButton: {
-        marginLeft: 'auto',
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderStyle: 'dashed',
+        borderRadius: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        height: 32,
+    },
+    addButtonText: {
+        color: colors.primary,
+        fontSize: 14,
+        marginLeft: 4,
+    },
+    addCategoryContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    input: {
+        height: 32,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderRadius: 16,
+        paddingHorizontal: 12,
+        backgroundColor: colors.white,
+        marginRight: 8,
+        minWidth: 120,
+    },
+    confirmButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    disabledButton: {
+        opacity: 0.5,
     },
 });
 

@@ -20,9 +20,9 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
-import Carousel, { ICarouselInstance } from 'react-native-reanimated-carousel';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Easing } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Components
 import CollectionCarousel from '../components/collectionsScreen/sections/CollectionCarousel';
@@ -33,11 +33,11 @@ import ImportPreviewModal from '../components/collectionsScreen/modals/ImportPre
 import ListingModal from '../components/collectionsScreen/modals/ListingModal';
 import StatusChangeModal from '../components/collectionsScreen/modals/StatusChangeModal';
 import CategoriesCarousel from '../components/collectionsScreen/sections/CategoriesCarousel';
+import CustomAlertModal from "@/app/components/alerts/CustomAlertModal";
 
 // Types
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
 import { BookAgeInfo } from "@/app/components/scanScreen/types";
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface Collection {
     name: string;
@@ -59,13 +59,18 @@ const CollectionsScreen = () => {
     const [selectedPlatforms, setSelectedPlatforms] = useState<('amazon' | 'allegro' | 'olx')[]>([]);
     const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
     const [editingCollection, setEditingCollection] = useState<string | null>(null);
-    const [currentSlide, setCurrentSlide] = useState(0);
     const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState<'info' | 'success' | 'error' | 'warning'>('info');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
 
-    const carouselRef = useRef<ICarouselInstance>(null);
-    const { width } = Dimensions.get('window');
+    // Navigation between slides
+    const [currentStep, setCurrentStep] = useState(0);
+    const totalSteps = 2;
     const slideAnim = useRef(new Animated.Value(0)).current;
 
     const {
@@ -103,7 +108,7 @@ const CollectionsScreen = () => {
 
     // Animation handlers
     const animateSlide = (direction: 'forward' | 'backward') => {
-        slideAnim.setValue(direction === 'forward' ? -50 : 50);
+        slideAnim.setValue(direction === 'forward' ? 50 : -50);
         Animated.timing(slideAnim, {
             toValue: 0,
             duration: 300,
@@ -112,21 +117,32 @@ const CollectionsScreen = () => {
         }).start();
     };
 
-    const handleNextSlide = () => {
-        if (currentSlide < 1) {
+    const goToNextStep = () => {
+        if (currentStep < totalSteps - 1) {
             animateSlide('forward');
-            carouselRef.current?.next();
-            setCurrentSlide(prev => prev + 1);
+            setCurrentStep(prev => prev + 1);
         }
     };
 
-    const handlePrevSlide = () => {
-        if (currentSlide > 0) {
+    const goToPrevStep = () => {
+        if (currentStep > 0) {
             animateSlide('backward');
             AsyncStorage.setItem('@selectedCollection', selectedCollection || '');
-            carouselRef.current?.prev();
-            setCurrentSlide(prev => prev - 1);
+            setCurrentStep(prev => prev - 1);
         }
+    };
+
+    const showAlert = (
+        title: string,
+        message: string,
+        type: 'info' | 'success' | 'error' | 'warning' = 'info',
+        onConfirm?: () => void
+    ) => {
+        setAlertTitle(title);
+        setAlertMessage(message);
+        setAlertType(type);
+        setConfirmAction(() => onConfirm || (() => {}));
+        setAlertVisible(true);
     };
 
     // Load selected collection on mount
@@ -161,30 +177,23 @@ const CollectionsScreen = () => {
                 }
                 setShowEditModal(false);
             } catch (error) {
-                Alert.alert(t('alerts.error'), t('alerts.renameError'));
+                showAlert(t('alerts.error'), t('alerts.renameError'), 'error');
             }
         }
     };
 
     const handleDeleteCollection = (collectionName: string) => {
         const bookCount = books[collectionName]?.length || 0;
-        Alert.alert(
+        showAlert(
             t('alerts.confirmDeleteTitle'),
             bookCount > 0 ?
                 t('alerts.confirmDeleteMessage', { collectionName, bookCount }) :
                 t('alerts.confirmEmptyDeleteMessage', { collectionName }),
-            [
-                { text: t('buttons.cancel'), style: 'cancel' },
-                {
-                    text: t('buttons.confirm'),
-                    onPress: () => {
-                        removeCollection(collectionName);
-                        if (selectedCollection === collectionName) setSelectedCollection(null);
-                    },
-                    style: 'destructive'
-                },
-            ],
-            { cancelable: true }
+            'warning',
+            () => {
+                removeCollection(collectionName);
+                if (selectedCollection === collectionName) setSelectedCollection(null);
+            }
         );
     };
 
@@ -202,17 +211,11 @@ const CollectionsScreen = () => {
     };
 
     const handleRemoveCategory = (collectionName: string, category: string) => {
-        Alert.alert(
+        showAlert(
             t('alerts.confirmDeleteTitle'),
             t('alerts.confirmDeleteCategory', { category }),
-            [
-                { text: t('buttons.cancel'), style: 'cancel' },
-                {
-                    text: t('buttons.confirm'),
-                    onPress: () => removeCategoryFromCollection(collectionName, category),
-                    style: 'destructive'
-                },
-            ]
+            'warning',
+            () => removeCategoryFromCollection(collectionName, category)
         );
     };
 
@@ -280,7 +283,7 @@ const CollectionsScreen = () => {
                 showPreview: true
             });
         } catch (error) {
-            Alert.alert(t('alerts.error'), t('alerts.importError'));
+            showAlert(t('alerts.error'), t('alerts.importError'), 'error');
             console.error('Import failed:', error);
         } finally {
             setIsImporting(false);
@@ -292,10 +295,13 @@ const CollectionsScreen = () => {
         try {
             addCollection(importPreview.collectionName);
             await addBooksToCollection(importPreview.collectionName, importPreview.books);
-            Alert.alert(t('alerts.success'), t('status.importSuccess', { count: importPreview.books.length, name: importPreview.collectionName }));
+            showAlert(t('alerts.success'), t('status.importSuccess', {
+                count: importPreview.books.length,
+                name: importPreview.collectionName
+            }), 'success');
             setImportPreview(null);
         } catch (error) {
-            Alert.alert(t('alerts.error'), t('alerts.importSaveError'));
+            showAlert(t('alerts.error'), t('alerts.importSaveError'), 'error');
             console.error('Failed to save import:', error);
         }
     };
@@ -328,7 +334,7 @@ const CollectionsScreen = () => {
             const fileUri = FileSystem.cacheDirectory + `${collectionName}.csv`;
             await FileSystem.writeAsStringAsync(fileUri, csvContent);
             if (!(await Sharing.isAvailableAsync())) {
-                Alert.alert(t('alerts.error'), t('alerts.sharingNotAvailable'));
+                showAlert(t('alerts.error'), t('alerts.sharingNotAvailable'), 'error');
                 return;
             }
             await Sharing.shareAsync(fileUri, {
@@ -336,7 +342,7 @@ const CollectionsScreen = () => {
                 dialogTitle: t('alerts.exportTitle', { collectionName })
             });
         } catch (error) {
-            Alert.alert(t('alerts.error'), t('alerts.exportError'));
+            showAlert(t('alerts.error'), t('alerts.exportError'), 'error');
         }
     };
 
@@ -382,7 +388,7 @@ const CollectionsScreen = () => {
         setShowListingModal(false);
         setCurrentListingBook(null);
         setSelectedPlatforms([]);
-        Alert.alert(t('alerts.success'), t('status.listedRedirect'));
+        showAlert(t('alerts.success'), t('status.listedRedirect'), 'success');
     };
 
     const changeListingStatus = (newStatus: 'notListed' | 'listed' | 'sold') => {
@@ -512,6 +518,90 @@ const CollectionsScreen = () => {
         }
     };
 
+    const renderStep = () => {
+        const stepTitles = [
+            t('labels.yourCollections'),
+            t('labels.yourBooks')
+        ];
+
+        switch (currentStep) {
+            case 0:
+                return (
+                    <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1, width: '120%' }}>
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.slideTitle}>{stepTitles[0]}</Text>
+                        </View>
+                        {selectedCollection && (
+                            <CategoriesCarousel
+                                collectionName={selectedCollection}
+                                collectionCategories={collectionCategories}
+                                onAddCategory={handleAddCategory}
+                                onRemoveCategory={handleRemoveCategory}
+                            />
+                        )}
+                        {collections.length > 0 ? (
+                            <>
+                                <CollectionCarousel
+                                    collections={collections}
+                                    books={books}
+                                    selectedCollection={selectedCollection}
+                                    onSelectCollection={(collectionName) => {
+                                        setSelectedCollection(collectionName);
+                                    }}
+                                    calculateCollectionTotal={calculateCollectionTotal}
+                                    onEditCollection={async (collectionName, newName) => {
+                                        await handleEditCollection(collectionName, newName);
+                                    }}
+                                    onDeleteCollection={handleDeleteCollection}
+                                    onAddCollection={() => setShowAddCollectionModal(true)}
+                                    onExportCollection={handleExportCSV}
+                                    getBookWord={getBookWord}
+                                    formatCurrency={formatCurrency}
+                                    onImportCollection={handleImportCollection}
+                                    onNavigateToBooks={goToNextStep}
+                                />
+                            </>
+                        ) : (
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
+                            </View>
+                        )}
+                    </Animated.View>
+                );
+            case 1:
+                return (
+                    <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1, width: '120%' }}>
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.slideTitle}>{stepTitles[1]}</Text>
+                        </View>
+                        {selectedCollection && (
+                            <View style={styles.collectionDetails}>
+                                {books[selectedCollection]?.length === 0 ? (
+                                    <View style={styles.emptyBookContainer}>
+                                        <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
+                                    </View>
+                                ) : (
+                                    <BooksCarousel
+                                        books={books[selectedCollection]}
+                                        collectionName={selectedCollection}
+                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
+                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
+                                        onListBook={(index) => handleListBook(selectedCollection, index)}
+                                        formatDefectsSummary={formatDefectsSummary}
+                                        formatUniquenessSummary={formatUniquenessSummary}
+                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                        formatListingStatus={formatListingStatus}
+                                    />
+                                )}
+                            </View>
+                        )}
+                    </Animated.View>
+                );
+            default:
+                return null;
+        }
+    };
+
     return (
         <View style={{ flex: 1 }}>
             <ScrollView
@@ -574,143 +664,50 @@ const CollectionsScreen = () => {
                     </View>
                 </LinearGradient>
 
-                {/* Carousel with two slides */}
-                <View style={styles.slidesContainer}>
-                    <Carousel
-                        ref={carouselRef}
-                        loop={false}
-                        width={width}
-                        height={currentSlide === 0 ? 500 : 500}
-                        data={[0, 1]}
-                        onSnapToItem={(index) => setCurrentSlide(index)}
-                        renderItem={({ index }) => (
-                            <Animated.View
-                                style={[
-                                    styles.slide,
-                                    { transform: [{ translateX: slideAnim }] }
-                                ]}
-                            >
-                                {index === 0 ? (
-                                    <>
-                                        <View style={styles.titleContainer}>
-                                            <TouchableOpacity
-                                                onPress={handlePrevSlide}
-                                                disabled={currentSlide === 0}
-                                                style={styles.navArrow}
-                                            >
-                                                <Feather
-                                                    name="chevron-left"
-                                                    size={24}
-                                                    color={currentSlide === 0 ? colors.grayLight : colors.primary}
-                                                />
-                                            </TouchableOpacity>
-                                            <Text style={styles.slideTitle}>{t('labels.yourCollections')}</Text>
-                                            <TouchableOpacity
-                                                onPress={handleNextSlide}
-                                                disabled={!selectedCollection}
-                                                style={styles.navArrow}
-                                            >
-                                                <Feather
-                                                    name="chevron-right"
-                                                    size={24}
-                                                    color={!selectedCollection ? colors.grayLight : colors.primary}
-                                                />
-                                            </TouchableOpacity>
-                                        </View>
-                                        {selectedCollection && (
-                                            <CategoriesCarousel
-                                                collectionName={selectedCollection}
-                                                collectionCategories={collectionCategories}
-                                                onAddCategory={handleAddCategory}
-                                                onRemoveCategory={handleRemoveCategory}
-                                            />
-                                        )}
-                                        {collections.length > 0 ? (
-                                            <>
-                                                <CollectionCarousel
-                                                    collections={collections}
-                                                    books={books}
-                                                    selectedCollection={selectedCollection}
-                                                    onSelectCollection={(collectionName) => {
-                                                        setSelectedCollection(collectionName);
-                                                    }}
-                                                    calculateCollectionTotal={calculateCollectionTotal}
-                                                    onEditCollection={async (collectionName, newName) => {
-                                                        await handleEditCollection(collectionName, newName);
-                                                    }}
-                                                    onDeleteCollection={handleDeleteCollection}
-                                                    onAddCollection={() => setShowAddCollectionModal(true)}
-                                                    onExportCollection={handleExportCSV}
-                                                    getBookWord={getBookWord}
-                                                    formatCurrency={formatCurrency}
-                                                    onImportCollection={handleImportCollection}
-                                                    onNavigateToBooks={() => {
-                                                        if (selectedCollection) {
-                                                            handleNextSlide();
-                                                        }
-                                                    }}
-                                                />
-                                            </>
-                                        ) : (
-                                            <View style={styles.emptyContainer}>
-                                                <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
-                                            </View>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        <View style={styles.titleContainer}>
-                                            <TouchableOpacity
-                                                onPress={handlePrevSlide}
-                                                style={styles.navArrow}
-                                            >
-                                                <Feather name="chevron-left" size={24} color={colors.primary} />
-                                            </TouchableOpacity>
-                                            <Text style={styles.slideTitle}>{t('labels.yourBooks')}</Text>
-                                            <TouchableOpacity
-                                                onPress={handleNextSlide}
-                                                disabled={currentSlide === 1}
-                                                style={styles.navArrow}
-                                            >
-                                                <Feather
-                                                    name="chevron-right"
-                                                    size={24}
-                                                    color={currentSlide === 1 ? colors.grayLight : colors.primary}
-                                                />
-                                            </TouchableOpacity>
-                                        </View>
-                                        {selectedCollection && (
-                                            <View style={styles.collectionDetails}>
-                                                {books[selectedCollection]?.length === 0 ? (
-                                                    <View style={styles.emptyBookContainer}>
-                                                        <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
-                                                    </View>
-                                                ) : (
-                                                    <BooksCarousel
-                                                        books={books[selectedCollection]}
-                                                        collectionName={selectedCollection}
-                                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
-                                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
-                                                        onListBook={(index) => handleListBook(selectedCollection, index)}
-                                                        formatDefectsSummary={formatDefectsSummary}
-                                                        formatUniquenessSummary={formatUniquenessSummary}
-                                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
-                                                        formatListingStatus={formatListingStatus}
-                                                    />
-                                                )}
-                                            </View>
-                                        )}
-                                    </>
-                                )}
-                            </Animated.View>
+                {/* Step navigation */}
+                <View style={styles.stepContainer}>
+                    <View style={styles.navArrowContainer}>
+                        {currentStep > 0 ? (
+                            <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
+                                <Ionicons name="chevron-back" size={32} color={colors.primary}/>
+                            </TouchableOpacity>
+                        ) : (
+                            <Ionicons name="chevron-back" size={32} color={colors.white}/>
                         )}
-                        enabled={false}
-                        autoPlay={false}
-                    />
+                    </View>
+
+                    <View style={styles.stepContent}>
+                        {renderStep()}
+                    </View>
+
+                    <View style={styles.navArrowContainer}>
+                        {currentStep < totalSteps - 1 && selectedCollection ? (
+                            <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
+                                <Ionicons name="chevron-forward" size={32} color={colors.primary}/>
+                            </TouchableOpacity>
+                        ) : (
+                            <Ionicons name="chevron-forward" size={32} color={colors.white}/>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
 
             {/* Modals */}
+            <CustomAlertModal
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                type={alertType}
+                onConfirm={() => {
+                    confirmAction();
+                    setAlertVisible(false);
+                }}
+                confirmText={t('buttons.confirm')}
+                closeButtonStyle={styles.closeButton}
+                closeButtonTextStyle={styles.closeButtonText}
+                buttonFullWidth={true}
+            />
+
             <AddCollectionModal
                 visible={showAddCollectionModal}
                 onClose={() => setShowAddCollectionModal(false)}
@@ -761,29 +758,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginVertical: 8,
     },
-    slidesContainer: {
-        minHeight: 450,
-        maxHeight: 450
-    },
-    slide: {
-        flex: 1,
-        width: '100%'
-    },
     titleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 10,
+        marginTop: 10
     },
     navArrow: {
-        padding: 8,
         marginHorizontal: 10,
+        marginTop: 10
     },
     slideTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: colors.primary,
-        marginHorizontal: 10,
+        marginRight: 30,
     },
     emptyContainer: {
         justifyContent: 'center',
@@ -999,7 +989,6 @@ const styles = StyleSheet.create({
     priceSummarySection: {
         borderRadius: 12,
         overflow: 'hidden',
-        // Dodajemy margines dla lepszego efektu cienia
         marginHorizontal: 4,
         shadowColor: colors.lightPrimary,
         shadowOffset: { width: 0, height: 4 },
@@ -1009,9 +998,42 @@ const styles = StyleSheet.create({
     },
     priceSummaryGradient: {
         padding: 16,
-        // Ważne dla działania cienia na Androidzie
         backgroundColor: colors.white,
         borderRadius: 12,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1,
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
+    stepContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        minHeight: 400,
+        width: '100%',
+        marginTop: 0,
+    },
+    navArrowContainer: {
+        width: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 5,
+    },
+    stepContent: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        minHeight: 480,
+        maxHeight: 480,
+        width: Dimensions.get('window').width - 80, // Obliczana szerokość
+        paddingHorizontal: 10, // Dodany padding
     },
 });
 
