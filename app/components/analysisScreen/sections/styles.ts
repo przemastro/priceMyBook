@@ -1,5 +1,6 @@
 import {StyleSheet} from "react-native";
 import {colors} from "@/styles/styles";
+import {gray} from "colorette";
 
 export const styles = StyleSheet.create({
     detailsRowContainer: {
@@ -87,7 +88,7 @@ export const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
     detailsContainer: {
-        backgroundColor: 'white',
+        backgroundColor: colors.grayLight,
         borderRadius: 12,
         padding: 1,
     },
@@ -147,7 +148,7 @@ export const styles = StyleSheet.create({
         color: colors.primary,
     },
     marketFactors: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.grayLight,
         borderRadius: 8,
         padding: 10,
         marginTop: 6,
@@ -272,7 +273,7 @@ export const styles = StyleSheet.create({
         elevation: 5,
     },
     combinedSection: {
-        backgroundColor: 'white',
+        backgroundColor: colors.grayLight,
         borderRadius: 0,
         paddingTop: 20,
         marginBottom: 0,

@@ -322,7 +322,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
     },
     searchHeader: {
         flexDirection: 'row',

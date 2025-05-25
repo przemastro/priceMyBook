@@ -164,7 +164,7 @@ const CollectionsSection = ({
 
 const styles = StyleSheet.create({
     combinedSection: {
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
         borderRadius: 0,
         paddingTop: 20,
         marginBottom: 0,

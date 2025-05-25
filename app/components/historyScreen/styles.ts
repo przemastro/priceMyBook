@@ -3,10 +3,10 @@ import { colors, typography } from '@/styles/styles';
 
 export const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         padding: 16,
         paddingTop: 80,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: colors.grayLight,
     },
     listContent: {
         paddingBottom: 20,
@@ -18,40 +18,60 @@ export const styles = StyleSheet.create({
         padding: 20,
     },
     emptyText: {
-        ...typography.body,
-        textAlign: 'center',
+        fontSize: 16,
         color: colors.grayDark,
+        textAlign: 'center',
     },
-    // Add these new styles
     item: {
-        padding: 16,
+        borderRadius: 12,
         marginBottom: 12,
-        backgroundColor: colors.white,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        marginHorizontal: 16,
+        overflow: 'hidden',
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    itemGradient: {
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    textContainer: {
+        flex: 1,
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: colors.black,
+        marginBottom: 4,
+    },
+    isbn: {
+        fontSize: 14,
+        color: colors.grayDark,
+        marginBottom: 8,
     },
     price: {
-        ...typography.caption,
+        fontSize: 14,
         color: colors.primary,
-        marginTop: 4
+        fontWeight: '500',
     },
     originalPrice: {
-        ...typography.caption,
+        fontSize: 14,
         color: colors.grayDark,
         textDecorationLine: 'line-through',
-        marginTop: 4
+        marginTop: 4,
     },
     noPrice: {
-        ...typography.caption,
+        fontSize: 14,
         color: colors.grayDark,
         fontStyle: 'italic',
-        marginTop: 4
     },
     rateError: {
-        ...typography.caption,
-        color: colors.error,
         fontSize: 12,
-        marginTop: 4
-    }
+        color: colors.error,
+        marginTop: 4,
+    },
 });

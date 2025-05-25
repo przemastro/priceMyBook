@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 16,
     paddingTop: 82,
-    backgroundColor: colors.white,
+    backgroundColor: colors.grayLight,
   },
   loadingContainer: {
     flex: 1,
@@ -1046,9 +1046,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   combinedSection: {
-    backgroundColor: 'white',
+    backgroundColor: colors.grayLight,
     borderRadius: 0,
-    marginTop: 30,
+    marginTop: 20,
     marginBottom: 0,
   },
   stepTitle: {
@@ -1200,6 +1200,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 0,
     marginLeft: 0,
+    backgroundColor: colors.grayLight
   },
   navArrowContainer: {
     marginLeft: 5,
@@ -1336,6 +1337,7 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: colors.primary,
+    height: 50
   },
   buttonGradient: {
     paddingVertical: 14,

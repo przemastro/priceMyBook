@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     categoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.gray,
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 16,

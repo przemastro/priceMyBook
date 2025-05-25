@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 6,
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
     },
     valueRow: {
         flexDirection: 'row',
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
         borderRadius: 2,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
         padding: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
         borderRadius: 2,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 6,
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
     },
     totalValueContent: {
         alignItems: 'center',
@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(74,108,247,0.1)',
     },
     priceContainer: {
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
         borderRadius: 20,
         paddingVertical: 12,
         paddingHorizontal: 20,
@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
     },
     separator: {
         height: 1,
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.gray,
         marginVertical: 12,
     },
     withShadow: {
@@ -998,7 +998,7 @@ const styles = StyleSheet.create({
     },
     priceSummaryGradient: {
         padding: 16,
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
         borderRadius: 12,
     },
     closeButton: {

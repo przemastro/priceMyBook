@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
         marginTop: 30,
         paddingTop: 0,
         paddingBottom: 20,
-        backgroundColor: colors.white,
+        backgroundColor: colors.grayLight,
     },
     booksCarousel: {
         width: '100%',

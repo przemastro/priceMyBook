@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList} from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 import { useAppContext } from '@/context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { styles } from '@/app/components/historyScreen/styles';

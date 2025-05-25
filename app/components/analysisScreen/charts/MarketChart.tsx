@@ -110,8 +110,8 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
     };
 
     const charts = [
-        renderBarChart(),
-        ...(marketData.priceHistory && marketData.priceHistory.length > 1 ? [renderLineChart()] : [])
+        renderLineChart(),
+        ...(marketData.priceHistory && marketData.priceHistory.length > 1 ? [renderBarChart()] : [])
     ].filter(Boolean);
 
     return (

@@ -1,6 +1,7 @@
 import React from 'react';
-import { TextInput } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { colors } from '@/styles/styles';
+import { Feather } from '@expo/vector-icons';
 
 type SearchBarProps = {
     value: string;
@@ -9,22 +10,45 @@ type SearchBarProps = {
 };
 
 const SearchBar = ({ value, onChangeText, placeholder }: SearchBarProps) => (
-    <TextInput
-        style={{
-            height: 50,
-            borderColor: 'rgba(0,0,0,0.1)',
-            borderWidth: 1,
-            borderRadius: 2,
-            paddingHorizontal: 16,
-            marginBottom: 16,
-            backgroundColor: colors.white,
-            color: colors.black,
-        }}
-        placeholder={placeholder}
-        value={value}
-        onChangeText={onChangeText}
-        placeholderTextColor="#888"
-    />
+    <View style={styles.searchContainer}>
+        <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
+        <TextInput
+            style={styles.searchInput}
+            placeholder={placeholder}
+            placeholderTextColor={colors.grayDark}
+            value={value}
+            onChangeText={onChangeText}
+        />
+    </View>
 );
+
+const styles = StyleSheet.create({
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.white,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: colors.buttonSelected1,
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 16,
+        color: colors.black,
+        height: 40,
+    },
+});
 
 export default SearchBar;
