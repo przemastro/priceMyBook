@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 interface Collection {
     name: string;
     icon: string;
+    createdAt: string; // Dodajemy datę utworzenia
 }
 
 type CollectionsSectionProps = {
@@ -70,6 +71,12 @@ const CollectionsSection = ({
         const bookCount = books[item.name]?.length || 0;
         const isSelected = selectedCollection === item.name;
 
+        // Formatowanie daty
+        const createdAtDate = new Date(item.createdAt);
+        const month = createdAtDate.toLocaleString(i18n.language, { month: 'short' });
+        const year = createdAtDate.getFullYear();
+        const formattedDate = `${month}, ${year}`;
+
         return (
             <TouchableOpacity
                 style={[
@@ -102,9 +109,14 @@ const CollectionsSection = ({
                         ]}>
                             {item.name}
                         </Text>
-                        <Text style={styles.collectionBookCount}>
-                            {bookCount} {t(getBookWord(bookCount, i18n.language))}
-                        </Text>
+                        <View style={styles.collectionMetaContainer}>
+                            <Text style={styles.collectionBookCount}>
+                                {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                            </Text>
+                            <Text style={styles.collectionDate}>
+                                {formattedDate}
+                            </Text>
+                        </View>
                     </View>
                 </LinearGradient>
             </TouchableOpacity>
@@ -288,6 +300,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.grayDark,
         textAlign: 'center',
+    },
+    collectionMetaContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    collectionDate: {
+        fontSize: 12,
+        color: colors.grayDark,
+        marginLeft: 8,
     },
 });
 

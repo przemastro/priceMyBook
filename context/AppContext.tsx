@@ -218,7 +218,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const addCollection = useCallback((name: string, icon: string = 'book') => {
         if (!name.trim()) return;
 
-        setCollections(prev => [...prev, {name, icon}]);
+        setCollections(prev => [...prev, {
+            name,
+            icon,
+            createdAt: new Date().toISOString() // Dodajemy datę utworzenia
+        }]);
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
         setCollectionCategories(prev => ({ ...prev, [name]: prev[name] || [] }));
     }, []);
