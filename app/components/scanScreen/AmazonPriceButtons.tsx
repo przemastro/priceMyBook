@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AmazonApiResponse, AmazonPriceOffer } from './types';
 import { colors } from '@/styles/styles';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface AmazonPriceButtonsProps {
     amazonData: AmazonApiResponse | undefined;
@@ -40,12 +41,27 @@ export const AmazonPriceButtons = ({
                         setManualPrice('');
                     }}
                 >
-                    <Text style={styles.amazonPriceText}>
-                        {offer.price.toFixed(2)} {offer.currency}
-                    </Text>
-                    <Text style={styles.amazonPriceDetails}>
-                        {offer.condition} • {offer.seller} • {offer.deliveryTime}
-                    </Text>
+                    <LinearGradient
+                        colors={selectedPrice === offer.price
+                            ? [colors.buttonSelected1, colors.buttonSelected2]
+                            : [colors.white, colors.whiteBlue]}
+                        style={styles.priceButtonGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
+                        <Text style={[
+                            styles.amazonPriceText,
+                            selectedPrice === offer.price && styles.selectedPriceText
+                        ]}>
+                            {offer.price.toFixed(2)} {offer.currency}
+                        </Text>
+                        <Text style={[
+                            styles.amazonPriceDetails,
+                            selectedPrice === offer.price && styles.selectedPriceDetails
+                        ]}>
+                            {offer.condition} • {offer.seller} • {offer.deliveryTime}
+                        </Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             ))}
         </View>
@@ -57,30 +73,45 @@ const styles = StyleSheet.create({
         marginVertical: 10,
     },
     amazonPricesTitle: {
-        fontWeight: 'bold' as const, // Explicitly type as 'bold'
+        fontSize: 16,
+        fontWeight: '600',
         marginBottom: 8,
         color: colors.black,
-        textAlign: 'center' as const,
+        textAlign: 'center',
     },
     amazonPriceButton: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 2,
-        padding: 10,
+        borderRadius: 8,
         marginBottom: 8,
-        backgroundColor: '#f9f9f9',
+        overflow: 'hidden',
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     amazonPriceButtonSelected: {
-        borderColor: colors.primary,
-        backgroundColor: '#e6f7ff',
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    priceButtonGradient: {
+        padding: 12,
     },
     amazonPriceText: {
-        fontWeight: 'bold' as const,
-        color: colors.black,
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.secondary,
+    },
+    selectedPriceText: {
+        color: colors.primary,
     },
     amazonPriceDetails: {
         fontSize: 12,
-        color: '#666',
+        color: colors.grayDark,
         marginTop: 4,
+    },
+    selectedPriceDetails: {
+        color: colors.primary,
     },
 });

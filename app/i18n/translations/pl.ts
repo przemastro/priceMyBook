@@ -65,7 +65,7 @@ export default {
         noPrice: 'Brak dostępnej ceny',
         discountedPrice: 'Cena po obniżce',
         amazonPrices: 'Najnowsze ceny na Amazon',
-        addCover: "Dodaj okładkę książki (max 200KB)"
+        addCover: "Dodaj okładkę książki (max 200KB)",
     },
     labels: {
         selectCollection: 'Wybierz księgozbiór',
@@ -205,7 +205,7 @@ export default {
         enterPrice: 'Wprowadź cenę ręcznie',
         searchHistory: 'Szukaj po ISBN/tytule',
         enterISBN: 'Wprowadź numer ISBN',
-        enterPricePLN: 'Wprowadź cenę',
+        enterPricePLN: 'Wprowadź swoją cenę',
         searchCollections: "Wyszukaj księgozbiór"
     },
     status: {

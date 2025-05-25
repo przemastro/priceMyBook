@@ -207,7 +207,7 @@ export default {
         enterPrice: 'Enter price manually',
         searchHistory: 'Search by ISBN/title',
         enterISBN: 'Enter ISBN number',
-        enterPriceUSD: 'Enter price',
+        enterPriceUSD: 'Enter your price',
         searchCollections: "Search Collection"
     },
     status: {

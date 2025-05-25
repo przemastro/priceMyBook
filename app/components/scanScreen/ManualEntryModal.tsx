@@ -1,7 +1,9 @@
 import React from 'react';
-import {View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Modal} from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography } from '@/styles/styles';
+import { colors } from '@/styles/styles';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface ManualEntryModalProps {
     visible: boolean;
@@ -23,42 +25,64 @@ export const ManualEntryModal = ({
     if (!visible) return null;
 
     return (
-        <View style={styles.modalOverlay}>
-            <View style={styles.manualModalContainer}>
-                <Text style={styles.modalTitle}>
-                    {t('labels.enterISBNManually')}
-                </Text>
+        <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onRequestClose}>
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.iconPreviewContainer}>
+                            <View style={styles.iconPreviewCircle}>
+                                <MaterialIcons
+                                    name="book"
+                                    size={62}
+                                    color={colors.primary}
+                                />
+                            </View>
+                        </View>
 
-                <TextInput
-                    style={styles.modalInput}
-                    placeholder={t('placeholders.enterISBN')}
-                    placeholderTextColor="#888"
-                    keyboardType="numeric"
-                    value={manualISBN}
-                    onChangeText={setManualISBN}
-                    autoFocus
-                />
+                        <Text style={styles.modalTitle}>
+                            {t('labels.enterISBNManually')}
+                        </Text>
 
-                <View style={styles.modalButtonsContainer}>
-                    <TouchableOpacity
-                        style={[styles.modalButton, styles.cancelButton]}
-                        onPress={onRequestClose}
-                    >
-                        <Text style={styles.cancelButtonText}>
-                            {t('buttons.cancel')}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.modalButton, styles.submitButton]}
-                        onPress={onManualSubmit}
-                    >
-                        <Text style={styles.submitButtonText}>
-                            {t('buttons.submit')}
-                        </Text>
-                    </TouchableOpacity>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder={t('placeholders.enterISBN')}
+                            placeholderTextColor={colors.gray}
+                            keyboardType="numeric"
+                            value={manualISBN}
+                            onChangeText={setManualISBN}
+                            autoFocus
+                        />
+
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={onRequestClose}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.closeButtonCircle}>
+                                <Text style={styles.closeButtonText}>×</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.confirmButton]}
+                                onPress={onManualSubmit}
+                                activeOpacity={0.7}
+                            >
+                                <LinearGradient
+                                    colors={[colors.primary, colors.primary]}
+                                    style={styles.buttonGradient}
+                                >
+                                    <Text style={styles.confirmButtonText}>
+                                        {t('buttons.submit')}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </View>
-        </View>
+        </Modal>
     );
 };
 
@@ -69,54 +93,117 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
-    manualModalContainer: {
+    modalContainer: {
         width: '90%',
         backgroundColor: 'white',
-        borderRadius: 2,
-        padding: 20,
-        maxHeight: '40%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    modalContent: {
+        padding: 24,
+        paddingTop: 32,
+        alignItems: 'center',
+    },
+    iconPreviewContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    iconPreviewCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 60,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
     },
     modalTitle: {
-        ...typography.h1,
-        marginBottom: 16,
-        textAlign: 'left',
+        fontSize: 20,
+        fontWeight: '600',
         color: colors.black,
+        marginBottom: 8,
+        textAlign: 'center',
     },
     modalInput: {
         height: 50,
-        borderColor: 'rgba(0,0,0,0.1)',
         borderWidth: 1,
-        borderRadius: 2,
+        borderColor: 'rgba(74,108,247,0.2)',
+        borderRadius: 10,
         paddingHorizontal: 16,
         backgroundColor: 'white',
+        marginBottom: 24,
         color: colors.black,
-        marginVertical: 20,
         fontSize: 16,
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    modalButtonsContainer: {
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
+    buttonRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 16,
     },
-    modalButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginHorizontal: 5,
+    actionButton: {
+        borderRadius: 10,
+        overflow: 'hidden',
+        width: '100%',
+        height: 50
     },
     cancelButton: {
         backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: colors.gray,
     },
-    submitButton: {
-        backgroundColor: colors.white,
+    confirmButton: {
+        backgroundColor: colors.primary,
+    },
+    buttonGradient: {
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
     },
     cancelButtonText: {
-        color: colors.primary,
-        fontWeight: '500',
+        color: colors.grayDark,
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+        lineHeight: 50,
     },
-    submitButtonText: {
-        color: colors.primary,
-        fontWeight: '500',
+    confirmButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
     },
 });

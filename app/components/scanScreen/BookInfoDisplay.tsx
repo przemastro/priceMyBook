@@ -2,7 +2,7 @@ import React from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BookInfo } from './types';
-import { colors, typography } from '@/styles/styles';
+import { colors } from '@/styles/styles';
 
 interface BookInfoDisplayProps {
     bookInfo: BookInfo | null;
@@ -16,7 +16,7 @@ export const BookInfoDisplay = ({ bookInfo, isbn }: BookInfoDisplayProps) => {
 
     return (
         <View style={styles.bookInfoContainer}>
-            <Text style={styles.modalTitle}>
+            <Text style={styles.isbnText}>
                 {t('bookInfo.scannedISBN')}: {isbn}
             </Text>
 
@@ -52,14 +52,16 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         alignItems: 'center',
     },
-    modalTitle: {
-        ...typography.h1,
-        marginBottom: 16,
-        textAlign: 'left',
-        color: colors.black,
+    isbnText: {
+        fontSize: 18,
+        color: colors.primary,
+        marginBottom: 40,
+        marginTop: 40,
+        textAlign: 'center',
     },
     bookInfoText: {
-        ...typography.body,
+        fontSize: 16,
+        color: colors.black,
         marginBottom: 8,
         textAlign: 'center',
     },
@@ -67,6 +69,6 @@ const styles = StyleSheet.create({
         width: 120,
         height: 180,
         marginBottom: 16,
-        borderRadius: 2,
+        borderRadius: 8,
     },
 });
