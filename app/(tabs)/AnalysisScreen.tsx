@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
-  ActivityIndicator,
+  ActivityIndicator, Alert,
   Animated,
   Dimensions,
   Easing,
@@ -614,6 +614,26 @@ export default function AnalysisScreen() {
     showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${collection}`, 'success');
   };
 
+  const handleClearPress = () => {
+    setBookImage(null);
+    setTitleInput('');
+    setIsbnInput('');
+    setOriginalPrice('');
+    setAuthors('');
+    setPublisher('');
+    setDescription('');
+  };
+
+  const handleClearFields = () => {
+    setTitleInput('');
+    setAuthors('');
+    setPublisher('');
+    setIsbnInput('');
+    setOriginalPriceInput('');
+    setDescription('');
+  };
+
+
   const handleSaveBook = () => {
     const priceValue = finalPrice.toFixed(2);
     const defaultListingStatus: ListingStatus = {
@@ -722,6 +742,7 @@ export default function AnalysisScreen() {
                     onPickImage={pickImage}
                     onEditPress={openEditModal}
                     onScanPress={startScanning}
+                    onClearPress={handleClearPress}
                     formatPrice={(price) => formatCurrency({price, exchangeRate})}
                     isScanning={isScanning}
                 />
@@ -751,6 +772,7 @@ export default function AnalysisScreen() {
                       closeEditModal();
                     }
                   }}
+                  onClearFields={handleClearFields}
               />
             </Animated.View>
         );

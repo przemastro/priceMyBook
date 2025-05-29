@@ -322,5 +322,9 @@ export default {
     modals: {
         addToCollectionTitle: "Add Book To the Collection",
         addToCollectionConfirm: "You can view your book collections and their contents in the Collections tab"
-    }
+    },
+    confirmation: {
+        title: "Confirmation",
+        clearAllFields: "\"Are you sure you want to clear all fields?"
+    },
 }

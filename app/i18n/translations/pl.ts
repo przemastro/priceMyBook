@@ -316,5 +316,9 @@ export default {
     modals: {
         addToCollectionTitle: "Dodaj książkę do księgozbioru",
         addToCollectionConfirm: "Możesz przeglądać swoje księgozbiory i ich zawartość w zakładce Księgozbiory"
-    }
+    },
+    confirmation: {
+        title: "Potwierdzenie",
+        clearAllFields: "Czy na pewno chcesz wyczyścić wszystkie pola?"
+    },
 }

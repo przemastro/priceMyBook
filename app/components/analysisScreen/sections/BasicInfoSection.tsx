@@ -4,9 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.8;
-const CARD_HEIGHT = 400; // Stała wysokość karty
+const CARD_HEIGHT = 400;
 const ACTION_BUTTONS_WIDTH = 60;
 
 interface BasicBookInfoProps {
@@ -19,6 +20,7 @@ interface BasicBookInfoProps {
     onPickImage: () => Promise<void>;
     onEditPress: () => void;
     onScanPress: () => void;
+    onClearPress: () => void;
     formatPrice: (price: string) => string;
     isScanning?: boolean;
     authors?: string;
@@ -36,6 +38,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                    onPickImage,
                                                                    onEditPress,
                                                                    onScanPress,
+                                                                   onClearPress,
                                                                    formatPrice,
                                                                    isScanning = false,
                                                                    authors,
@@ -44,9 +47,19 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                }) => {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
+    const [showClearAlert, setShowClearAlert] = useState(false);
 
     const toggleExpanded = () => {
         setExpanded(!expanded);
+    };
+
+    const handleClearPress = () => {
+        setShowClearAlert(true);
+    };
+
+    const handleConfirmClear = () => {
+        setShowClearAlert(false);
+        onClearPress();
     };
 
     const renderActionButtons = () => {
@@ -71,6 +84,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                 {/* Clear Button */}
                 <TouchableOpacity
                     style={styles.actionButton}
+                    onPress={handleClearPress}
                 >
                     <LinearGradient
                         colors={[`${colors.primary}20`, `${colors.primary}10`]}
@@ -113,6 +127,16 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
 
     return (
         <View style={styles.container}>
+            <CustomAlertModal
+                visible={showClearAlert}
+                title={t('confirmation.title')}
+                message={t('confirmation.clearAllFields')}
+                confirmText={t('buttons.clear')}
+                onConfirm={handleConfirmClear}
+                type="warning"
+                buttonFullWidth={true}
+            />
+
             <View style={styles.bookCard}>
                 <LinearGradient
                     colors={[colors.buttonSelected1, colors.buttonSelected2]}
@@ -120,13 +144,11 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    {/* Główny ScrollView obejmujący całą zawartość karty */}
                     <ScrollView
                         style={styles.mainScrollView}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={true}
                     >
-                        {/* Book Cover - Centered */}
                         <View style={styles.imageContainer}>
                             <TouchableOpacity
                                 style={styles.bookImageContainer}
@@ -154,7 +176,6 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             </TouchableOpacity>
                         </View>
 
-                        {/* Book Details */}
                         <View style={styles.bookDetails}>
                             <View style={styles.detailRow}>
                                 <Text style={styles.bookTitle} numberOfLines={2}>
@@ -248,7 +269,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 4,
-        paddingBottom: 20, // Dodatkowe miejsce na dole
+        paddingBottom: 20,
     },
     imageContainer: {
         alignItems: 'center',

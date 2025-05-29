@@ -36,6 +36,7 @@ interface EditBookDetailsModalProps {
     setDescription: (text: string) => void;
     onPickImage: () => Promise<void>;
     onSave: () => void;
+    onClearFields: () => void; // Dodaj tę prop
 }
 
 export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
@@ -55,10 +56,17 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                                                               description,
                                                                               setDescription,
                                                                               onPickImage,
-                                                                              onSave
+                                                                              onSave,
+                                                                              onClearFields
                                                                           }) => {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    React.useEffect(() => {
+        if (visible) {
+            onClearFields();
+            setErrors({});
+        }
+    }, [visible]);
     const validateFields = () => {
         const newErrors: Record<string, string> = {};
 
