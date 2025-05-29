@@ -69,7 +69,7 @@ export default {
         noPrice: 'No price available',
         discountedPrice: 'Discounted Price',
         amazonPrices: 'Latest Amazon Prices',
-        addCover: "Add book cover (max 200KB)"
+        addCover: "Add book cover (max 200KB)",
     },
     labels: {
         selectCollection: 'Select Collection',
@@ -201,6 +201,8 @@ export default {
         books: 'Books',
         delete: 'Delete',
         export: 'Export',
+        more: "More",
+        less: "Less"
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',

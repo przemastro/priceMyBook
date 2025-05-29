@@ -1,5 +1,5 @@
 // components/analysisScreen/EditBookDetailsModal.tsx
-import React from 'react';
+import React, {useState} from 'react';
 import {
     Modal,
     View,
@@ -57,6 +57,47 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                                                               onPickImage,
                                                                               onSave
                                                                           }) => {
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const validateFields = () => {
+        const newErrors: Record<string, string> = {};
+
+        if (!titleInput.trim()) {
+            newErrors.title = 'Tytuł jest wymagany';
+        }
+
+        if (!isbnInput.trim()) {
+            newErrors.isbn = 'ISBN jest wymagany';
+        } else if (!/^\d{10}(\d{3})?$/.test(isbnInput)) {
+            newErrors.isbn = 'Wprowadź poprawny ISBN (10 lub 13 cyfr)';
+        }
+
+        if (!originalPriceInput.trim()) {
+            newErrors.price = 'Cena jest wymagana';
+        } else if (isNaN(parseFloat(originalPriceInput)) || parseFloat(originalPriceInput) <= 0) {
+            newErrors.price = 'Wprowadź poprawną cenę (większą niż 0)';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSave = async () => {
+        const isValid = validateFields();
+
+        if (!isValid) {
+            return; // Zatrzymaj jeśli walidacja nie przeszła
+        }
+
+        try {
+            await onSave(); // Wywołaj funkcję zapisu
+            setErrors({}); // Wyczyść błędy
+            onClose(); // Zamknij modal
+        } catch (error) {
+            console.error('Błąd podczas zapisywania:', error);
+        }
+    };
+
     return (
         <Modal
             visible={visible}
@@ -114,12 +155,16 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                             <View style={styles.inputGroup}>
                                 <Text style={styles.inputLabel}>Tytuł*</Text>
                                 <TextInput
-                                    style={styles.editableInput}
+                                    style={[styles.editableInput, errors.title ? styles.errorInput : null]}
                                     value={titleInput}
-                                    onChangeText={setTitleInput}
+                                    onChangeText={(text) => {
+                                        setTitleInput(text);
+                                        if (errors.title) setErrors(prev => ({...prev, title: ''}));
+                                    }}
                                     placeholder="Wprowadź tytuł"
                                     placeholderTextColor={colors.grayDark}
                                 />
+                                {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
                             </View>
 
                             {/* Autor */}
@@ -150,26 +195,34 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                             <View style={styles.inputGroup}>
                                 <Text style={styles.inputLabel}>ISBN*</Text>
                                 <TextInput
-                                    style={styles.editableInput}
+                                    style={[styles.editableInput, errors.isbn ? styles.errorInput : null]}
                                     value={isbnInput}
-                                    onChangeText={setIsbnInput}
+                                    onChangeText={(text) => {
+                                        setIsbnInput(text);
+                                        if (errors.isbn) setErrors(prev => ({...prev, isbn: ''}));
+                                    }}
                                     placeholder="Wprowadź ISBN"
                                     placeholderTextColor={colors.grayDark}
                                     keyboardType="numeric"
                                 />
+                                {errors.isbn && <Text style={styles.errorText}>{errors.isbn}</Text>}
                             </View>
 
                             {/* Cena (wymagana) */}
                             <View style={styles.inputGroup}>
                                 <Text style={styles.inputLabel}>Cena oryginalna*</Text>
                                 <TextInput
-                                    style={styles.editableInput}
+                                    style={[styles.editableInput, errors.price ? styles.errorInput : null]}
                                     value={originalPriceInput}
-                                    onChangeText={setOriginalPriceInput}
+                                    onChangeText={(text) => {
+                                        setOriginalPriceInput(text);
+                                        if (errors.price) setErrors(prev => ({...prev, price: ''}));
+                                    }}
                                     placeholder="Wprowadź cenę"
                                     placeholderTextColor={colors.grayDark}
                                     keyboardType="numeric"
                                 />
+                                {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
                             </View>
 
                             {/* Opis */}
@@ -192,7 +245,7 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                         <View style={styles.buttonRow}>
                             <TouchableOpacity
                                 style={[styles.actionButton, styles.saveButton]}
-                                onPress={onSave}
+                                onPress={handleSave}
                                 activeOpacity={0.7}
                             >
                                 <LinearGradient
@@ -202,6 +255,10 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                     <Text style={styles.saveButtonText}>{t('buttons.save')}</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
+
+                            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+                            {errors.isbn && <Text style={styles.errorText}>{errors.isbn}</Text>}
+                            {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
                         </View>
                     </View>
                 </View>
@@ -283,15 +340,6 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         fontWeight: '500',
     },
-    editableInput: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.buttonSelected1,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        color: colors.black,
-    },
     footer: {
         padding: 16,
         backgroundColor: colors.white,
@@ -326,6 +374,24 @@ const styles = StyleSheet.create({
         color: colors.white,
         fontSize: 16,
         fontWeight: '600',
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 4,
+    },
+    editableInput: {
+        backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: colors.buttonSelected1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        color: colors.black,
+    },
+    errorInput: {
+        borderColor: 'red',  // To jest poprawne dla TextInput
     },
 });
 

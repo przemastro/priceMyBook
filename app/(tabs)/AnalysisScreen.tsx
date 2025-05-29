@@ -673,6 +673,27 @@ export default function AnalysisScreen() {
     }
   };
 
+  const validateFields = () => {
+    let isValid = true;
+
+    if (!titleInput.trim()) {
+      showAlert(t('alerts.error'), t('alerts.enterTitle'));
+      isValid = false;
+    }
+
+    if (!isbnInput.trim()) {
+      showAlert(t('alerts.error'), t('alerts.enterISBN'));
+      isValid = false;
+    }
+
+    if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
+      showAlert(t('alerts.error'), t('alerts.enterValidPrice'));
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const renderStep = () => {
     const stepTitles = [
       t('stepTitles.scanForDefects'),
@@ -695,11 +716,14 @@ export default function AnalysisScreen() {
                     isbn={isbn}
                     isbnInput={isbnInput}
                     originalPrice={originalPrice}
+                    authors={authors}
+                    publisher={publisher}
+                    description={description}
                     onPickImage={pickImage}
                     onEditPress={openEditModal}
-                    onScanPress={startScanning} // Przekazujemy funkcję skanowania
-                    isScanning={isScanning} // Przekazujemy stan skanowania
+                    onScanPress={startScanning}
                     formatPrice={(price) => formatCurrency({price, exchangeRate})}
+                    isScanning={isScanning}
                 />
               </View>
               <EditBookDetailsModal
@@ -720,10 +744,12 @@ export default function AnalysisScreen() {
                   setDescription={setDescription}
                   onPickImage={pickImage}
                   onSave={() => {
-                    saveTitle();
-                    saveIsbn();
-                    saveOriginalPrice();
-                    closeEditModal();
+                    if (validateFields()) {
+                      saveTitle();
+                      saveIsbn();
+                      saveOriginalPrice();
+                      closeEditModal();
+                    }
                   }}
               />
             </Animated.View>
@@ -1025,13 +1051,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 16,
     paddingTop: 82,
-    backgroundColor: colors.grayLight,
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.grayLight,
+    backgroundColor: colors.background,
   },
   priceValue: {
     fontSize: 16,
@@ -1046,16 +1072,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   combinedSection: {
-    backgroundColor: colors.grayLight,
+    backgroundColor: colors.background,
     borderRadius: 0,
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 0,
   },
   stepTitle: {
     color: colors.primary,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 40,
+    marginBottom: 20,
     textAlign: 'center',
   },
   fullScreenContainer: {
@@ -1197,10 +1223,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     minHeight: 400,
+    maxHeight: 800,
     width: '100%',
     marginTop: 0,
     marginLeft: 0,
-    backgroundColor: colors.grayLight
+    backgroundColor: colors.background
   },
   navArrowContainer: {
     marginLeft: 5,

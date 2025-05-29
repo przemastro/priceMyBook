@@ -570,7 +570,12 @@ const CollectionsScreen = () => {
                 );
             case 1:
                 return (
-                    <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1, width: '120%' }}>
+                    <Animated.View style={{
+                        transform: [{ translateX: slideAnim }],
+                        flex: 1,
+                        width: '120%',
+                        minHeight: Dimensions.get('window').height * 0.7, // Zwiększona wysokość
+                    }}>
                         <View style={styles.titleContainer}>
                             <Text style={styles.slideTitle}>{stepTitles[1]}</Text>
                         </View>
@@ -750,7 +755,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 6,
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
     },
     valueRow: {
         flexDirection: 'row',
@@ -779,7 +784,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
         borderRadius: 2,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
@@ -789,7 +794,7 @@ const styles = StyleSheet.create({
         padding: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
         borderRadius: 2,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
@@ -806,7 +811,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 6,
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
     },
     totalValueContent: {
         alignItems: 'center',
@@ -835,7 +840,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(74,108,247,0.1)',
     },
     priceContainer: {
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
         borderRadius: 20,
         paddingVertical: 12,
         paddingHorizontal: 20,
@@ -998,7 +1003,7 @@ const styles = StyleSheet.create({
     },
     priceSummaryGradient: {
         padding: 16,
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
         borderRadius: 12,
     },
     closeButton: {

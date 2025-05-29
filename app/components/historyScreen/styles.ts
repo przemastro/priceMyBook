@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         paddingTop: 80,
-        backgroundColor: colors.grayLight,
+        backgroundColor: '#f8f9ff',
     },
     listContent: {
         paddingBottom: 20,

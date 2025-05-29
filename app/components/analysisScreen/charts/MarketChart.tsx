@@ -68,7 +68,7 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
                     }]
                 }}
                 width={chartWidth}
-                height={220}
+                height={200}
                 yAxisLabel=""
                 yAxisSuffix="%"
                 chartConfig={chartConfig}
@@ -97,7 +97,7 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
                         }]
                     }}
                     width={chartWidth}
-                    height={220}
+                    height={200}
                     yAxisLabel=""
                     yAxisSuffix=""
                     chartConfig={chartConfig}

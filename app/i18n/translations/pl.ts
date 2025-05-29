@@ -199,6 +199,8 @@ export default {
         export: 'Wyeksportuj',
         clear: "Wyczyść",
         startScanning: 'Skanuj',
+        more: "Więcej",
+        less: "Mniej"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',

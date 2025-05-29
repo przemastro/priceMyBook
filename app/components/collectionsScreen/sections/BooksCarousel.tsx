@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
-    ViewStyle, TextStyle,
 } from 'react-native';
 import { FontAwesome, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
@@ -45,6 +44,22 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                                                      }) => {
     const { t } = useTranslation();
     const carouselRef = useRef<any>(null);
+
+    const handleGoToStart = () => {
+        carouselRef.current?.scrollTo({ index: 0, animated: true });
+    };
+
+    const handleGoToEnd = () => {
+        carouselRef.current?.scrollTo({ index: books.length - 1, animated: true });
+    };
+
+    const handlePrev = () => {
+        carouselRef.current?.prev();
+    };
+
+    const handleNext = () => {
+        carouselRef.current?.next();
+    };
 
     const renderListingButton = (bookIndex: number) => {
         const book = books[bookIndex];
@@ -216,6 +231,59 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 renderItem={({ index, animationValue }) => <BookItem index={index} animationValue={animationValue} />}
                 scrollAnimationDuration={800}
             />
+
+            {/* Navigation arrows - zawsze widoczne do testów */}
+            <View style={styles.navigationContainer}>
+                <TouchableOpacity
+                    onPress={handleGoToStart}
+                    style={styles.navButton}
+                    disabled={books.length <= 1}
+                >
+                    <MaterialIcons
+                        name="first-page"
+                        size={24}
+                        color={books.length > 1 ? colors.primary : colors.gray}
+                    />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handlePrev}
+                    style={styles.navButton}
+                    disabled={books.length <= 1}
+                >
+                    <MaterialIcons
+                        name="chevron-left"
+                        size={30}
+                        color={books.length > 1 ? colors.primary : colors.gray}
+                    />
+                </TouchableOpacity>
+
+                <View style={styles.navSpacer} />
+
+                <TouchableOpacity
+                    onPress={handleNext}
+                    style={styles.navButton}
+                    disabled={books.length <= 1}
+                >
+                    <MaterialIcons
+                        name="chevron-right"
+                        size={30}
+                        color={books.length > 1 ? colors.primary : colors.gray}
+                    />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handleGoToEnd}
+                    style={styles.navButton}
+                    disabled={books.length <= 1}
+                >
+                    <MaterialIcons
+                        name="last-page"
+                        size={24}
+                        color={books.length > 1 ? colors.primary : colors.gray}
+                    />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
@@ -224,8 +292,10 @@ const styles = StyleSheet.create({
     booksCarouselContainer: {
         marginTop: 30,
         paddingTop: 0,
-        paddingBottom: 20,
+        paddingBottom: 80, // Zwiększone miejsce na nawigację
         backgroundColor: colors.grayLight,
+        height: BOOK_CARD_HEIGHT + 120, // Stała wysokość
+        position: 'relative', // Wymagane dla pozycjonowania absolutnego dzieci
     },
     booksCarousel: {
         width: '100%',
@@ -358,6 +428,38 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: colors.grayDark,
         fontWeight: '500',
+    },
+    navigationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 60,
+        width: '100%',
+        position: 'absolute',
+        bottom: 10,
+        left: 0,
+        right: 0,
+        backgroundColor: colors.white,
+        paddingHorizontal: 20,
+        borderTopWidth: 1,
+        borderTopColor: colors.grayLight,
+        zIndex: 100,
+        elevation: 10,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    navButton: {
+        padding: 10,
+        marginHorizontal: 5,
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.gray,
+    },
+    navSpacer: {
+        width: 20,
     },
 });
 

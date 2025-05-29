@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 interface Collection {
     name: string;
     icon: string;
-    createdAt: string; // Dodajemy datę utworzenia
+    createdAt?: string; // Dodajemy datę utworzenia
 }
 
 type CollectionsSectionProps = {
@@ -72,10 +72,9 @@ const CollectionsSection = ({
         const isSelected = selectedCollection === item.name;
 
         // Formatowanie daty
-        const createdAtDate = new Date(item.createdAt);
-        const month = createdAtDate.toLocaleString(i18n.language, { month: 'short' });
-        const year = createdAtDate.getFullYear();
-        const formattedDate = `${month}, ${year}`;
+        const formattedDate = item.createdAt
+            ? `${new Date(item.createdAt).toLocaleString(i18n.language, { month: 'short' })}, ${new Date(item.createdAt).getFullYear()}`
+            : t('labels.noDate');
 
         return (
             <TouchableOpacity
@@ -176,7 +175,7 @@ const CollectionsSection = ({
 
 const styles = StyleSheet.create({
     combinedSection: {
-        backgroundColor: colors.grayLight,
+        backgroundColor: colors.background,
         borderRadius: 0,
         paddingTop: 20,
         marginBottom: 0,

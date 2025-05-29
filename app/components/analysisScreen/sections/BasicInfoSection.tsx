@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import React, {useState} from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.8;
+const CARD_HEIGHT = 400; // Stała wysokość karty
 const ACTION_BUTTONS_WIDTH = 60;
 
 interface BasicBookInfoProps {
@@ -20,6 +21,9 @@ interface BasicBookInfoProps {
     onScanPress: () => void;
     formatPrice: (price: string) => string;
     isScanning?: boolean;
+    authors?: string;
+    publisher?: string;
+    description?: string;
 }
 
 export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
@@ -33,9 +37,17 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                    onEditPress,
                                                                    onScanPress,
                                                                    formatPrice,
-                                                                   isScanning = false
+                                                                   isScanning = false,
+                                                                   authors,
+                                                                   publisher,
+                                                                   description,
                                                                }) => {
     const { t } = useTranslation();
+    const [expanded, setExpanded] = useState(false);
+
+    const toggleExpanded = () => {
+        setExpanded(!expanded);
+    };
 
     const renderActionButtons = () => {
         return (
@@ -108,54 +120,98 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    {/* Book Cover - Centered */}
-                    <View style={styles.imageContainer}>
-                        <TouchableOpacity
-                            style={styles.bookImageContainer}
-                            onPress={onPickImage}
-                            activeOpacity={0.8}
-                        >
-                            {bookImage ? (
-                                <Image
-                                    source={{ uri: bookImage }}
-                                    style={styles.bookImage}
-                                    resizeMode="cover"
-                                />
-                            ) : (
-                                <LinearGradient
-                                    colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
-                                    style={styles.bookImagePlaceholder}
-                                >
-                                    <Ionicons
-                                        name="book"
-                                        size={40}
-                                        color={colors.primary}
+                    {/* Główny ScrollView obejmujący całą zawartość karty */}
+                    <ScrollView
+                        style={styles.mainScrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={true}
+                    >
+                        {/* Book Cover - Centered */}
+                        <View style={styles.imageContainer}>
+                            <TouchableOpacity
+                                style={styles.bookImageContainer}
+                                onPress={onPickImage}
+                                activeOpacity={0.8}
+                            >
+                                {bookImage ? (
+                                    <Image
+                                        source={{ uri: bookImage }}
+                                        style={styles.bookImage}
+                                        resizeMode="cover"
                                     />
-                                </LinearGradient>
+                                ) : (
+                                    <LinearGradient
+                                        colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
+                                        style={styles.bookImagePlaceholder}
+                                    >
+                                        <Ionicons
+                                            name="book"
+                                            size={40}
+                                            color={colors.primary}
+                                        />
+                                    </LinearGradient>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Book Details */}
+                        <View style={styles.bookDetails}>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.bookTitle} numberOfLines={2}>
+                                    {titleInput || title || t('bookInfo.noTitle')}
+                                </Text>
+                            </View>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.bookInfo}>
+                                    {t('bookInfo.isbn')}: {isbnInput || isbn || t('bookInfo.noIsbn')}
+                                </Text>
+                            </View>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.bookPrice}>
+                                    {t('bookInfo.price')}: {formatPrice(originalPrice)}
+                                </Text>
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={toggleExpanded}
+                                style={styles.moreButton}
+                            >
+                                <Text style={styles.moreButtonText}>
+                                    {expanded ? t('buttons.less') : t('buttons.more')}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {expanded && (
+                                <View style={styles.additionalInfo}>
+                                    {authors && (
+                                        <View style={styles.detailRow}>
+                                            <Text style={styles.bookInfo}>
+                                                {t('bookInfo.authors')}: {authors}
+                                            </Text>
+                                        </View>
+                                    )}
+
+                                    {publisher && (
+                                        <View style={styles.detailRow}>
+                                            <Text style={styles.bookInfo}>
+                                                {t('bookInfo.publisher')}: {publisher}
+                                            </Text>
+                                        </View>
+                                    )}
+
+                                    {description && (
+                                        <View style={styles.detailRow}>
+                                            <Text style={styles.bookInfo}>
+                                                {t('bookInfo.description')}: {description}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
                             )}
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Book Details */}
-                    <View style={styles.bookDetails}>
-                        <View style={styles.detailRow}>
-                            <Text style={styles.bookTitle} numberOfLines={2}>
-                                {titleInput || title || t('bookInfo.noTitle')}
-                            </Text>
                         </View>
-
-                        <View style={styles.detailRow}>
-                            <Text style={styles.bookInfo}>
-                                {t('bookInfo.isbn')}: {isbnInput || isbn || t('bookInfo.noIsbn')}
-                            </Text>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                            <Text style={styles.bookPrice}>
-                                {t('bookInfo.price')}: {formatPrice(originalPrice)}
-                            </Text>
-                        </View>
-                    </View>
+                    </ScrollView>
                 </LinearGradient>
             </View>
 
@@ -170,11 +226,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
-        marginVertical: 16,
+        marginVertical: 0,
     },
     bookCard: {
         width: CARD_WIDTH - 80,
-        height: 350,
+        height: CARD_HEIGHT,
         borderRadius: 12,
         marginLeft: 10,
         shadowColor: colors.primary,
@@ -186,7 +242,13 @@ const styles = StyleSheet.create({
     },
     bookCardGradient: {
         flex: 1,
-        padding: 16,
+    },
+    mainScrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 4,
+        paddingBottom: 20, // Dodatkowe miejsce na dole
     },
     imageContainer: {
         alignItems: 'center',
@@ -194,7 +256,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     bookImageContainer: {
-        width: 150,
+        width: '100%',
         height: 200,
         borderRadius: 8,
         justifyContent: 'center',
@@ -263,5 +325,23 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: colors.grayDark,
         fontWeight: '500',
+    },
+    moreButton: {
+        marginTop: 8,
+        paddingVertical: 4,
+        alignItems: 'center',
+    },
+    moreButtonText: {
+        color: colors.primary,
+        fontSize: 14,
+        fontWeight: '500',
+        textDecorationLine: 'underline',
+    },
+    additionalInfo: {
+        marginTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.2)',
+        paddingTop: 8,
+        width: '100%',
     },
 });

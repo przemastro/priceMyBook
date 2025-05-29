@@ -21,17 +21,17 @@ interface IStyles {
 // Style dla kontenerów i elementów UI
 export const styles = StyleSheet.create<IStyles>({
     premiumContainer: {
-        backgroundColor: '#f8f9ff',
+        backgroundColor: colors.background,
         borderRadius: 24,
-        padding: 16,
-        marginBottom: 20,
+        padding: 6,
+        marginBottom: 30,
         marginHorizontal: 16,
         shadowColor: '#4A6CF7',
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
         elevation: 5,
-        width: '100%',
+        width: '90%',
         alignSelf: 'center',
         maxWidth: 500,
     },
@@ -42,7 +42,7 @@ export const styles = StyleSheet.create<IStyles>({
         marginBottom: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        height: 200
+        height: 180
     },
     chartTitle: {
         fontSize: 18,
@@ -59,7 +59,8 @@ export const styles = StyleSheet.create<IStyles>({
         textAlign: 'center',
     },
     chartContainer: {
-        width: '100%',
+        width: '90%',
+        height: '90%',
         alignItems: 'center',
         paddingHorizontal: 8,
     },

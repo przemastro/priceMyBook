@@ -8,7 +8,7 @@ export const colors = {
     lightPrimary: '#4a6cf7',
     primary2: '#4a6cf714',
     secondary: '#2c3e50', // Kolor tekstu i nagłówków
-    background: '#f5f5f5', // Kolor tła
+    background: '#f8f9ff', // Kolor tła
     white: '#ffffff', // Kolor tła elementów
     gray: '#eeeded', // Kolor obramowań i nieaktywnych elementów
     grayDark: '#b6b5b5',
@@ -20,7 +20,7 @@ export const colors = {
     buttonSelected1: '#e6f1ff',
     buttonSelected2: '#cce0ff',
     whiteBlue: '#f9faff',
-    blackDark: '#000'
+    blackDark: '#000',
 };
 
 // Typografia
