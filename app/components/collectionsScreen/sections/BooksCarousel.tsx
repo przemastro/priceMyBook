@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Dimensions,
+    ScrollView,
 } from 'react-native';
 import { FontAwesome, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
@@ -18,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
 const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58;
 const ACTION_BUTTONS_WIDTH = 60;
+const SCROLL_BUTTON_HEIGHT = 24;
 
 interface BooksCarouselProps {
     books: BookData[];
@@ -44,6 +46,7 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                                                      }) => {
     const { t } = useTranslation();
     const carouselRef = useRef<any>(null);
+    const scrollViewRefs = useRef<Record<number, ScrollView | null>>({});
 
     const handleGoToStart = () => {
         carouselRef.current?.scrollTo({ index: 0, animated: true });
@@ -59,6 +62,14 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
 
     const handleNext = () => {
         carouselRef.current?.next();
+    };
+
+    const scrollContentUp = (index: number) => {
+        scrollViewRefs.current[index]?.scrollTo({ y: 0, animated: true });
+    };
+
+    const scrollContentDown = (index: number) => {
+        scrollViewRefs.current[index]?.scrollToEnd({ animated: true });
     };
 
     const renderListingButton = (bookIndex: number) => {
@@ -186,30 +197,53 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                             >
                                 <MaterialIcons
                                     name="book"
-                                    size={24}
+                                    size={50}
                                     color={colors.primary}
                                 />
                             </LinearGradient>
                         </View>
 
-                        <View style={styles.bookCardContent}>
-                            <View style={styles.bookCardHeader}>
-                                <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
-                                <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
-                            </View>
+                        <View style={styles.scrollButtonsContainer}>
+                            <TouchableOpacity
+                                style={styles.scrollButton}
+                                onPress={() => scrollContentUp(index)}
+                            >
+                                <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.primary} />
+                            </TouchableOpacity>
+                        </View>
 
-                            <View style={styles.bookDetails}>
-                                <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
-                                <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
-                                <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+                        <ScrollView
+                            ref={ref => scrollViewRefs.current[index] = ref}
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            <View style={styles.bookCardContent}>
+                                <View style={styles.bookCardHeader}>
+                                    <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
+                                    <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                                </View>
 
-                                <View style={styles.bookCardDetails}>
+                                <View style={styles.bookDetails}>
+                                    <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
+                                    <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
+                                    <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+
                                     <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
                                     {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
                                     {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
                                     {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
                                 </View>
                             </View>
+                        </ScrollView>
+
+                        <View style={styles.scrollButtonsContainer}>
+                            <TouchableOpacity
+                                style={styles.scrollButton}
+                                onPress={() => scrollContentDown(index)}
+                            >
+                                <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.primary} />
+                            </TouchableOpacity>
                         </View>
                     </LinearGradient>
                 </Animated.View>
@@ -232,7 +266,7 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 scrollAnimationDuration={800}
             />
 
-            {/* Navigation arrows - zawsze widoczne do testów */}
+            {/* Navigation arrows */}
             <View style={styles.navigationContainer}>
                 <TouchableOpacity
                     onPress={handleGoToStart}
@@ -292,10 +326,10 @@ const styles = StyleSheet.create({
     booksCarouselContainer: {
         marginTop: 30,
         paddingTop: 0,
-        paddingBottom: 80, // Zwiększone miejsce na nawigację
+        paddingBottom: 80,
         backgroundColor: colors.grayLight,
-        height: BOOK_CARD_HEIGHT + 120, // Stała wysokość
-        position: 'relative', // Wymagane dla pozycjonowania absolutnego dzieci
+        height: BOOK_CARD_HEIGHT + 120,
+        position: 'relative',
     },
     booksCarousel: {
         width: '100%',
@@ -334,14 +368,29 @@ const styles = StyleSheet.create({
         height: 100,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 50,
+        marginTop: 20,
     },
     collectionIconContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 150,
+        height: 150,
+        borderRadius: 100,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingBottom: 16,
+    },
+    scrollButtonsContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: SCROLL_BUTTON_HEIGHT,
+    },
+    scrollButton: {
+        padding: 4,
     },
     bookCardContent: {
         flex: 1,
@@ -357,10 +406,12 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.1)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
+        textAlign: 'center',
     },
     bookCardAuthors: {
         fontSize: 14,
         color: colors.primary,
+        textAlign: 'center',
     },
     bookDetails: {
         flex: 1,
@@ -369,40 +420,44 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.primary,
         marginBottom: 4,
+        textAlign: 'center',
     },
     bookCardPrice: {
         fontSize: 16,
         color: colors.primary,
         fontWeight: '600',
         marginBottom: 6,
+        textAlign: 'center',
     },
     bookCardCondition: {
         fontSize: 14,
         color: colors.primary,
         marginBottom: 12,
-    },
-    bookCardDetails: {
-        marginTop: 8,
+        textAlign: 'center',
     },
     bookCardDefects: {
         fontSize: 12,
         color: colors.black,
         marginBottom: 4,
+        textAlign: 'center',
     },
     bookCardUniqueness: {
         fontSize: 12,
         color: colors.black,
         marginBottom: 4,
+        textAlign: 'center',
     },
     bookCardMarket: {
         fontSize: 12,
         color: colors.black,
         marginBottom: 4,
+        textAlign: 'center',
     },
     bookCardAge: {
         fontSize: 12,
         color: colors.black,
         marginBottom: 4,
+        textAlign: 'center',
     },
     actionsColumn: {
         width: ACTION_BUTTONS_WIDTH,

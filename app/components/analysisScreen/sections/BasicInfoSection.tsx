@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 const CARD_WIDTH = Dimensions.get('window').width * 0.8;
 const CARD_HEIGHT = 400;
 const ACTION_BUTTONS_WIDTH = 60;
+const SCROLL_BUTTON_HEIGHT = 24;
 
 interface BasicBookInfoProps {
     bookImage: string | null;
@@ -46,12 +47,8 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                    description,
                                                                }) => {
     const { t } = useTranslation();
-    const [expanded, setExpanded] = useState(false);
     const [showClearAlert, setShowClearAlert] = useState(false);
-
-    const toggleExpanded = () => {
-        setExpanded(!expanded);
-    };
+    const scrollViewRef = useRef<ScrollView>(null);
 
     const handleClearPress = () => {
         setShowClearAlert(true);
@@ -60,6 +57,14 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
     const handleConfirmClear = () => {
         setShowClearAlert(false);
         onClearPress();
+    };
+
+    const scrollContentUp = () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const scrollContentDown = () => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
     };
 
     const renderActionButtons = () => {
@@ -145,9 +150,10 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     end={{ x: 1, y: 1 }}
                 >
                     <ScrollView
-                        style={styles.mainScrollView}
+                        ref={scrollViewRef}
+                        style={styles.scrollView}
                         contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={true}
+                        showsVerticalScrollIndicator={false}
                     >
                         <View style={styles.imageContainer}>
                             <TouchableOpacity
@@ -157,9 +163,11 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             >
                                 {bookImage ? (
                                     <Image
+                                        key={bookImage} // Dodane key dla lepszego renderowania
                                         source={{ uri: bookImage }}
                                         style={styles.bookImage}
-                                        resizeMode="cover"
+                                        resizeMode="contain"
+                                        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
                                     />
                                 ) : (
                                     <LinearGradient
@@ -168,11 +176,21 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                     >
                                         <Ionicons
                                             name="book"
-                                            size={40}
+                                            size={50}
                                             color={colors.primary}
                                         />
                                     </LinearGradient>
                                 )}
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Scroll up button */}
+                        <View style={styles.scrollButtonsContainer}>
+                            <TouchableOpacity
+                                style={styles.scrollButton}
+                                onPress={scrollContentUp}
+                            >
+                                <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
 
@@ -195,44 +213,41 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                 </Text>
                             </View>
 
-                            <TouchableOpacity
-                                onPress={toggleExpanded}
-                                style={styles.moreButton}
-                            >
-                                <Text style={styles.moreButtonText}>
-                                    {expanded ? t('buttons.less') : t('buttons.more')}
-                                </Text>
-                            </TouchableOpacity>
+                            {authors && (
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.bookInfo}>
+                                        {t('bookInfo.authors')}: {authors}
+                                    </Text>
+                                </View>
+                            )}
 
-                            {expanded && (
-                                <View style={styles.additionalInfo}>
-                                    {authors && (
-                                        <View style={styles.detailRow}>
-                                            <Text style={styles.bookInfo}>
-                                                {t('bookInfo.authors')}: {authors}
-                                            </Text>
-                                        </View>
-                                    )}
+                            {publisher && (
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.bookInfo}>
+                                        {t('bookInfo.publisher')}: {publisher}
+                                    </Text>
+                                </View>
+                            )}
 
-                                    {publisher && (
-                                        <View style={styles.detailRow}>
-                                            <Text style={styles.bookInfo}>
-                                                {t('bookInfo.publisher')}: {publisher}
-                                            </Text>
-                                        </View>
-                                    )}
-
-                                    {description && (
-                                        <View style={styles.detailRow}>
-                                            <Text style={styles.bookInfo}>
-                                                {t('bookInfo.description')}: {description}
-                                            </Text>
-                                        </View>
-                                    )}
+                            {description && (
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.bookInfo}>
+                                        {t('bookInfo.description')}: {description}
+                                    </Text>
                                 </View>
                             )}
                         </View>
                     </ScrollView>
+
+                    {/* Scroll down button */}
+                    <View style={styles.scrollButtonsContainer}>
+                        <TouchableOpacity
+                            style={styles.scrollButton}
+                            onPress={scrollContentDown}
+                        >
+                            <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                    </View>
                 </LinearGradient>
             </View>
 
@@ -264,12 +279,20 @@ const styles = StyleSheet.create({
     bookCardGradient: {
         flex: 1,
     },
-    mainScrollView: {
+    scrollView: {
         flex: 1,
     },
     scrollContent: {
         padding: 4,
         paddingBottom: 20,
+    },
+    scrollButtonsContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: SCROLL_BUTTON_HEIGHT,
+    },
+    scrollButton: {
+        padding: 4,
     },
     imageContainer: {
         alignItems: 'center',
@@ -277,22 +300,26 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     bookImageContainer: {
-        width: '100%',
-        height: 200,
-        borderRadius: 8,
+        width: 150,
+        height: 150,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        marginBottom: 0,
+        marginTop: 10,
+        borderRadius: 75,
+        overflow: 'hidden',
     },
     bookImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 8,
+        width: 150,
+        height: 150,
+        borderRadius: 75,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     bookImagePlaceholder: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 8,
+        width: 150,
+        height: 150,
+        borderRadius: 75,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -347,22 +374,6 @@ const styles = StyleSheet.create({
         color: colors.grayDark,
         fontWeight: '500',
     },
-    moreButton: {
-        marginTop: 8,
-        paddingVertical: 4,
-        alignItems: 'center',
-    },
-    moreButtonText: {
-        color: colors.primary,
-        fontSize: 14,
-        fontWeight: '500',
-        textDecorationLine: 'underline',
-    },
-    additionalInfo: {
-        marginTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.2)',
-        paddingTop: 8,
-        width: '100%',
-    },
 });
+
+export default BasicInfoSection;

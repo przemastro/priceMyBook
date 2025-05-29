@@ -1103,7 +1103,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 30,
     textAlign: 'center',
   },
   fullScreenContainer: {
@@ -1245,7 +1245,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     minHeight: 400,
-    maxHeight: 800,
     width: '100%',
     marginTop: 0,
     marginLeft: 0,
@@ -1264,7 +1263,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     minHeight: 400,
-    marginTop: 10
+    marginTop: 20
   },
   marketFactorsContainer: {
     width: '100%',

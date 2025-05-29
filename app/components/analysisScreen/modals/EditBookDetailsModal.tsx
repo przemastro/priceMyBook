@@ -1,4 +1,3 @@
-// components/analysisScreen/EditBookDetailsModal.tsx
 import React, {useState} from 'react';
 import {
     Modal,
@@ -36,7 +35,7 @@ interface EditBookDetailsModalProps {
     setDescription: (text: string) => void;
     onPickImage: () => Promise<void>;
     onSave: () => void;
-    onClearFields: () => void; // Dodaj tę prop
+    onClearFields: () => void;
 }
 
 export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
@@ -61,29 +60,23 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                                                           }) => {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    React.useEffect(() => {
-        if (visible) {
-            onClearFields();
-            setErrors({});
-        }
-    }, [visible]);
     const validateFields = () => {
         const newErrors: Record<string, string> = {};
 
         if (!titleInput.trim()) {
-            newErrors.title = 'Tytuł jest wymagany';
+            newErrors.title = t('errors.titleRequired');
         }
 
         if (!isbnInput.trim()) {
-            newErrors.isbn = 'ISBN jest wymagany';
+            newErrors.isbn = t('errors.isbnRequired');
         } else if (!/^\d{10}(\d{3})?$/.test(isbnInput)) {
-            newErrors.isbn = 'Wprowadź poprawny ISBN (10 lub 13 cyfr)';
+            newErrors.isbn = t('errors.invalidIsbn');
         }
 
         if (!originalPriceInput.trim()) {
-            newErrors.price = 'Cena jest wymagana';
+            newErrors.price = t('errors.priceRequired');
         } else if (isNaN(parseFloat(originalPriceInput)) || parseFloat(originalPriceInput) <= 0) {
-            newErrors.price = 'Wprowadź poprawną cenę (większą niż 0)';
+            newErrors.price = t('errors.invalidPrice');
         }
 
         setErrors(newErrors);
@@ -94,15 +87,15 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
         const isValid = validateFields();
 
         if (!isValid) {
-            return; // Zatrzymaj jeśli walidacja nie przeszła
+            return;
         }
 
         try {
-            await onSave(); // Wywołaj funkcję zapisu
-            setErrors({}); // Wyczyść błędy
-            onClose(); // Zamknij modal
+            await onSave();
+            setErrors({});
+            onClose();
         } catch (error) {
-            console.error('Błąd podczas zapisywania:', error);
+            console.error('Error saving:', error);
         }
     };
 
@@ -115,7 +108,6 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
         >
             <View style={styles.modalOverlay}>
                 <View style={[styles.modalContainer, { maxHeight: SCREEN_HEIGHT * 0.85 }]}>
-                    {/* Przycisk zamknięcia */}
                     <TouchableOpacity
                         style={styles.closeButton}
                         onPress={onClose}
@@ -130,7 +122,6 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Sekcja okładki */}
                         <View style={styles.bookCoverSection}>
                             <TouchableOpacity onPress={onPickImage} activeOpacity={0.8}>
                                 {bookImage ? (
@@ -150,18 +141,16 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                             color={colors.primary}
                                         />
                                         <Text style={styles.bookCoverPlaceholderText}>
-                                            Dodaj okładkę
+                                            {t('buttons.addCover')}
                                         </Text>
                                     </LinearGradient>
                                 )}
                             </TouchableOpacity>
                         </View>
 
-                        {/* Formularz - wszystkie pola edytowalne */}
                         <View style={styles.formSection}>
-                            {/* Tytuł (wymagany) */}
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Tytuł*</Text>
+                                <Text style={styles.inputLabel}>{t('bookInfo.title')}*</Text>
                                 <TextInput
                                     style={[styles.editableInput, errors.title ? styles.errorInput : null]}
                                     value={titleInput}
@@ -169,39 +158,36 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                         setTitleInput(text);
                                         if (errors.title) setErrors(prev => ({...prev, title: ''}));
                                     }}
-                                    placeholder="Wprowadź tytuł"
+                                    placeholder={t('placeholders.enterTitle')}
                                     placeholderTextColor={colors.grayDark}
                                 />
                                 {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
                             </View>
 
-                            {/* Autor */}
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Autor</Text>
+                                <Text style={styles.inputLabel}>{t('bookInfo.authors')}</Text>
                                 <TextInput
                                     style={styles.editableInput}
                                     value={authors}
                                     onChangeText={setAuthors}
-                                    placeholder="Wprowadź autora/autorów"
+                                    placeholder={t('placeholders.enterAuthors')}
                                     placeholderTextColor={colors.grayDark}
                                 />
                             </View>
 
-                            {/* Wydawca */}
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Wydawca</Text>
+                                <Text style={styles.inputLabel}>{t('bookInfo.publisher')}</Text>
                                 <TextInput
                                     style={styles.editableInput}
                                     value={publisher}
                                     onChangeText={setPublisher}
-                                    placeholder="Wprowadź wydawcę"
+                                    placeholder={t('placeholders.enterPublisher')}
                                     placeholderTextColor={colors.grayDark}
                                 />
                             </View>
 
-                            {/* ISBN (wymagany) */}
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>ISBN*</Text>
+                                <Text style={styles.inputLabel}>{t('bookInfo.isbn')}*</Text>
                                 <TextInput
                                     style={[styles.editableInput, errors.isbn ? styles.errorInput : null]}
                                     value={isbnInput}
@@ -209,16 +195,15 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                         setIsbnInput(text);
                                         if (errors.isbn) setErrors(prev => ({...prev, isbn: ''}));
                                     }}
-                                    placeholder="Wprowadź ISBN"
+                                    placeholder={t('placeholders.enterIsbn')}
                                     placeholderTextColor={colors.grayDark}
                                     keyboardType="numeric"
                                 />
                                 {errors.isbn && <Text style={styles.errorText}>{errors.isbn}</Text>}
                             </View>
 
-                            {/* Cena (wymagana) */}
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Cena oryginalna*</Text>
+                                <Text style={styles.inputLabel}>{t('bookInfo.originalPrice')}*</Text>
                                 <TextInput
                                     style={[styles.editableInput, errors.price ? styles.errorInput : null]}
                                     value={originalPriceInput}
@@ -226,21 +211,20 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                         setOriginalPriceInput(text);
                                         if (errors.price) setErrors(prev => ({...prev, price: ''}));
                                     }}
-                                    placeholder="Wprowadź cenę"
+                                    placeholder={t('placeholders.enterPrice')}
                                     placeholderTextColor={colors.grayDark}
                                     keyboardType="numeric"
                                 />
                                 {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
                             </View>
 
-                            {/* Opis */}
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Opis</Text>
+                                <Text style={styles.inputLabel}>{t('bookInfo.description')}</Text>
                                 <TextInput
                                     style={[styles.editableInput, { height: 100, textAlignVertical: 'top' }]}
                                     value={description}
                                     onChangeText={setDescription}
-                                    placeholder="Wprowadź opis"
+                                    placeholder={t('placeholders.enterDescription')}
                                     placeholderTextColor={colors.grayDark}
                                     multiline
                                 />
@@ -248,7 +232,6 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                         </View>
                     </ScrollView>
 
-                    {/* Przyciski akcji */}
                     <View style={styles.footer}>
                         <View style={styles.buttonRow}>
                             <TouchableOpacity
@@ -263,10 +246,6 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                     <Text style={styles.saveButtonText}>{t('buttons.save')}</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
-
-                            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-                            {errors.isbn && <Text style={styles.errorText}>{errors.isbn}</Text>}
-                            {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
                         </View>
                     </View>
                 </View>
@@ -373,11 +352,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    cancelButtonText: {
-        color: colors.grayDark,
-        fontSize: 16,
-        fontWeight: '600',
-    },
     saveButtonText: {
         color: colors.white,
         fontSize: 16,
@@ -399,7 +373,7 @@ const styles = StyleSheet.create({
         color: colors.black,
     },
     errorInput: {
-        borderColor: 'red',  // To jest poprawne dla TextInput
+        borderColor: 'red',
     },
 });
 
