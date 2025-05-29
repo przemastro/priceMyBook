@@ -15,6 +15,7 @@ import Carousel from 'react-native-reanimated-carousel';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import ExportToPDFButton from '../buttons/ExportToPDFButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
 const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58;
@@ -47,6 +48,8 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
     const { t } = useTranslation();
     const carouselRef = useRef<any>(null);
     const scrollViewRefs = useRef<Record<number, ScrollView | null>>({});
+    const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
+    const [bookToDeleteIndex, setBookToDeleteIndex] = useState<number | null>(null);
 
     const handleGoToStart = () => {
         carouselRef.current?.scrollTo({ index: 0, animated: true });
@@ -70,6 +73,24 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
 
     const scrollContentDown = (index: number) => {
         scrollViewRefs.current[index]?.scrollToEnd({ animated: true });
+    };
+
+    const showDeleteAlert = (index: number) => {
+        setBookToDeleteIndex(index);
+        setDeleteAlertVisible(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (bookToDeleteIndex !== null) {
+            onDeleteBook(bookToDeleteIndex);
+        }
+        setDeleteAlertVisible(false);
+        setBookToDeleteIndex(null);
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteAlertVisible(false);
+        setBookToDeleteIndex(null);
     };
 
     const renderListingButton = (bookIndex: number) => {
@@ -175,7 +196,7 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                             style={styles.deleteButton}
                             onPress={(e) => {
                                 e.stopPropagation();
-                                onDeleteBook(index);
+                                showDeleteAlert(index);
                             }}
                             activeOpacity={0.5}
                             hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
@@ -318,6 +339,17 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                     />
                 </TouchableOpacity>
             </View>
+
+            {/* Delete confirmation alert */}
+            <CustomAlertModal
+                visible={deleteAlertVisible}
+                title={t('alerts.deleteBookTitle')}
+                message={t('alerts.deleteBookMessage')}
+                confirmText={t('buttons.delete')}
+                onConfirm={handleConfirmDelete}
+                type="warning"
+                buttonFullWidth={true}
+            />
         </View>
     );
 };
