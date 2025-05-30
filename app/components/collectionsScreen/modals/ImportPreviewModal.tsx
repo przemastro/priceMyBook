@@ -1,14 +1,15 @@
-// app/components/modals/ImportPreviewModal.tsx
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { BookData } from '../types';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface ImportPreviewModalProps {
     importPreview: {
         collectionName: string;
-        books: BookData[]; // Zmiana z Omit<BookData, 'createdAt'>[] na BookData[]
+        books: BookData[];
         showPreview: boolean;
     } | null;
     onCancel: () => void;
@@ -33,33 +34,114 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
     if (!importPreview) return null;
 
     return (
-        <Modal animationType="slide" transparent={true} visible={!!importPreview} onRequestClose={onCancel}>
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={importPreview.showPreview}
+            onRequestClose={onCancel}
+        >
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>{t('labels.importPreview')} ({importPreview.books.length} {t('labels.books')})</Text>
-                    <Text style={styles.modalText}>{t('labels.collectionName')}: {importPreview.collectionName}</Text>
-                    <ScrollView style={styles.previewScroll}>
-                        {importPreview.books.slice(0, 5).map((book, index) => (
-                            <View key={index} style={styles.previewBook}>
-                                <Text style={styles.previewBookTitle}>{book.title}</Text>
-                                <Text style={styles.previewBookIsbn}>ISBN: {book.isbn}</Text>
-                                <Text style={styles.previewBookRating}>{t('labels.condition')}: {book.rating}/10</Text>
-                                <Text style={styles.previewBookDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
-                                {book.uniqueness && <Text style={styles.previewBookUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
-                                {book.marketFactors && <Text style={styles.previewBookMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
-                                {book.ageInfo && <Text style={styles.previewBookAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
-                                {book.listingStatus && <Text style={styles.previewBookListing}>{t('labels.listingStatus')}: {formatListingStatus(book.listingStatus)}</Text>}
+                    {/* Close button */}
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={onCancel}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.closeButtonCircle}>
+                            <Text style={styles.closeButtonText}>×</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.modalContent}>
+                        {/* Icon preview */}
+                        <View style={styles.iconPreviewContainer}>
+                            <View style={styles.iconPreviewCircle}>
+                                <Ionicons
+                                    name="document-text-outline"
+                                    size={42}
+                                    color={colors.primary}
+                                />
                             </View>
-                        ))}
-                        {importPreview.books.length > 5 && <Text style={styles.previewMore}>+ {importPreview.books.length - 5} {t('labels.moreBooks')}...</Text>}
-                    </ScrollView>
-                    <View style={styles.modalButtons}>
-                        <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={onCancel}>
-                            <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={onConfirm}>
-                            <Text style={styles.confirmButtonText}>{t('buttons.confirmImport')}</Text>
-                        </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.modalTitle}>
+                            {t('labels.importPreview')}
+                        </Text>
+
+                        <View style={styles.infoContainer}>
+                            <Text style={styles.infoText}>
+                                {t('labels.collectionName')}:
+                                <Text style={styles.infoValue}> {importPreview.collectionName}</Text>
+                            </Text>
+                            <Text style={styles.infoText}>
+                                {t('labels.booksToImport')}:
+                                <Text style={styles.infoValue}> {importPreview.books.length}</Text>
+                            </Text>
+                        </View>
+
+                        {/* Preview list */}
+                        <ScrollView
+                            style={styles.previewScroll}
+                            contentContainerStyle={styles.previewScrollContent}
+                        >
+                            {importPreview.books.slice(0, 5).map((book, index) => (
+                                <View key={index} style={styles.bookPreview}>
+                                    <Text style={styles.bookTitle} numberOfLines={1}>
+                                        {book.title || t('labels.noTitle')}
+                                    </Text>
+                                    <Text style={styles.bookDetails}>
+                                        ISBN: {book.isbn} • {t('labels.condition')}: {book.rating}/10
+                                    </Text>
+                                    <Text style={styles.bookMeta}>
+                                        {t('labels.defects')}: {formatDefectsSummary(book.defects)}
+                                    </Text>
+                                    {book.uniqueness && (
+                                        <Text style={styles.bookMeta}>
+                                            {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
+                                        </Text>
+                                    )}
+                                    {book.marketFactors && (
+                                        <Text style={styles.bookMeta}>
+                                            {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
+                                        </Text>
+                                    )}
+                                    {book.ageInfo && (
+                                        <Text style={styles.bookMeta}>
+                                            {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
+                                        </Text>
+                                    )}
+                                    {book.listingStatus && (
+                                        <Text style={styles.bookMeta}>
+                                            {t('labels.listingStatus')}: {formatListingStatus(book.listingStatus)}
+                                        </Text>
+                                    )}
+                                </View>
+                            ))}
+                            {importPreview.books.length > 5 && (
+                                <Text style={styles.moreItemsText}>
+                                    + {importPreview.books.length - 5} {t('labels.moreBooks')}...
+                                </Text>
+                            )}
+                        </ScrollView>
+
+                        {/* Action buttons */}
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.confirmButton]}
+                                onPress={onConfirm}
+                                activeOpacity={0.7}
+                            >
+                                <LinearGradient
+                                    colors={[colors.primary, colors.primary]}
+                                    style={styles.buttonGradient}
+                                >
+                                    <Text style={styles.confirmButtonText}>
+                                        {t('buttons.confirmImport')}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -76,98 +158,153 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         width: '90%',
+        maxHeight: '80%',
         backgroundColor: 'white',
-        borderRadius: 2,
-        padding: 20,
+        borderRadius: 12,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    modalContent: {
+        padding: 24,
+        paddingTop: 32,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1,
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
+    iconPreviewContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    iconPreviewCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '600',
         color: colors.black,
-        marginBottom: 15,
+        marginBottom: 16,
+        textAlign: 'center',
     },
-    modalText: {
-        marginBottom: 10,
-        color: colors.black,
+    infoContainer: {
+        marginBottom: 16,
+        padding: 12,
+        backgroundColor: colors.whiteBlue,
+        borderRadius: 8,
+    },
+    infoText: {
+        fontSize: 16,
+        color: colors.grayDark,
+        marginBottom: 4,
+    },
+    infoValue: {
+        fontWeight: '600',
+        color: colors.primary,
     },
     previewScroll: {
         maxHeight: 200,
-        marginVertical: 10,
+        marginBottom: 16,
     },
-    previewBook: {
-        padding: 10,
+    previewScrollContent: {
+        paddingRight: 8,
     },
-    previewBookTitle: {
-        fontWeight: '500',
+    bookPreview: {
+        padding: 12,
+        marginBottom: 8,
+        backgroundColor: colors.white,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.gray,
+    },
+    bookTitle: {
+        fontSize: 16,
+        fontWeight: '600',
         color: colors.black,
+        marginBottom: 4,
     },
-    previewBookIsbn: {
-        fontSize: 12,
+    bookDetails: {
+        fontSize: 14,
         color: colors.grayDark,
+        marginBottom: 4,
     },
-    previewBookRating: {
-        fontSize: 12,
-        color: colors.primary,
-        marginTop: 4,
-    },
-    previewBookDefects: {
+    bookMeta: {
         fontSize: 12,
         color: colors.grayDark,
         marginTop: 4,
         fontStyle: 'italic',
     },
-    previewBookUniqueness: {
-        fontSize: 12,
+    moreItemsText: {
+        fontSize: 14,
         color: colors.grayDark,
-        marginTop: 4,
-        fontStyle: 'italic',
-    },
-    previewBookMarket: {
-        fontSize: 12,
-        color: colors.grayDark,
-        marginTop: 4,
-        fontStyle: 'italic',
-    },
-    previewBookAge: {
-        fontSize: 12,
-        color: colors.grayDark,
-        marginTop: 4,
-        fontStyle: 'italic',
-    },
-    previewBookListing: {
-        fontSize: 12,
-        color: colors.grayDark,
-        marginTop: 4,
-        fontStyle: 'italic',
-    },
-    previewMore: {
         textAlign: 'center',
-        marginTop: 5,
-        color: colors.gray,
+        marginTop: 8,
         fontStyle: 'italic',
     },
-    modalButtons: {
+    buttonRow: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: 10,
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 16,
     },
-    modalButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 2,
-        marginLeft: 10,
+    actionButton: {
+        borderRadius: 10,
+        overflow: 'hidden',
+        width: '100%',
+        height: 50,
+        justifyContent: 'center',
     },
     cancelButton: {
         backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: colors.primary,
     },
     confirmButton: {
-        backgroundColor: colors.white,
+        backgroundColor: colors.primary,
+    },
+    buttonGradient: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     cancelButtonText: {
         color: colors.primary,
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
     },
     confirmButtonText: {
-        color: colors.primary,
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

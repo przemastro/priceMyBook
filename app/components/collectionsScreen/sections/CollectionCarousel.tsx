@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Modal, ActivityIndicator } from 'react-native';
 import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
@@ -12,7 +12,7 @@ interface CollectionCarouselProps {
     selectedCollection: string | null;
     onSelectCollection: (collectionName: string) => void;
     calculateCollectionTotal: (collectionName: string) => number;
-    onEditCollection: (collectionName: string, newName: string) => Promise<void>;
+    onEditCollection: (collectionName: string) => void;
     onDeleteCollection: (collectionName: string) => void;
     onExportCollection: (collectionName: string) => void;
     getBookWord: (count: number, lang: string) => string;
@@ -41,6 +41,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         y: 0,
         opensUpward: false
     });
+    const [isProcessing, setIsProcessing] = useState(false);
     const { width, height } = Dimensions.get('window');
 
     // Alert state
@@ -83,6 +84,16 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
     const hideMenu = () => {
         setMenuVisible(null);
+    };
+
+    const handleEditPress = (collectionName: string) => {
+        setIsProcessing(true);
+        try {
+            onEditCollection(collectionName);
+            hideMenu();
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const renderItem = ({ item }: { item: { name: string; icon: string } }) => {
@@ -205,15 +216,17 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                         <View style={styles.menuContent}>
                             <TouchableOpacity
                                 style={styles.menuOption}
-                                onPress={() => {
-                                    if (menuVisible) {
-                                        onEditCollection(menuVisible, menuVisible);
-                                        hideMenu();
-                                    }
-                                }}
+                                onPress={() => menuVisible && handleEditPress(menuVisible)}
+                                disabled={isProcessing}
                             >
-                                <Ionicons name="create-outline" size={18} color={colors.blackDark} />
-                                <Text style={styles.menuOptionText}>{t('buttons.edit')}</Text>
+                                {isProcessing ? (
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="create-outline" size={18} color={colors.blackDark} />
+                                        <Text style={styles.menuOptionText}>{t('buttons.edit')}</Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
 
                             <TouchableOpacity

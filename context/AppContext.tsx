@@ -79,7 +79,12 @@ interface AppContextType {
     clearScanHistory: () => void;
     formatCurrency: (price: string) => string;
     forceUpdateCollections: () => void;
-    renameCollection: (oldName: string, newName: string) => void;
+    renameCollection: (
+        oldName: string,
+        newName: string,
+        categories?: string[],
+        icon?: string
+    ) => Promise<void>;
     selectedCollection: string | null;
     setSelectedCollection: (collection: string | null) => void;
 }
@@ -128,8 +133,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
     const [updateTrigger, setUpdateTrigger] = useState(0);
     const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
-
-
 
     const forceUpdateCollections = useCallback(() => {
         setUpdateTrigger(prev => prev + 1);
@@ -223,17 +226,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCollections(prev => [...prev, {
             name,
             icon,
-            createdAt: new Date().toISOString() // Dodajemy datę utworzenia
+            createdAt: new Date().toISOString()
         }]);
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
         setCollectionCategories(prev => ({ ...prev, [name]: prev[name] || [] }));
     }, []);
 
-    const renameCollection = useCallback((oldName: string, newName: string) => {
+    const renameCollection = useCallback(async (oldName: string, newName: string, categories?: string[], icon?: string) => {
         if (!newName.trim() || oldName === newName) return;
 
         setCollections(prev => prev.map(collection =>
-            collection.name === oldName ? {...collection, name: newName} : collection
+            collection.name === oldName ? {...collection, name: newName, icon: icon || collection.icon} : collection
         ));
 
         setBooks(prev => {
@@ -248,7 +251,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCollectionCategories(prev => {
             const newCategories = {...prev};
             if (newCategories[oldName]) {
-                newCategories[newName] = newCategories[oldName];
+                newCategories[newName] = categories || newCategories[oldName];
                 delete newCategories[oldName];
             }
             return newCategories;
@@ -278,7 +281,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCollectionCategories(prev => {
             const currentCategories = prev[collectionName] || [];
             if (currentCategories.includes(category.trim())) {
-                return prev; // Kategoria już istnieje
+                return prev;
             }
             return {
                 ...prev,
@@ -321,7 +324,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
                 isExpanded: false,
                 listingStatus: bookData.listingStatus || defaultListingStatus,
-                imageUri: bookData.imageUri || undefined
             };
 
             return {
@@ -354,7 +356,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     ageInfo: book.ageInfo || defaultAgeInfo,
                     listingStatus: book.listingStatus || defaultListingStatus,
                     isExpanded: false,
-                    imageUri: book.imageUri || undefined
                 } as BookData));
 
                 return {

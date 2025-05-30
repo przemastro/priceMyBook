@@ -23,8 +23,6 @@ import { useAppContext } from '@/context/AppContext';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Components
 import CollectionCarousel from '../components/collectionsScreen/sections/CollectionCarousel';
 import BooksCarousel from '../components/collectionsScreen/sections/BooksCarousel';
 import AddCollectionModal from '../components/commonScreen/modals/AddCollectionModal';
@@ -35,16 +33,64 @@ import StatusChangeModal from '../components/collectionsScreen/modals/StatusChan
 import CategoriesCarousel from '../components/collectionsScreen/sections/CategoriesCarousel';
 import CustomAlertModal from "@/app/components/alerts/CustomAlertModal";
 
-// Types
-import {
-    BookData,
-    BookDefect,
-    BookUniqueness,
-    MarketFactors,
-    ListingStatus,
-    ImportPreviewData
-} from '../components/collectionsScreen/types';
-import { BookAgeInfo } from "@/app/components/scanScreen/types";
+interface BookDefect {
+    selected: boolean;
+    reduction: number;
+    count: number;
+}
+
+interface ListingStatus {
+    status: 'notListed' | 'listed' | 'sold';
+    platforms: ('amazon' | 'allegro' | 'olx')[];
+    listedDate?: string;
+    soldDate?: string;
+}
+
+interface BookUniqueness {
+    isMassMarket: boolean;
+    isFirstEdition: boolean;
+    isCollectorsEdition: boolean;
+    hasAuthorSignature: boolean;
+    isLimitedEdition: boolean;
+    isPublisherDefunct: boolean;
+}
+
+interface MarketFactors {
+    demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
+    supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
+    publicationYear?: number;
+}
+
+interface BookAgeInfo {
+    years: number;
+}
+
+interface BookData {
+    title: string;
+    authors: string;
+    isbn: string;
+    price: string;
+    displayPrice: string;
+    foundInApi: boolean;
+    originalPrice: string;
+    defects: Record<string, BookDefect>;
+    createdAt: string;
+    rating: number;
+    source?: 'google' | 'amazon' | 'manual';
+    priceSource?: string;
+    uniqueness: BookUniqueness;
+    marketFactors: MarketFactors;
+    ageInfo: BookAgeInfo;
+    isExpanded?: boolean;
+    listingStatus?: ListingStatus;
+}
+
+interface ImportPreviewData {
+    collectionName: string;
+    books: BookData[];
+    categories: string[];
+    showPreview: boolean;
+}
 
 interface Collection {
     name: string;
@@ -72,8 +118,6 @@ const CollectionsScreen = () => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [importPreview, setImportPreview] = useState<ImportPreviewData | null>(null);
 
-
-    // Navigation between slides
     const [currentStep, setCurrentStep] = useState(0);
     const totalSteps = 2;
     const slideAnim = useRef(new Animated.Value(0)).current;
@@ -94,7 +138,6 @@ const CollectionsScreen = () => {
         setSelectedCollection
     } = useAppContext();
 
-    // Default values
     const defaultUniqueness: BookUniqueness = {
         isMassMarket: false,
         isFirstEdition: false,
@@ -108,10 +151,8 @@ const CollectionsScreen = () => {
     const defaultAgeInfo: BookAgeInfo = { years: 0 };
     const defaultListingStatus: ListingStatus = { status: 'notListed', platforms: [] };
 
-    // Helper function to get collection names as strings
     const getCollectionNames = (): string[] => collections.map(c => c.name);
 
-    // Animation handlers
     const animateSlide = (direction: 'forward' | 'backward') => {
         slideAnim.setValue(direction === 'forward' ? 50 : -50);
         Animated.timing(slideAnim, {
@@ -150,7 +191,6 @@ const CollectionsScreen = () => {
         setAlertVisible(true);
     };
 
-    // Load selected collection on mount
     useEffect(() => {
         const loadSelected = async () => {
             try {
@@ -165,7 +205,6 @@ const CollectionsScreen = () => {
         loadSelected();
     }, [collections]);
 
-    // Collection management
     const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
         if (!name.trim()) return;
         addCollection(name, icon);
@@ -173,10 +212,15 @@ const CollectionsScreen = () => {
         setShowAddModal(false);
     };
 
-    const handleEditCollection = async (oldName: string, newName: string): Promise<void> => {
+    const handleEditCollection = async (
+        oldName: string,
+        newName: string,
+        categories: string[],
+        icon: string
+    ): Promise<void> => {
         if (newName.trim() && newName.trim() !== oldName) {
             try {
-                await renameCollection(oldName, newName.trim());
+                await renameCollection(oldName, newName.trim(), categories, icon);
                 if (selectedCollection === oldName) {
                     setSelectedCollection(newName.trim());
                 }
@@ -202,7 +246,6 @@ const CollectionsScreen = () => {
         );
     };
 
-    // Category management
     const handleAddCategory = (collectionName: string, category: string) => {
         if (!collectionName || !category.trim()) return;
 
@@ -224,7 +267,6 @@ const CollectionsScreen = () => {
         );
     };
 
-    // Book management
     const handleEditBook = (collectionName: string, bookIndex: number) => {
         const book = books[collectionName][bookIndex];
         router.push({
@@ -247,7 +289,6 @@ const CollectionsScreen = () => {
         });
     };
 
-    // Import/export
     const handleImportCollection = async () => {
         try {
             setIsImporting(true);
@@ -292,7 +333,6 @@ const CollectionsScreen = () => {
                     createdAt: new Date().toISOString()
                 }));
 
-            // Pobierz kategorie z pierwszego rekordu
             const categories = parseResult[0]?.Categories
                 ? parseResult[0].Categories.split(';').map((c: string) => c.trim()).filter((c: string) => c)
                 : [];
@@ -314,13 +354,9 @@ const CollectionsScreen = () => {
     const confirmImport = async () => {
         if (!importPreview) return;
         try {
-            // Najpierw dodaj kolekcję
             addCollection(importPreview.collectionName);
-
-            // Dodaj książki do kolekcji
             await addBooksToCollection(importPreview.collectionName, importPreview.books);
 
-            // Dodaj kategorie do kolekcji
             if (importPreview.categories && importPreview.categories.length > 0) {
                 importPreview.categories.forEach(category => {
                     addCategoryToCollection(importPreview.collectionName, category);
@@ -353,7 +389,6 @@ const CollectionsScreen = () => {
                 return;
             }
 
-            // Nagłówki CSV
             const headers = [
                 'Title', 'Authors', 'ISBN', 'Original Price',
                 'Price (PLN)', 'Condition Rating', 'Found in API',
@@ -362,7 +397,6 @@ const CollectionsScreen = () => {
                 'Categories'
             ].join(',');
 
-            // Generowanie wierszy danych
             const rows = collectionBooks.map(book => {
                 const bookCategories = categories.join('; ');
 
@@ -379,7 +413,6 @@ const CollectionsScreen = () => {
                     `"${JSON.stringify(book.marketFactors || {}).replace(/"/g, '""')}"`,
                     `"${JSON.stringify(book.ageInfo || {}).replace(/"/g, '""')}"`,
                     `"${JSON.stringify(book.listingStatus || {}).replace(/"/g, '""')}"`,
-                    book.imageUri ? `"${book.imageUri}"` : '',
                     `"${bookCategories}"`
                 ].join(',');
             });
@@ -404,7 +437,6 @@ const CollectionsScreen = () => {
         }
     };
 
-    // Listing management
     const handleListBook = (collection: string, index: number) => {
         const book = books[collection][index];
         setCurrentListingBook({ collection, index });
@@ -475,7 +507,6 @@ const CollectionsScreen = () => {
         );
     };
 
-    // Helpers
     const formatCurrency = (value: string): string => {
         try {
             const number = parseFloat(value);
@@ -576,7 +607,6 @@ const CollectionsScreen = () => {
         }
     };
 
-    // Filtrowanie kolekcji
     const filteredCollections = useMemo(() => {
         if (!searchQuery) return collections;
         return collections.filter(collection =>
@@ -597,7 +627,6 @@ const CollectionsScreen = () => {
                             <Text style={styles.slideTitle}>{stepTitles[0]}</Text>
                         </View>
 
-                        {/* Sekcja wyszukiwania i przycisków */}
                         <View style={styles.searchHeader}>
                             <View style={styles.searchContainer}>
                                 <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
@@ -655,7 +684,10 @@ const CollectionsScreen = () => {
                                 selectedCollection={selectedCollection}
                                 onSelectCollection={setSelectedCollection}
                                 calculateCollectionTotal={calculateCollectionTotal}
-                                onEditCollection={handleEditCollection}
+                                onEditCollection={(collectionName) => {
+                                    setEditingCollection(collectionName);
+                                    setShowEditModal(true);
+                                }}
                                 onDeleteCollection={handleDeleteCollection}
                                 onExportCollection={handleExportCollectionToCSV}
                                 getBookWord={getBookWord}
@@ -690,7 +722,7 @@ const CollectionsScreen = () => {
                         transform: [{ translateX: slideAnim }],
                         flex: 1,
                         width: '120%',
-                        minHeight: Dimensions.get('window').height * 0.7, // Zwiększona wysokość
+                        minHeight: Dimensions.get('window').height * 0.7,
                     }}>
                         <View style={styles.titleContainer}>
                             <Text style={styles.slideTitle}>{stepTitles[1]}</Text>
@@ -736,18 +768,15 @@ const CollectionsScreen = () => {
                     style={styles.ratingOuterContainer}
                 >
                     <View style={styles.ratingContainer}>
-                        {/* Nagłówek */}
                         <View style={styles.ratingHeader}>
                             <Text style={styles.ratingTitle}>Wartość kolekcji</Text>
                         </View>
 
-                        {/* Główna wartość z cieniem */}
                         <View style={styles.priceSummarySection}>
                             <LinearGradient
                                 colors={[colors.white, colors.whiteBlue]}
                                 style={[styles.priceSummaryGradient, styles.withShadow]}
                             >
-                                {/* Wartość całkowita */}
                                 <View style={styles.priceRow}>
                                     <View style={styles.priceLabelContainer}>
                                         <FontAwesome5 name="coins" size={22} color={colors.primary} />
@@ -760,7 +789,6 @@ const CollectionsScreen = () => {
 
                                 <View style={styles.separator} />
 
-                                {/* Podział wartości */}
                                 <View style={styles.priceRow}>
                                     <View style={styles.priceLabelContainer}>
                                         <Ionicons name="book-outline" size={14} color={colors.secondary} />
@@ -785,7 +813,6 @@ const CollectionsScreen = () => {
                     </View>
                 </LinearGradient>
 
-                {/* Step navigation */}
                 <View style={styles.stepContainer}>
                     <View style={styles.navArrowContainer}>
                         {currentStep > 0 ? (
@@ -813,7 +840,6 @@ const CollectionsScreen = () => {
                 </View>
             </ScrollView>
 
-            {/* Modals */}
             <CustomAlertModal
                 visible={alertVisible}
                 title={alertTitle}
@@ -836,9 +862,14 @@ const CollectionsScreen = () => {
             />
             <EditCollectionModal
                 visible={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                onConfirm={(newName) => editingCollection && handleEditCollection(editingCollection, newName)}
                 currentName={editingCollection || ''}
+                onClose={() => setShowEditModal(false)}
+                onConfirm={(newName, categories, icon) => {
+                    if (editingCollection) {
+                        handleEditCollection(editingCollection, newName, categories, icon);
+                    }
+                }}
+                collectionCategories={collectionCategories}
             />
             <ImportPreviewModal
                 importPreview={importPreview}
@@ -1119,8 +1150,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         minHeight: 480,
         maxHeight: 480,
-        width: Dimensions.get('window').width - 80, // Obliczana szerokość
-        paddingHorizontal: 10, // Dodany padding
+        width: Dimensions.get('window').width - 80,
+        paddingHorizontal: 10,
     },
     scrollContainer: {
         flexGrow: 1,

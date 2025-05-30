@@ -1,61 +1,198 @@
-// app/components/modals/EditCollectionModal.tsx
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, FlatList } from 'react-native';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import CategoriesManager from '../../collectionsScreen/CategoriesManager';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface EditCollectionModalProps {
     visible: boolean;
-    onClose: () => void;
-    onConfirm: (newName: string) => void;
     currentName: string;
+    onClose: () => void;
+    onConfirm: (newName: string, categories: string[], icon: string) => void;
+    collectionCategories: Record<string, string[]>;
 }
+
+const BOOK_ICONS = [
+    'book', 'menu-book', 'auto-stories', 'library-books', 'school',
+    'science', 'biotech', 'calculate', 'functions', 'psychology',
+    'memory', 'data-usage', 'insights',
+    'computer', 'code', 'developer-mode', 'terminal', 'smartphone',
+    'wifi', 'settings', 'storage', 'security', 'cloud',
+    'nature', 'pets', 'spa', 'grass', 'forest',
+    'water', 'eco', 'bug-report',
+    'medical-services', 'healing', 'fitness-center', 'health-and-safety', 'sanitizer',
+    'vaccines', 'medication', 'monitor-heart', 'elderly', 'accessible',
+    'palette', 'brush', 'colorize', 'music-note', 'theater-comedy',
+    'mic', 'movie', 'photo-camera', 'museum', 'draw',
+    'sports-baseball', 'sports-basketball', 'sports-football', 'sports-soccer', 'sports-tennis',
+    'sports-volleyball', 'sports-golf', 'sports-handball', 'sports-kabaddi', 'sports-martial-arts',
+    'travel-explore', 'map', 'public', 'language', 'flight',
+    'train', 'directions-boat', 'directions-car', 'motorcycle', 'commute',
+    'history-edu', 'castle', 'account-balance', 'temple-buddhist',
+    'temple-hindu', 'mosque', 'church', 'synagogue', 'fort',
+    'business-center', 'work', 'attach-money', 'savings', 'trending-up',
+    'account-balance-wallet', 'euro', 'currency-exchange', 'receipt', 'credit-card',
+    'restaurant', 'local-cafe', 'nightlife', 'cake', 'wine-bar',
+    'bakery-dining', 'icecream', 'set-meal', 'ramen-dining', 'rice-bowl',
+    'home', 'apartment', 'yard', 'balcony', 'bathtub',
+    'bed', 'chair', 'flatware', 'kitchen', 'light',
+    'auto-awesome', 'star', 'rocket', 'public-off', 'visibility-off',
+    'sunny', 'thunderstorm', 'whatshot', 'flare',
+    'fingerprint', 'search', 'gavel', 'policy', 'security',
+    'visibility', 'remove-red-eye', 'lock', 'vpn-key', 'shield',
+    'favorite', 'celebration', 'mood', 'sentiment-satisfied', 'heart-broken',
+    'diamond', 'spa', 'hotel',
+    'child-friendly', 'toys', 'crib', 'school', 'face',
+    'emoji-people', 'cake', 'park',
+];
 
 const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
                                                                      visible,
+                                                                     currentName,
                                                                      onClose,
                                                                      onConfirm,
-                                                                     currentName
+                                                                     collectionCategories
                                                                  }) => {
-    const [newCollectionName, setNewCollectionName] = React.useState(currentName);
     const { t } = useTranslation();
+    const [localCollectionName, setLocalCollectionName] = useState(currentName);
+    const [categories, setCategories] = useState<string[]>([]);
+    const [selectedIcon, setSelectedIcon] = useState('book');
+    const [showIcons, setShowIcons] = useState(false);
 
-    React.useEffect(() => {
-        setNewCollectionName(currentName);
-    }, [currentName]);
+    useEffect(() => {
+        if (visible) {
+            setLocalCollectionName(currentName);
+            setCategories(collectionCategories[currentName] || []);
+        }
+    }, [visible, currentName, collectionCategories]);
+
+    const handleAddCategory = (collectionName: string, category: string) => {
+        setCategories([...categories, category]);
+    };
+
+    const handleRemoveCategory = (collectionName: string, category: string) => {
+        setCategories(categories.filter(c => c !== category));
+    };
 
     const handleConfirm = () => {
-        if (newCollectionName.trim() && newCollectionName.trim() !== currentName) {
-            onConfirm(newCollectionName.trim());
-        }
+        if (!localCollectionName.trim()) return;
+        onConfirm(localCollectionName, categories, selectedIcon);
         onClose();
     };
+
+    const renderIconItem = ({ item }: { item: string }) => (
+        <TouchableOpacity
+            style={[
+                styles.iconItem,
+                selectedIcon === item && styles.selectedIconItem
+            ]}
+            onPress={() => {
+                setSelectedIcon(item);
+                setShowIcons(false);
+            }}
+        >
+            <MaterialIcons
+                name={item as any}
+                size={24}
+                color={selectedIcon === item ? colors.primary : colors.secondary}
+            />
+        </TouchableOpacity>
+    );
 
     return (
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>{t('labels.editCollectionName')}</Text>
-                    <TextInput
-                        style={styles.modalInput}
-                        placeholder={t('placeholders.enterNewCollectionName')}
-                        placeholderTextColor="#888"
-                        value={newCollectionName}
-                        onChangeText={setNewCollectionName}
-                        autoFocus
-                        onSubmitEditing={handleConfirm}
-                        returnKeyType="done"
-                    />
-                    <View style={styles.modalButtons}>
-                        <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={onClose}>
-                            <Text style={styles.cancelButtonText}>{t('buttons.cancel')}</Text>
-                        </TouchableOpacity>
+                    <View style={styles.modalContent}>
+                        <View style={styles.iconPreviewContainer}>
+                            <View style={styles.iconPreviewCircle}>
+                                <MaterialIcons
+                                    name={selectedIcon as any}
+                                    size={62}
+                                    color={colors.primary}
+                                />
+                            </View>
+                        </View>
+
+                        <Text style={styles.currentNameText}>
+                            {t('labels.editingCollection')}: {currentName}
+                        </Text>
+
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder={t('placeholders.enterNewCollectionName')}
+                            placeholderTextColor={colors.gray}
+                            value={localCollectionName}
+                            onChangeText={setLocalCollectionName}
+                            autoFocus
+                        />
+
                         <TouchableOpacity
-                            style={[styles.modalButton, styles.confirmButton]}
-                            onPress={handleConfirm}
-                            disabled={!newCollectionName.trim() || newCollectionName.trim() === currentName}
+                            style={styles.iconSelector}
+                            onPress={() => setShowIcons(!showIcons)}
                         >
-                            <Text style={styles.confirmButtonText}>{t('buttons.save')}</Text>
+                            <View style={styles.iconPreview}>
+                                <MaterialIcons
+                                    name={selectedIcon as any}
+                                    size={24}
+                                    color={colors.primary}
+                                />
+                                <Text style={styles.iconSelectorText}>
+                                    {t('labels.selectIcon')}
+                                </Text>
+                            </View>
+                            <MaterialIcons
+                                name={showIcons ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                                size={24}
+                                color={colors.secondary}
+                            />
+                        </TouchableOpacity>
+
+                        {showIcons && (
+                            <View style={styles.iconsContainer}>
+                                <FlatList
+                                    data={BOOK_ICONS}
+                                    renderItem={renderIconItem}
+                                    keyExtractor={(item) => item}
+                                    numColumns={5}
+                                    contentContainerStyle={styles.iconsList}
+                                />
+                            </View>
+                        )}
+
+                        <CategoriesManager
+                            collectionName={currentName}
+                            collectionCategories={{ [currentName]: categories }}
+                            onAddCategory={handleAddCategory}
+                            onRemoveCategory={handleRemoveCategory}
+                        />
+
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={onClose}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.closeButtonCircle}>
+                                <Text style={styles.closeButtonText}>×</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.confirmButton, !localCollectionName.trim() && styles.disabledButton]}
+                            onPress={handleConfirm}
+                            disabled={!localCollectionName.trim()}
+                            activeOpacity={0.7}
+                        >
+                            <LinearGradient
+                                colors={!localCollectionName.trim() ?
+                                    [colors.primary, colors.primary] :
+                                    [colors.primary, colors.primary]}
+                                style={styles.buttonGradient}
+                            >
+                                <Text style={styles.confirmButtonText}>{t('buttons.saveChanges')}</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -74,47 +211,135 @@ const styles = StyleSheet.create({
     modalContainer: {
         width: '90%',
         backgroundColor: 'white',
-        borderRadius: 2,
-        padding: 20,
+        borderRadius: 12,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+        maxHeight: '80%',
     },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.black,
-        marginBottom: 15,
+    modalContent: {
+        padding: 24,
+        paddingTop: 32,
+    },
+    iconPreviewContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    iconPreviewCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 60,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    currentNameText: {
+        fontSize: 16,
+        color: colors.grayDark,
+        textAlign: 'center',
+        marginBottom: 10,
     },
     modalInput: {
         height: 50,
-        borderColor: 'rgba(0,0,0,0.1)',
         borderWidth: 1,
-        borderRadius: 2,
+        borderColor: 'rgba(74,108,247,0.2)',
+        borderRadius: 10,
         paddingHorizontal: 16,
-        backgroundColor: colors.white,
-        marginBottom: 15,
+        backgroundColor: 'white',
+        marginBottom: 20,
         color: colors.black,
+        fontSize: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    modalButtons: {
+    iconSelector: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: 10,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.2)',
+        borderRadius: 10,
+        marginBottom: 20,
+        backgroundColor: 'white',
     },
-    modalButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 2,
+    iconPreview: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconSelectorText: {
         marginLeft: 10,
+        color: colors.secondary,
     },
-    cancelButton: {
+    iconsContainer: {
+        maxHeight: 150,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+        borderRadius: 10,
+        padding: 10,
+    },
+    iconsList: {
+        justifyContent: 'center',
+    },
+    iconItem: {
+        width: 50,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 5,
+        borderRadius: 8,
+        backgroundColor: colors.whiteBlue,
+    },
+    selectedIconItem: {
+        backgroundColor: colors.primary,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+    },
+    closeButtonCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 24,
+        color: colors.primary,
     },
     confirmButton: {
-        backgroundColor: colors.white,
+        borderRadius: 10,
+        overflow: 'hidden',
+        marginTop: 16,
     },
-    cancelButtonText: {
-        color: colors.primary,
+    disabledButton: {
+        opacity: 0.7,
+    },
+    buttonGradient: {
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     confirmButtonText: {
-        color: colors.primary,
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 
