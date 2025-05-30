@@ -12,6 +12,7 @@ interface CustomAlertModalProps {
     message: string;
     confirmText?: string;
     onConfirm: () => void;
+    onCancel?: () => void;
     type?: AlertType;
     closeButtonStyle?: any;
     closeButtonTextStyle?: any;

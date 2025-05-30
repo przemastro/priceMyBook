@@ -139,24 +139,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useEffect(() => {
         const loadPersistedData = async () => {
             try {
-                const [history, collections, books, rate, categories] = await Promise.all([
+                const [history, collections, books, rate, categories, selected] = await Promise.all([
                     AsyncStorage.getItem(STORAGE_KEYS.SCAN_HISTORY),
                     AsyncStorage.getItem(STORAGE_KEYS.COLLECTIONS),
                     AsyncStorage.getItem(STORAGE_KEYS.BOOKS),
                     AsyncStorage.getItem(STORAGE_KEYS.EXCHANGE_RATE),
-                    AsyncStorage.getItem(STORAGE_KEYS.COLLECTION_CATEGORIES)
+                    AsyncStorage.getItem(STORAGE_KEYS.COLLECTION_CATEGORIES),
+                    AsyncStorage.getItem('@selectedCollection')
                 ]);
 
                 if (history) setScanHistory(JSON.parse(history));
                 if (collections) setCollections(JSON.parse(collections));
                 if (books) setBooks(JSON.parse(books));
+                if (categories) setCollectionCategories(JSON.parse(categories));
+                if (selected) setSelectedCollection(JSON.parse(selected));
                 if (rate) {
                     const { rate: savedRate, error, timestamp } = JSON.parse(rate);
                     setExchangeRate(savedRate);
                     setExchangeRateError(error);
                     setLastRateUpdate(new Date(timestamp));
                 }
-                if (categories) setCollectionCategories(JSON.parse(categories));
 
                 await refreshExchangeRate();
             } catch (error) {
@@ -233,6 +235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCollections(prev => prev.map(collection =>
             collection.name === oldName ? {...collection, name: newName} : collection
         ));
+
         setBooks(prev => {
             const newBooks = {...prev};
             if (newBooks[oldName]) {
@@ -241,6 +244,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             return newBooks;
         });
+
         setCollectionCategories(prev => {
             const newCategories = {...prev};
             if (newCategories[oldName]) {
@@ -249,6 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             return newCategories;
         });
+
         forceUpdateCollections();
     }, [forceUpdateCollections]);
 
@@ -268,19 +273,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, [forceUpdateCollections]);
 
     const addCategoryToCollection = useCallback((collectionName: string, category: string) => {
-        if (!category.trim()) return;
+        if (!collectionName || !category.trim()) return;
 
-        setCollectionCategories(prev => ({
-            ...prev,
-            [collectionName]: [...(prev[collectionName] || []), category.trim()]
-        }));
+        setCollectionCategories(prev => {
+            const currentCategories = prev[collectionName] || [];
+            if (currentCategories.includes(category.trim())) {
+                return prev; // Kategoria już istnieje
+            }
+            return {
+                ...prev,
+                [collectionName]: [...currentCategories, category.trim()]
+            };
+        });
     }, []);
 
     const removeCategoryFromCollection = useCallback((collectionName: string, category: string) => {
-        setCollectionCategories(prev => ({
-            ...prev,
-            [collectionName]: (prev[collectionName] || []).filter(c => c !== category)
-        }));
+        if (!collectionName) return;
+
+        setCollectionCategories(prev => {
+            const currentCategories = prev[collectionName] || [];
+            return {
+                ...prev,
+                [collectionName]: currentCategories.filter(c => c !== category)
+            };
+        });
     }, []);
 
     const addBookToCollection = useCallback((
@@ -304,17 +320,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
                 isExpanded: false,
-                listingStatus: bookData.listingStatus
-                    ? {
-                        status: bookData.listingStatus.status || 'notListed',
-                        platforms: Array.isArray(bookData.listingStatus.platforms)
-                            ? bookData.listingStatus.platforms.filter(p =>
-                                ['amazon', 'allegro', 'olx'].includes(p))
-                            : [],
-                        listedDate: bookData.listingStatus.listedDate,
-                        soldDate: bookData.listingStatus.soldDate
-                    }
-                    : defaultListingStatus
+                listingStatus: bookData.listingStatus || defaultListingStatus,
+                imageUri: bookData.imageUri || undefined
             };
 
             return {
@@ -326,18 +333,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const addBooksToCollection = useCallback(async (
         collectionName: string,
-        booksData: Array<Omit<BookData, 'createdAt'> & {
-            uniqueness?: BookUniqueness;
-            marketFactors?: MarketFactors;
-            ageInfo?: BookAgeInfo;
-            listingStatus?: ListingStatus;
-        }>
+        booksData: Array<Omit<BookData, 'createdAt'>>
     ) => {
         return new Promise<void>((resolve) => {
             setBooks(prev => {
-                if (!prev[collectionName]) {
-                    console.error(`Collection ${collectionName} doesn't exist`);
-                    return prev;
+                const newBooks = { ...prev };
+                if (!newBooks[collectionName]) {
+                    newBooks[collectionName] = [];
                 }
 
                 const booksWithDefaults = booksData.map(book => ({
@@ -351,12 +353,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     marketFactors: book.marketFactors || defaultMarketFactors,
                     ageInfo: book.ageInfo || defaultAgeInfo,
                     listingStatus: book.listingStatus || defaultListingStatus,
-                    isExpanded: false
+                    isExpanded: false,
+                    imageUri: book.imageUri || undefined
                 } as BookData));
 
                 return {
-                    ...prev,
-                    [collectionName]: [...(prev[collectionName] || []), ...booksWithDefaults]
+                    ...newBooks,
+                    [collectionName]: [...newBooks[collectionName], ...booksWithDefaults]
                 };
             });
             resolve();

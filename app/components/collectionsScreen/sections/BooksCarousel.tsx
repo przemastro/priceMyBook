@@ -6,16 +6,20 @@ import {
     TouchableOpacity,
     Dimensions,
     ScrollView,
+    Image,
+    ActivityIndicator,
+    Alert
 } from 'react-native';
-import { FontAwesome, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
-import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
-import Carousel from 'react-native-reanimated-carousel';
-import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
-import ExportToPDFButton from '../buttons/ExportToPDFButton';
+import Animated, { interpolate, useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
+import Carousel from "react-native-reanimated-carousel";
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
 const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58;
@@ -34,6 +38,264 @@ interface BooksCarouselProps {
     formatListingStatus: (status?: ListingStatus) => string;
 }
 
+interface BookItemProps {
+    book: BookData;
+    index: number;
+    animationValue: SharedValue<number>;
+    onEdit: () => void;
+    onDelete: () => void;
+    onList: () => void;
+    formatDefectsSummary: (defects: Record<string, BookDefect> | undefined) => string;
+    formatUniquenessSummary: (uniqueness: BookUniqueness | undefined) => string;
+    formatMarketFactorsSummary: (marketFactors: MarketFactors | undefined) => string;
+    formatListingStatus: (status?: ListingStatus) => string;
+}
+
+const BookItem: React.FC<BookItemProps> = ({
+                                               book,
+                                               animationValue,
+                                               onEdit,
+                                               onDelete,
+                                               onList,
+                                               formatDefectsSummary,
+                                               formatUniquenessSummary,
+                                               formatMarketFactorsSummary,
+                                               formatListingStatus
+                                           }) => {
+    const { t } = useTranslation();
+    const scrollViewRef = useRef<ScrollView>(null);
+    const [exporting, setExporting] = useState(false);
+
+    const animatedStyle = useAnimatedStyle(() => {
+        const scale = interpolate(animationValue.value, [-1, 0, 1], [0.9, 1, 0.9]);
+        return { transform: [{ scale }] };
+    });
+
+    const scrollContentUp = () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const scrollContentDown = () => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+    };
+
+    const handleExportToCSV = async () => {
+        setExporting(true);
+        try {
+            const headers = [
+                'Title', 'Authors', 'ISBN', 'Original Price', 'Price',
+                'Condition Rating', 'Image URI', 'Defects', 'Uniqueness',
+                'Market Factors', 'Age Info', 'Listing Status'
+            ].join(',');
+
+            const row = [
+                `"${book.title.replace(/"/g, '""')}"`,
+                `"${book.authors.replace(/"/g, '""')}"`,
+                book.isbn,
+                book.originalPrice,
+                book.price,
+                book.rating,
+                book.imageUri || '',
+                `"${JSON.stringify(book.defects || {}).replace(/"/g, '""')}"`,
+                `"${JSON.stringify(book.uniqueness || {}).replace(/"/g, '""')}"`,
+                `"${JSON.stringify(book.marketFactors || {}).replace(/"/g, '""')}"`,
+                `"${JSON.stringify(book.ageInfo || {}).replace(/"/g, '""')}"`,
+                `"${JSON.stringify(book.listingStatus || {}).replace(/"/g, '""')}"`
+            ].join(',');
+
+            const csvContent = `${headers}\n${row}`;
+            const fileUri = FileSystem.cacheDirectory + `${book.isbn}_export.csv`;
+
+            await FileSystem.writeAsStringAsync(fileUri, csvContent);
+
+            if (!(await Sharing.isAvailableAsync())) {
+                Alert.alert(t('alerts.error'), t('alerts.sharingNotAvailable'));
+                return;
+            }
+
+            await Sharing.shareAsync(fileUri, {
+                mimeType: 'text/csv',
+                dialogTitle: `${book.title} - Export`
+            });
+        } catch (error) {
+            Alert.alert(t('alerts.error'), t('alerts.exportError'));
+            console.error('Export failed:', error);
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const renderListingButton = () => {
+        const listingStatus = book.listingStatus || { status: 'notListed', platforms: [] };
+        const buttonConfig = {
+            notListed: { icon: 'upload', color: colors.primary, text: t('buttons.list') },
+            listed: { icon: 'check', color: colors.success, text: t('listingStatus.listed') },
+            sold: { icon: 'check-double', color: colors.grayDark, text: t('buttons.sold') }
+        };
+        const {icon, color, text} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
+
+        return (
+            <TouchableOpacity
+                style={styles.actionButton}
+                onPress={onList}
+                disabled={exporting}
+            >
+                <LinearGradient
+                    colors={[`${color}`, `${color}`]}
+                    style={styles.actionIconContainer}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <FontAwesome5 name={icon} size={20} color={colors.white} />
+                </LinearGradient>
+                <Text style={styles.actionButtonText}>{text}</Text>
+            </TouchableOpacity>
+        );
+    };
+
+    return (
+        <View style={styles.bookItemContainer}>
+            <Animated.View style={[styles.bookCard, animatedStyle]}>
+                <LinearGradient
+                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                    style={styles.bookCardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={onDelete}
+                        activeOpacity={0.5}
+                        hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                    >
+                        <MaterialIcons name="close" size={18} color={colors.primary} />
+                    </TouchableOpacity>
+
+                    <View style={styles.imageContainer}>
+                        {book.imageUri ? (
+                            <Image
+                                source={{ uri: book.imageUri }}
+                                style={styles.bookImage}
+                                resizeMode="contain"
+                            />
+                        ) : (
+                            <LinearGradient
+                                colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
+                                style={styles.bookImagePlaceholder}
+                            >
+                                <MaterialIcons name="book" size={50} color={colors.primary} />
+                            </LinearGradient>
+                        )}
+                    </View>
+
+                    <View style={styles.scrollButtonsContainer}>
+                        <TouchableOpacity
+                            style={styles.scrollButton}
+                            onPress={scrollContentUp}
+                        >
+                            <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView
+                        ref={scrollViewRef}
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.bookCardContent}>
+                            <View style={styles.bookCardHeader}>
+                                <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
+                                <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
+                            </View>
+
+                            <View style={styles.bookDetails}>
+                                <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
+                                <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
+                                <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+
+                                <Text style={styles.bookCardDefects}>
+                                    {t('labels.defects')}: {formatDefectsSummary(book.defects)}
+                                </Text>
+
+                                <Text style={styles.bookCardUniqueness}>
+                                    {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
+                                </Text>
+
+                                {book.marketFactors && (
+                                    <Text style={styles.bookCardMarket}>
+                                        {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
+                                    </Text>
+                                )}
+
+                                {book.ageInfo && (
+                                    <Text style={styles.bookCardAge}>
+                                        {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
+                                    </Text>
+                                )}
+
+                                <Text style={styles.bookCardListingStatus}>
+                                    {t('labels.listingStatus')}: {formatListingStatus(book.listingStatus)}
+                                </Text>
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    <View style={styles.scrollButtonsContainer}>
+                        <TouchableOpacity
+                            style={styles.scrollButton}
+                            onPress={scrollContentDown}
+                        >
+                            <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                    </View>
+                </LinearGradient>
+            </Animated.View>
+
+            <View style={styles.actionsColumn}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={handleExportToCSV}
+                    disabled={exporting}
+                >
+                    <LinearGradient
+                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
+                        style={styles.actionIconContainer}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
+                        {exporting ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                        ) : (
+                            <Ionicons name="document-text" size={20} color={colors.primary} />
+                        )}
+                    </LinearGradient>
+                    <Text style={styles.actionButtonText}>
+                        {exporting ? t('buttons.exporting') : t('buttons.exportCSV')}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={onEdit}
+                >
+                    <LinearGradient
+                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
+                        style={styles.actionIconContainer}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
+                        <Ionicons name="create" size={20} color={colors.primary} />
+                    </LinearGradient>
+                    <Text style={styles.actionButtonText}>{t('buttons.edit')}</Text>
+                </TouchableOpacity>
+
+                {renderListingButton()}
+            </View>
+        </View>
+    );
+};
+
 const BooksCarousel: React.FC<BooksCarouselProps> = ({
                                                          books,
                                                          collectionName,
@@ -47,9 +309,16 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                                                      }) => {
     const { t } = useTranslation();
     const carouselRef = useRef<any>(null);
-    const scrollViewRefs = useRef<Record<number, ScrollView | null>>({});
     const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
     const [bookToDeleteIndex, setBookToDeleteIndex] = useState<number | null>(null);
+
+    const handleConfirmDelete = () => {
+        if (bookToDeleteIndex !== null) {
+            onDeleteBook(bookToDeleteIndex);
+        }
+        setDeleteAlertVisible(false);
+        setBookToDeleteIndex(null);
+    };
 
     const handleGoToStart = () => {
         carouselRef.current?.scrollTo({ index: 0, animated: true });
@@ -67,213 +336,6 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         carouselRef.current?.next();
     };
 
-    const scrollContentUp = (index: number) => {
-        scrollViewRefs.current[index]?.scrollTo({ y: 0, animated: true });
-    };
-
-    const scrollContentDown = (index: number) => {
-        scrollViewRefs.current[index]?.scrollToEnd({ animated: true });
-    };
-
-    const showDeleteAlert = (index: number) => {
-        setBookToDeleteIndex(index);
-        setDeleteAlertVisible(true);
-    };
-
-    const handleConfirmDelete = () => {
-        if (bookToDeleteIndex !== null) {
-            onDeleteBook(bookToDeleteIndex);
-        }
-        setDeleteAlertVisible(false);
-        setBookToDeleteIndex(null);
-    };
-
-    const handleCancelDelete = () => {
-        setDeleteAlertVisible(false);
-        setBookToDeleteIndex(null);
-    };
-
-    const renderListingButton = (bookIndex: number) => {
-        const book = books[bookIndex];
-        const listingStatus = book.listingStatus || { status: 'notListed', platforms: [] };
-        const buttonConfig = {
-            notListed: { icon: 'upload', color: colors.primary, text: t('buttons.list') },
-            listed: { icon: 'check', color: colors.success, text: t('listingStatus.listed') },
-            sold: { icon: 'check-double', color: colors.grayDark, text: t('buttons.sold') }
-        };
-        const {icon, color, text} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
-
-        return (
-            <TouchableOpacity
-                style={styles.actionButton}
-                onPress={(e) => { e.stopPropagation(); onListBook(bookIndex); }}
-            >
-                <LinearGradient
-                    colors={[`${color}`, `${color}`]}
-                    style={styles.actionIconContainer}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                >
-                    <FontAwesome5 name={icon} size={20} color={colors.white}/>
-                </LinearGradient>
-                <Text style={styles.actionButtonText}>{text}</Text>
-            </TouchableOpacity>
-        );
-    };
-
-    const renderActionButtons = (bookIndex: number) => {
-        const book = books[bookIndex];
-        return (
-            <View style={styles.actionsColumn}>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={(e) => e.stopPropagation()}
-                >
-                    <LinearGradient
-                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <ExportToPDFButton
-                            book={book}
-                            formatDefectsSummary={formatDefectsSummary}
-                            formatUniquenessSummary={formatUniquenessSummary}
-                            formatMarketFactorsSummary={formatMarketFactorsSummary}
-                            formatListingStatus={formatListingStatus}
-                        />
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>{t('buttons.exportPDF')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={(e) => {
-                        e.stopPropagation();
-                        onEditBook(bookIndex);
-                    }}
-                >
-                    <LinearGradient
-                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <Ionicons name="create" size={20} color={colors.primary} />
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>{t('buttons.edit')}</Text>
-                </TouchableOpacity>
-
-                {renderListingButton(bookIndex)}
-            </View>
-        );
-    };
-
-    const BookItem = ({
-                          index,
-                          animationValue,
-                      }: {
-        index: number;
-        animationValue: Animated.SharedValue<number>;
-    }) => {
-        const book = books[index];
-        const animatedStyle = useAnimatedStyle(() => {
-            const scale = interpolate(animationValue.value, [-1, 0, 1], [0.9, 1, 0.9]);
-            return { transform: [{ scale }] };
-        });
-
-        return (
-            <View style={styles.bookItemContainer}>
-                <Animated.View style={[styles.bookCard, animatedStyle]}>
-                    <LinearGradient
-                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                        style={styles.bookCardGradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        {/* Delete button */}
-                        <TouchableOpacity
-                            style={styles.deleteButton}
-                            onPress={(e) => {
-                                e.stopPropagation();
-                                showDeleteAlert(index);
-                            }}
-                            activeOpacity={0.5}
-                            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-                        >
-                            <MaterialIcons
-                                name="close"
-                                size={18}
-                                color={colors.primary}
-                            />
-                        </TouchableOpacity>
-
-                        {/* Book image placeholder */}
-                        <View style={styles.bookImagePlaceholder}>
-                            <LinearGradient
-                                colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
-                                style={styles.collectionIconContainer}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                <MaterialIcons
-                                    name="book"
-                                    size={50}
-                                    color={colors.primary}
-                                />
-                            </LinearGradient>
-                        </View>
-
-                        <View style={styles.scrollButtonsContainer}>
-                            <TouchableOpacity
-                                style={styles.scrollButton}
-                                onPress={() => scrollContentUp(index)}
-                            >
-                                <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.primary} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView
-                            ref={ref => scrollViewRefs.current[index] = ref}
-                            style={styles.scrollView}
-                            contentContainerStyle={styles.scrollContent}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            <View style={styles.bookCardContent}>
-                                <View style={styles.bookCardHeader}>
-                                    <Text style={styles.bookCardTitle} numberOfLines={2}>{book.title}</Text>
-                                    <Text style={styles.bookCardAuthors} numberOfLines={1}>{book.authors}</Text>
-                                </View>
-
-                                <View style={styles.bookDetails}>
-                                    <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
-                                    <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
-                                    <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
-
-                                    <Text style={styles.bookCardDefects}>{t('labels.defects')}: {formatDefectsSummary(book.defects)}</Text>
-                                    {book.uniqueness && <Text style={styles.bookCardUniqueness}>{t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}</Text>}
-                                    {book.marketFactors && <Text style={styles.bookCardMarket}>{t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}</Text>}
-                                    {book.ageInfo && <Text style={styles.bookCardAge}>{t('labels.age')}: {book.ageInfo.years} {t('labels.years')}</Text>}
-                                </View>
-                            </View>
-                        </ScrollView>
-
-                        <View style={styles.scrollButtonsContainer}>
-                            <TouchableOpacity
-                                style={styles.scrollButton}
-                                onPress={() => scrollContentDown(index)}
-                            >
-                                <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    </LinearGradient>
-                </Animated.View>
-
-                {renderActionButtons(index)}
-            </View>
-        );
-    };
-
     return (
         <View style={styles.booksCarouselContainer}>
             <Carousel
@@ -283,11 +345,26 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 width={BOOK_CARD_WIDTH + ACTION_BUTTONS_WIDTH}
                 height={BOOK_CARD_HEIGHT}
                 data={books}
-                renderItem={({ index, animationValue }) => <BookItem index={index} animationValue={animationValue} />}
+                renderItem={({ item, index, animationValue }) => (
+                    <BookItem
+                        book={item}
+                        index={index}
+                        animationValue={animationValue}
+                        onEdit={() => onEditBook(index)}
+                        onDelete={() => {
+                            setBookToDeleteIndex(index);
+                            setDeleteAlertVisible(true);
+                        }}
+                        onList={() => onListBook(index)}
+                        formatDefectsSummary={formatDefectsSummary}
+                        formatUniquenessSummary={formatUniquenessSummary}
+                        formatMarketFactorsSummary={formatMarketFactorsSummary}
+                        formatListingStatus={formatListingStatus}
+                    />
+                )}
                 scrollAnimationDuration={800}
             />
 
-            {/* Navigation arrows */}
             <View style={styles.navigationContainer}>
                 <TouchableOpacity
                     onPress={handleGoToStart}
@@ -340,13 +417,13 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 </TouchableOpacity>
             </View>
 
-            {/* Delete confirmation alert */}
             <CustomAlertModal
                 visible={deleteAlertVisible}
                 title={t('alerts.deleteBookTitle')}
                 message={t('alerts.deleteBookMessage')}
                 confirmText={t('buttons.delete')}
                 onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteAlertVisible(false)}
                 type="warning"
                 buttonFullWidth={true}
             />
@@ -357,7 +434,6 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
 const styles = StyleSheet.create({
     booksCarouselContainer: {
         marginTop: 30,
-        paddingTop: 0,
         paddingBottom: 80,
         backgroundColor: colors.grayLight,
         height: BOOK_CARD_HEIGHT + 120,
@@ -396,19 +472,27 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         zIndex: 10,
     },
-    bookImagePlaceholder: {
-        height: 100,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 50,
-        marginTop: 20,
-    },
-    collectionIconContainer: {
-        width: 150,
+    imageContainer: {
         height: 150,
-        borderRadius: 100,
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 16,
+    },
+    bookImage: {
+        width: 120,
+        height: 160,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.grayLight,
+    },
+    bookImagePlaceholder: {
+        width: 120,
+        height: 160,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.grayLight,
     },
     scrollView: {
         flex: 1,
@@ -486,6 +570,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     bookCardAge: {
+        fontSize: 12,
+        color: colors.black,
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    bookCardListingStatus: {
         fontSize: 12,
         color: colors.black,
         marginBottom: 4,

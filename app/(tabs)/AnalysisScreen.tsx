@@ -643,6 +643,7 @@ export default function AnalysisScreen() {
     const bookData = {
       isbn: isbnInput,
       title: titleInput,
+      imageUri: bookImage,
       authors: authors,
       publisher: publisher,
       price: priceValue,

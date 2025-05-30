@@ -1,4 +1,3 @@
-// app/types/bookTypes.ts
 export interface BookDefect {
     selected: boolean;
     reduction: number;
@@ -37,18 +36,23 @@ export interface BookData {
     isbn: string;
     price: string;
     displayPrice: string;
-    foundInApi: boolean;
+    foundInApi?: boolean;
     originalPrice: string;
-    defects: Record<string, BookDefect>;
-    createdAt: string;
+    defects?: Record<string, BookDefect>;
     rating: number;
-    source?: 'google' | 'amazon' | 'manual';
-    priceSource?: string;
-    uniqueness: BookUniqueness;
-    marketFactors: MarketFactors;
-    ageInfo: BookAgeInfo;
-    isExpanded?: boolean;
+    uniqueness?: BookUniqueness;
+    marketFactors?: MarketFactors;
+    ageInfo?: BookAgeInfo;
     listingStatus?: ListingStatus;
+    imageUri?: string;
+    createdAt?: string;
+}
+
+export interface ImportPreviewData {
+    collectionName: string;
+    books: BookData[];
+    categories: string[];
+    showPreview: boolean;
 }
 
 export interface CollectionCarouselProps {
@@ -60,15 +64,7 @@ export interface CollectionCarouselProps {
     onEditCollection: (collectionName: string, newName: string) => Promise<void>;
     onDeleteCollection: (collectionName: string) => void;
     onExportCollection: (collectionName: string) => void;
-    getBookWord: (count: number, lang: string) => string;
+    getBookWord: (count: number) => string;
     formatCurrency: (price: string) => string;
-    onImportCollection: () => void;
-}
-
-export interface ExportToPDFButtonProps {
-    book: BookData;
-    formatDefectsSummary: (defects: Record<string, BookDefect> | undefined) => string;
-    formatUniquenessSummary: (uniqueness: BookUniqueness | undefined) => string;
-    formatMarketFactorsSummary: (marketFactors: MarketFactors | undefined) => string;
-    formatListingStatus: (status?: ListingStatus) => string;
+    onNavigateToBooks: () => void;
 }

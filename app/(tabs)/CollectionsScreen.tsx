@@ -36,7 +36,14 @@ import CategoriesCarousel from '../components/collectionsScreen/sections/Categor
 import CustomAlertModal from "@/app/components/alerts/CustomAlertModal";
 
 // Types
-import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../components/collectionsScreen/types';
+import {
+    BookData,
+    BookDefect,
+    BookUniqueness,
+    MarketFactors,
+    ListingStatus,
+    ImportPreviewData
+} from '../components/collectionsScreen/types';
 import { BookAgeInfo } from "@/app/components/scanScreen/types";
 
 interface Collection {
@@ -49,11 +56,6 @@ const CollectionsScreen = () => {
     const { t, i18n } = useTranslation();
     const [isImporting, setIsImporting] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [importPreview, setImportPreview] = useState<{
-        collectionName: string;
-        books: BookData[];
-        showPreview: boolean;
-    } | null>(null);
     const [showListingModal, setShowListingModal] = useState(false);
     const [currentListingBook, setCurrentListingBook] = useState<{ collection: string; index: number } | null>(null);
     const [selectedPlatforms, setSelectedPlatforms] = useState<('amazon' | 'allegro' | 'olx')[]>([]);
@@ -68,6 +70,7 @@ const CollectionsScreen = () => {
     const [alertType, setAlertType] = useState<'info' | 'success' | 'error' | 'warning'>('info');
     const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [importPreview, setImportPreview] = useState<ImportPreviewData | null>(null);
 
 
     // Navigation between slides
@@ -248,7 +251,11 @@ const CollectionsScreen = () => {
     const handleImportCollection = async () => {
         try {
             setIsImporting(true);
-            const result = await DocumentPicker.getDocumentAsync({ type: 'text/csv', copyToCacheDirectory: true });
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'text/csv',
+                copyToCacheDirectory: true
+            });
+
             if (result.canceled || !result.assets?.[0]) {
                 setIsImporting(false);
                 return;
@@ -256,8 +263,13 @@ const CollectionsScreen = () => {
 
             const file = result.assets[0];
             const csvContent = await FileSystem.readAsStringAsync(file.uri);
+
             const parseResult = await new Promise<any[]>((resolve) => {
-                Papa.parse(csvContent, { header: true, skipEmptyLines: true, complete: (results) => resolve(results.data) });
+                Papa.parse(csvContent, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => resolve(results.data)
+                });
             });
 
             const importedBooks: BookData[] = parseResult
@@ -276,12 +288,19 @@ const CollectionsScreen = () => {
                     marketFactors: book['Market Factors'] ? JSON.parse(book['Market Factors']) : defaultMarketFactors,
                     ageInfo: book['Age Info'] ? JSON.parse(book['Age Info']) : defaultAgeInfo,
                     listingStatus: book['Listing Status'] ? JSON.parse(book['Listing Status']) : defaultListingStatus,
+                    imageUri: book['Image URI'] || undefined,
                     createdAt: new Date().toISOString()
                 }));
+
+            // Pobierz kategorie z pierwszego rekordu
+            const categories = parseResult[0]?.Categories
+                ? parseResult[0].Categories.split(';').map((c: string) => c.trim()).filter((c: string) => c)
+                : [];
 
             setImportPreview({
                 collectionName: file.name.replace('.csv', '').slice(0, 30),
                 books: importedBooks,
+                categories,
                 showPreview: true
             });
         } catch (error) {
@@ -295,12 +314,24 @@ const CollectionsScreen = () => {
     const confirmImport = async () => {
         if (!importPreview) return;
         try {
+            // Najpierw dodaj kolekcję
             addCollection(importPreview.collectionName);
+
+            // Dodaj książki do kolekcji
             await addBooksToCollection(importPreview.collectionName, importPreview.books);
+
+            // Dodaj kategorie do kolekcji
+            if (importPreview.categories && importPreview.categories.length > 0) {
+                importPreview.categories.forEach(category => {
+                    addCategoryToCollection(importPreview.collectionName, category);
+                });
+            }
+
             showAlert(t('alerts.success'), t('status.importSuccess', {
                 count: importPreview.books.length,
                 name: importPreview.collectionName
             }), 'success');
+
             setImportPreview(null);
         } catch (error) {
             showAlert(t('alerts.error'), t('alerts.importSaveError'), 'error');
@@ -312,39 +343,64 @@ const CollectionsScreen = () => {
         setImportPreview(null);
     };
 
-    const handleExportCSV = async (collectionName: string) => {
-        const booksToExport = books[collectionName] || [];
-        let csvContent = "Title,Authors,ISBN,Original Price,Price (PLN),Condition Rating,Found in API,Defects,Uniqueness,Market Factors,Age Info,Listing Status\n";
-
-        booksToExport.forEach(book => {
-            const defectsString = JSON.stringify(book.defects || {});
-            const uniquenessString = JSON.stringify(book.uniqueness || defaultUniqueness);
-            const marketFactorsString = JSON.stringify(book.marketFactors || defaultMarketFactors);
-            const ageInfoString = JSON.stringify(book.ageInfo || defaultAgeInfo);
-            const listingStatus = book.listingStatus || defaultListingStatus;
-            const listingStatusString = JSON.stringify({
-                status: listingStatus.status || 'notListed',
-                platforms: listingStatus.platforms || [],
-                listedDate: listingStatus.listedDate,
-                soldDate: listingStatus.soldDate
-            });
-
-            csvContent += `"${book.title.replace(/"/g, '""')}","${book.authors.replace(/"/g, '""')}",${book.isbn},${book.originalPrice},${book.price},${book.rating},${book.foundInApi ? 'Yes' : 'No'},"${defectsString.replace(/"/g, '""')}","${uniquenessString.replace(/"/g, '""')}","${marketFactorsString.replace(/"/g, '""')}","${ageInfoString.replace(/"/g, '""')}","${listingStatusString.replace(/"/g, '""')}"\n`;
-        });
-
+    const handleExportCollectionToCSV = async (collectionName: string) => {
         try {
-            const fileUri = FileSystem.cacheDirectory + `${collectionName}.csv`;
-            await FileSystem.writeAsStringAsync(fileUri, csvContent);
-            if (!(await Sharing.isAvailableAsync())) {
-                showAlert(t('alerts.error'), t('alerts.sharingNotAvailable'), 'error');
+            const collectionBooks = books[collectionName] || [];
+            const categories = collectionCategories[collectionName] || [];
+
+            if (collectionBooks.length === 0) {
+                Alert.alert(t('alerts.info'), t('alerts.emptyCollectionExport'));
                 return;
             }
+
+            // Nagłówki CSV
+            const headers = [
+                'Title', 'Authors', 'ISBN', 'Original Price',
+                'Price (PLN)', 'Condition Rating', 'Found in API',
+                'Defects', 'Uniqueness', 'Market Factors',
+                'Age Info', 'Listing Status', 'Image URI',
+                'Categories'
+            ].join(',');
+
+            // Generowanie wierszy danych
+            const rows = collectionBooks.map(book => {
+                const bookCategories = categories.join('; ');
+
+                return [
+                    `"${book.title.replace(/"/g, '""')}"`,
+                    `"${book.authors.replace(/"/g, '""')}"`,
+                    book.isbn,
+                    book.originalPrice,
+                    book.price,
+                    book.rating,
+                    book.foundInApi ? 'Yes' : 'No',
+                    `"${JSON.stringify(book.defects || {}).replace(/"/g, '""')}"`,
+                    `"${JSON.stringify(book.uniqueness || {}).replace(/"/g, '""')}"`,
+                    `"${JSON.stringify(book.marketFactors || {}).replace(/"/g, '""')}"`,
+                    `"${JSON.stringify(book.ageInfo || {}).replace(/"/g, '""')}"`,
+                    `"${JSON.stringify(book.listingStatus || {}).replace(/"/g, '""')}"`,
+                    book.imageUri ? `"${book.imageUri}"` : '',
+                    `"${bookCategories}"`
+                ].join(',');
+            });
+
+            const csvContent = `${headers}\n${rows.join('\n')}`;
+            const fileUri = FileSystem.cacheDirectory + `${collectionName}_export.csv`;
+            await FileSystem.writeAsStringAsync(fileUri, csvContent);
+
+            if (!(await Sharing.isAvailableAsync())) {
+                Alert.alert(t('alerts.error'), t('alerts.sharingNotAvailable'));
+                return;
+            }
+
             await Sharing.shareAsync(fileUri, {
                 mimeType: 'text/csv',
                 dialogTitle: t('alerts.exportTitle', { collectionName })
             });
+
         } catch (error) {
-            showAlert(t('alerts.error'), t('alerts.exportError'), 'error');
+            Alert.alert(t('alerts.error'), t('alerts.exportError'));
+            console.error('Export failed:', error);
         }
     };
 
@@ -601,7 +657,7 @@ const CollectionsScreen = () => {
                                 calculateCollectionTotal={calculateCollectionTotal}
                                 onEditCollection={handleEditCollection}
                                 onDeleteCollection={handleDeleteCollection}
-                                onExportCollection={handleExportCSV}
+                                onExportCollection={handleExportCollectionToCSV}
                                 getBookWord={getBookWord}
                                 formatCurrency={formatCurrency}
                                 onNavigateToBooks={goToNextStep}
