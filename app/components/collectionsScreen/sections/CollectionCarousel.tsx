@@ -17,8 +17,6 @@ interface CollectionCarouselProps {
     onExportCollection: (collectionName: string) => void;
     getBookWord: (count: number, lang: string) => string;
     formatCurrency: (price: string) => string;
-    onImportCollection: () => void;
-    onAddCollection: () => void;
     onNavigateToBooks: () => void;
 }
 
@@ -33,8 +31,6 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                                                                    onExportCollection,
                                                                    getBookWord,
                                                                    formatCurrency,
-                                                                   onImportCollection,
-                                                                   onAddCollection,
                                                                    onNavigateToBooks,
                                                                }) => {
     const { t, i18n } = useTranslation();
@@ -158,48 +154,6 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
     return (
         <View style={styles.container}>
-            {/* Search and add section */}
-            <View style={styles.searchHeader}>
-                <View style={styles.searchContainer}>
-                    <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder={t('placeholders.searchCollections')}
-                        placeholderTextColor={colors.grayDark}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-
-                <View style={styles.headerButtons}>
-                    <TouchableOpacity
-                        onPress={onAddCollection}
-                        style={styles.headerButton}
-                        activeOpacity={0.7}
-                    >
-                        <LinearGradient
-                            colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                            style={styles.headerButtonGradient}
-                        >
-                            <Ionicons name="add" size={20} color={colors.primary} />
-                        </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={onImportCollection}
-                        style={[styles.headerButton, { marginLeft: 8 }]}
-                        activeOpacity={0.7}
-                    >
-                        <LinearGradient
-                            colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                            style={styles.headerButtonGradient}
-                        >
-                            <Ionicons name="download" size={20} color={colors.primary} />
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
             {/* Collections list */}
             <ScrollView
                 style={styles.listContainer}

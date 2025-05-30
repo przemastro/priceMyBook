@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, {useState, useRef, useEffect, useMemo} from 'react';
 import {
     View,
     Text,
@@ -67,6 +67,8 @@ const CollectionsScreen = () => {
     const [alertMessage, setAlertMessage] = useState('');
     const [alertType, setAlertType] = useState<'info' | 'success' | 'error' | 'warning'>('info');
     const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [searchQuery, setSearchQuery] = React.useState('');
+
 
     // Navigation between slides
     const [currentStep, setCurrentStep] = useState(0);
@@ -518,6 +520,13 @@ const CollectionsScreen = () => {
         }
     };
 
+    // Filtrowanie kolekcji
+    const filteredCollections = useMemo(() => {
+        if (!searchQuery) return collections;
+        return collections.filter(collection =>
+            collection.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    }, [collections, searchQuery]);
+
     const renderStep = () => {
         const stepTitles = [
             t('labels.yourCollections'),
@@ -531,6 +540,49 @@ const CollectionsScreen = () => {
                         <View style={styles.titleContainer}>
                             <Text style={styles.slideTitle}>{stepTitles[0]}</Text>
                         </View>
+
+                        {/* Sekcja wyszukiwania i przycisków */}
+                        <View style={styles.searchHeader}>
+                            <View style={styles.searchContainer}>
+                                <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
+                                <TextInput
+                                    style={styles.searchInput}
+                                    placeholder={t('placeholders.searchCollections')}
+                                    placeholderTextColor={colors.grayDark}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                />
+                            </View>
+
+                            <View style={styles.headerButtons}>
+                                <TouchableOpacity
+                                    onPress={() => setShowAddCollectionModal(true)}
+                                    style={styles.headerButton}
+                                    activeOpacity={0.7}
+                                >
+                                    <LinearGradient
+                                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                        style={styles.headerButtonGradient}
+                                    >
+                                        <Ionicons name="add" size={20} color={colors.primary} />
+                                    </LinearGradient>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={handleImportCollection}
+                                    style={[styles.headerButton, { marginLeft: 8 }]}
+                                    activeOpacity={0.7}
+                                >
+                                    <LinearGradient
+                                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                        style={styles.headerButtonGradient}
+                                    >
+                                        <Ionicons name="download" size={20} color={colors.primary} />
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
                         {selectedCollection && (
                             <CategoriesCarousel
                                 collectionName={selectedCollection}
@@ -539,31 +591,39 @@ const CollectionsScreen = () => {
                                 onRemoveCategory={handleRemoveCategory}
                             />
                         )}
-                        {collections.length > 0 ? (
-                            <>
-                                <CollectionCarousel
-                                    collections={collections}
-                                    books={books}
-                                    selectedCollection={selectedCollection}
-                                    onSelectCollection={(collectionName) => {
-                                        setSelectedCollection(collectionName);
-                                    }}
-                                    calculateCollectionTotal={calculateCollectionTotal}
-                                    onEditCollection={async (collectionName, newName) => {
-                                        await handleEditCollection(collectionName, newName);
-                                    }}
-                                    onDeleteCollection={handleDeleteCollection}
-                                    onAddCollection={() => setShowAddCollectionModal(true)}
-                                    onExportCollection={handleExportCSV}
-                                    getBookWord={getBookWord}
-                                    formatCurrency={formatCurrency}
-                                    onImportCollection={handleImportCollection}
-                                    onNavigateToBooks={goToNextStep}
-                                />
-                            </>
+
+                        {filteredCollections.length > 0 ? (
+                            <CollectionCarousel
+                                collections={filteredCollections}
+                                books={books}
+                                selectedCollection={selectedCollection}
+                                onSelectCollection={setSelectedCollection}
+                                calculateCollectionTotal={calculateCollectionTotal}
+                                onEditCollection={handleEditCollection}
+                                onDeleteCollection={handleDeleteCollection}
+                                onExportCollection={handleExportCSV}
+                                getBookWord={getBookWord}
+                                formatCurrency={formatCurrency}
+                                onNavigateToBooks={goToNextStep}
+                            />
                         ) : (
                             <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>{t('labels.noCollections')}</Text>
+                                <Text style={styles.emptyText}>
+                                    {searchQuery
+                                        ? t('labels.noCollectionsFound')
+                                        : t('labels.noCollections')}
+                                </Text>
+                                {!searchQuery && (
+                                    <View style={styles.emptyActions}>
+                                        <TouchableOpacity
+                                            style={styles.emptyActionButton}
+                                            onPress={() => setShowAddCollectionModal(true)}
+                                        >
+                                            <Ionicons name="add" size={20} color={colors.primary} />
+                                            <Text style={styles.emptyActionText}>{t('buttons.addCollection')}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                             </View>
                         )}
                     </Animated.View>
@@ -763,32 +823,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginVertical: 8,
     },
-    titleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
-        marginTop: 10
-    },
     navArrow: {
         marginHorizontal: 10,
         marginTop: 10
-    },
-    slideTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-        marginRight: 30,
-    },
-    emptyContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: colors.background,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        marginTop: 20
     },
     emptyBookContainer: {
         padding: 16,
@@ -799,19 +836,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.05)',
     },
-    emptyText: {
-        fontSize: 16,
-        textAlign: 'center',
-        color: colors.grayDark,
-    },
     collectionDetails: {
         marginTop: 0,
-    },
-    scrollContainer: {
-        flexGrow: 1,
-        padding: 16,
-        paddingTop: 6,
-        backgroundColor: colors.background,
     },
     totalValueContent: {
         alignItems: 'center',
@@ -1039,6 +1065,107 @@ const styles = StyleSheet.create({
         maxHeight: 480,
         width: Dimensions.get('window').width - 80, // Obliczana szerokość
         paddingHorizontal: 10, // Dodany padding
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        padding: 16,
+        paddingTop: 6,
+        backgroundColor: colors.background,
+    },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10,
+        marginTop: 10
+    },
+    slideTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.primary,
+        marginRight: 30,
+    },
+    emptyContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: colors.background,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+        marginTop: 20,
+        width: '90%',
+        marginLeft: 20,
+        marginRight: 20
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: colors.grayDark,
+    },
+    searchHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+    },
+    searchContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.white,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: colors.buttonSelected1,
+        marginRight: 5,
+        marginLeft: 5
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 16,
+        color: colors.black,
+    },
+    headerButtons: {
+        flexDirection: 'row',
+    },
+    headerButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    headerButtonGradient: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyActions: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 20,
+    },
+    emptyActionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.white,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    emptyActionText: {
+        color: colors.primary,
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 5,
     },
 });
 
