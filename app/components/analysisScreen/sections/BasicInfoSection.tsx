@@ -163,7 +163,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             >
                                 {bookImage ? (
                                     <Image
-                                        key={bookImage} // Dodane key dla lepszego renderowania
+                                        key={bookImage}
                                         source={{ uri: bookImage }}
                                         style={styles.bookImage}
                                         resizeMode="contain"

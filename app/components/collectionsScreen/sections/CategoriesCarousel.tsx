@@ -7,6 +7,9 @@ import { useAppContext } from '@/context/AppContext';
 
 interface CategoriesCarouselProps {
     collectionName: string;
+    collectionCategories: { [key: string]: string[] }; // Dodaj tę linię
+    onAddCategory: (collectionName: string, category: string) => void;
+    onRemoveCategory: (collectionName: string, category: string) => void;
 }
 
 const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({

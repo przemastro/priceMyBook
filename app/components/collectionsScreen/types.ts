@@ -38,6 +38,8 @@ export interface BookData {
     displayPrice: string;
     foundInApi?: boolean;
     originalPrice: string;
+    description?: string; // Dodane
+    publisher?: string; // Dodane
     defects?: Record<string, BookDefect>;
     rating: number;
     uniqueness?: BookUniqueness;
@@ -46,6 +48,8 @@ export interface BookData {
     listingStatus?: ListingStatus;
     imageUri?: string;
     createdAt?: string;
+    source?: 'google' | 'amazon' | 'manual'; // Dodane pole źródła
+    priceSource?: string; // Dodane pole źródła ceny
 }
 
 export interface ImportPreviewData {

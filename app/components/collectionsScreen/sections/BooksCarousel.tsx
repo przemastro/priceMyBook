@@ -20,6 +20,8 @@ import * as Sharing from 'expo-sharing';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 import Carousel from "react-native-reanimated-carousel";
+import ExportToPDFButton from "@/app/components/collectionsScreen/buttons/ExportToPDFButton";
+
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.8;
 const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.58;
@@ -211,8 +213,19 @@ const BookItem: React.FC<BookItemProps> = ({
 
                             <View style={styles.bookDetails}>
                                 <Text style={styles.bookCardIsbn}>ISBN: {book.isbn}</Text>
+                                {book.publisher && (
+                                    <Text style={styles.bookCardPublisher}>
+                                        {t('bookInfo.publisher')}: {book.publisher}
+                                    </Text>
+                                )}
                                 <Text style={styles.bookCardPrice}>{t('bookInfo.finalPrice')}: {book.displayPrice}</Text>
                                 <Text style={styles.bookCardCondition}>{t('labels.condition')}: {book.rating}/10</Text>
+
+                                {book.description && (
+                                    <Text style={styles.bookCardDescription}>
+                                        {t('bookInfo.description')}: {book.description}
+                                    </Text>
+                                )}
 
                                 <Text style={styles.bookCardDefects}>
                                     {t('labels.defects')}: {formatDefectsSummary(book.defects)}
@@ -255,24 +268,26 @@ const BookItem: React.FC<BookItemProps> = ({
             <View style={styles.actionsColumn}>
                 <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={handleExportToCSV}
-                    disabled={exporting}
+                    onPress={(e) => e.stopPropagation()}
                 >
-                    <LinearGradient
-                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        {exporting ? (
-                            <ActivityIndicator size="small" color={colors.primary} />
-                        ) : (
-                            <Ionicons name="document-text" size={20} color={colors.primary} />
-                        )}
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>
-                        {exporting ? t('buttons.exporting') : t('buttons.exportCSV')}
-                    </Text>
+                    {/* Zastąp obecny kod tym: */}
+                    <View style={styles.actionButton}>
+                        <LinearGradient
+                            colors={[`${colors.primary}20`, `${colors.primary}10`]}
+                            style={styles.actionIconContainer}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        >
+                            <ExportToPDFButton
+                                book={book}
+                                formatDefectsSummary={formatDefectsSummary}
+                                formatUniquenessSummary={formatUniquenessSummary}
+                                formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                formatListingStatus={formatListingStatus}
+                            />
+                        </LinearGradient>
+                        <Text style={styles.actionButtonText}>{t('buttons.exportPDF')}</Text>
+                    </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -637,6 +652,18 @@ const styles = StyleSheet.create({
     },
     navSpacer: {
         width: 20,
+    },
+    bookCardPublisher: {
+        fontSize: 12,
+        color: colors.black,
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    bookCardDescription: {
+        fontSize: 12,
+        color: colors.black,
+        marginBottom: 8,
+        textAlign: 'center',
     },
 });
 

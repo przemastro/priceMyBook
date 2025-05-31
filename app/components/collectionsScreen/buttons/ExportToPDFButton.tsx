@@ -28,56 +28,75 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
 
     const generatePDF = async () => {
         try {
-            // Create HTML content
+            // Create HTML content with all fields
             const htmlContent = `
-                <html>
-                <head>
-                    <style>
-                    body { font-family: Arial; padding: 20px; }
-                    h1 { color: #4a6cf7; font-size: 20px; margin-bottom: 10px; }
-                    .section { margin-bottom: 15px; }
-                    .label { font-weight: bold; color: #333; min-width: 120px; display: inline-block; }
-                    .value { margin-left: 10px; }
-                    .row { margin-bottom: 8px; }
-                    hr { border: 0.5px solid #eee; margin: 15px 0; }
-                    .header { text-align: center; margin-bottom: 20px; }
-                    .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
+            <html>
+            <head>
+                <style>
+                body { font-family: Arial; padding: 20px; }
+                h1 { color: #4a6cf7; font-size: 20px; margin-bottom: 10px; }
+                .section { margin-bottom: 15px; }
+                .label { font-weight: bold; color: #333; min-width: 150px; display: inline-block; }
+                .value { margin-left: 10px; }
+                .row { margin-bottom: 8px; }
+                hr { border: 0.5px solid #eee; margin: 15px 0; }
+                .header { text-align: center; margin-bottom: 20px; }
+                .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
+                .image-container { text-align: center; margin-bottom: 15px; }
+                .book-image { max-width: 150px; max-height: 200px; }
+                .two-columns { display: flex; flex-wrap: wrap; }
+                .column { flex: 1; min-width: 250px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
                     <h1>${book.title}</h1>
                     <p>${t('bookInfo.authors')}: ${book.authors}</p>
+                </div>
+
+                ${book.imageUri ? `
+                <div class="image-container">
+                    <img src="${book.imageUri}" class="book-image" />
+                </div>
+                ` : ''}
+
+                <div class="two-columns">
+                    <div class="column">
+                        <div class="section">
+                            <div class="row"><span class="label">ISBN:</span> <span class="value">${book.isbn}</span></div>
+                            ${book.publisher ? `<div class="row"><span class="label">${t('bookInfo.publisher')}:</span> <span class="value">${book.publisher}</span></div>` : ''}
+                            <div class="row"><span class="label">${t('bookInfo.originalPrice')}:</span> <span class="value">${book.originalPrice} PLN</span></div>
+                            <div class="row"><span class="label">${t('bookInfo.finalPrice')}:</span> <span class="value">${book.displayPrice}</span></div>
+                            <div class="row"><span class="label">${t('labels.condition')}:</span> <span class="value">${book.rating}/10</span></div>
+                            ${book.createdAt ? `<div class="row"><span class="label">${t('labels.addedDate')}:</span> <span class="value">${new Date(book.createdAt).toLocaleDateString()}</span></div>` : ''}
+                        </div>
+
+                        <div class="section">
+                            <div class="row"><span class="label">${t('labels.defects')}:</span> <span class="value">${formatDefectsSummary(book.defects)}</span></div>
+                            <div class="row"><span class="label">${t('labels.uniqueness')}:</span> <span class="value">${formatUniquenessSummary(book.uniqueness)}</span></div>
+                        </div>
                     </div>
-                    
-                    <div class="section">
-                    <div class="row"><span class="label">ISBN:</span> <span class="value">${book.isbn}</span></div>
-                    <div class="row"><span class="label">${t('bookInfo.originalPrice')}:</span> <span class="value">${book.originalPrice} PLN</span></div>
-                    <div class="row"><span class="label">${t('bookInfo.finalPrice')}:</span> <span class="value">${book.displayPrice}</span></div>
-                    <div class="row"><span class="label">${t('labels.condition')}:</span> <span class="value">${book.rating}/10</span></div>
+
+                    <div class="column">
+                        <div class="section">
+                            ${book.description ? `<div class="row"><span class="label">${t('bookInfo.description')}:</span> <span class="value">${book.description}</span></div>` : ''}
+                            <div class="row"><span class="label">${t('labels.marketFactors')}:</span> <span class="value">${formatMarketFactorsSummary(book.marketFactors)}</span></div>
+                            ${book.ageInfo ? `<div class="row"><span class="label">${t('labels.age')}:</span> <span class="value">${book.ageInfo.years} ${t('labels.years')}</span></div>` : ''}
+                            <div class="row"><span class="label">${t('labels.listingStatus')}:</span> <span class="value">${formatListingStatus(book.listingStatus)}</span></div>
+                            ${book.listingStatus?.listedDate ? `<div class="row"><span class="label">${t('labels.listedDate')}:</span> <span class="value">${new Date(book.listingStatus.listedDate).toLocaleDateString()}</span></div>` : ''}
+                            ${book.listingStatus?.soldDate ? `<div class="row"><span class="label">${t('labels.soldDate')}:</span> <span class="value">${new Date(book.listingStatus.soldDate).toLocaleDateString()}</span></div>` : ''}
+                            ${book.source ? `<div class="row"><span class="label">${t('labels.source')}:</span> <span class="value">${book.source}</span></div>` : ''}
+                            ${book.priceSource ? `<div class="row"><span class="label">${t('labels.priceSource')}:</span> <span class="value">${book.priceSource}</span></div>` : ''}
+                        </div>
                     </div>
-                    
-                    <hr/>
-                    
-                    <div class="section">
-                    <div class="row"><span class="label">${t('labels.defects')}:</span> <span class="value">${formatDefectsSummary(book.defects)}</span></div>
-                    <div class="row"><span class="label">${t('labels.uniqueness')}:</span> <span class="value">${formatUniquenessSummary(book.uniqueness)}</span></div>
-                    <div class="row"><span class="label">${t('labels.marketFactors')}:</span> <span class="value">${formatMarketFactorsSummary(book.marketFactors)}</span></div>
-                    ${book.ageInfo ? `<div class="row"><span class="label">${t('labels.age')}:</span> <span class="value">${book.ageInfo.years} ${t('labels.years')}</span></div>` : ''}
-                    </div>
-                    
-                    <hr/>
-                    
-                    <div class="section">
-                    <div class="row"><span class="label">${t('labels.listingStatus')}:</span> <span class="value">${formatListingStatus(book.listingStatus)}</span></div>
-                    </div>
-                    
-                    <div class="footer">
+                </div>
+
+                <div class="footer">
                     <p>${t('labels.generatedBy')} BookScout • ${new Date().toLocaleDateString()}</p>
-                    </div>
-                </body>
-                </html>
-            `;
+                </div>
+            </body>
+            </html>
+        `;
 
             // Generate PDF
             const { uri } = await Print.printToFileAsync({

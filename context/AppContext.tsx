@@ -43,6 +43,9 @@ interface BookData {
     displayPrice: string;
     foundInApi: boolean;
     originalPrice: string;
+    description?: string; // Dodane
+    publisher?: string; // Dodane
+    imageUri?: string; // Dodane
     defects: Record<string, BookDefect>;
     createdAt: string;
     rating: number;

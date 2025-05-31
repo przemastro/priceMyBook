@@ -104,7 +104,7 @@ const CollectionsScreen = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showListingModal, setShowListingModal] = useState(false);
     const [currentListingBook, setCurrentListingBook] = useState<{ collection: string; index: number } | null>(null);
-    const [selectedPlatforms, setSelectedPlatforms] = useState<('amazon' | 'allegro' | 'olx')[]>([]);
+    const [selectedPlatform, setSelectedPlatform] = useState<'amazon' | 'allegro' | 'olx' | null>(null);
     const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
     const [editingCollection, setEditingCollection] = useState<string | null>(null);
     const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
@@ -443,7 +443,7 @@ const CollectionsScreen = () => {
         const book = books[collection][index];
         setCurrentListingBook({ collection, index });
         if (book.listingStatus?.status === 'notListed') {
-            setSelectedPlatforms([]);
+            setSelectedPlatform(null);
             setShowListingModal(true);
         } else if (book.listingStatus?.status === 'listed') {
             setShowStatusChangeModal(true);
@@ -453,33 +453,39 @@ const CollectionsScreen = () => {
     };
 
     const confirmListing = () => {
-        if (!currentListingBook || selectedPlatforms.length === 0) return;
+        if (!currentListingBook || !selectedPlatform) return;
         const { collection, index } = currentListingBook;
         const book = books[collection][index];
 
-        selectedPlatforms.forEach(platform => {
-            let url = '';
-            switch (platform) {
-                case 'amazon': url = `https://sellercentral.amazon.com/listing/create?title=${encodeURIComponent(book.title)}`; break;
-                case 'allegro': url = `https://allegro.pl/myaccount/offer/new?title=${encodeURIComponent(book.title)}`; break;
-                case 'olx': url = `https://www.olx.pl/dodaj-ogloszenie/?query=${encodeURIComponent(book.title)}`; break;
-            }
-            Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
-        });
+        let url = '';
+        switch (selectedPlatform) {
+            case 'amazon':
+                url = `https://sellercentral.amazon.com/listing/create?title=${encodeURIComponent(book.title)}`;
+                break;
+            case 'allegro':
+                url = `https://allegro.pl/myaccount/offer/new?title=${encodeURIComponent(book.title)}`;
+                break;
+            case 'olx':
+                url = `https://www.olx.pl/dodaj-ogloszenie/?query=${encodeURIComponent(book.title)}`;
+                break;
+        }
+
+        Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
 
         const updatedBooks = [...books[collection]];
         updatedBooks[index] = {
             ...updatedBooks[index],
             listingStatus: {
                 status: 'listed',
-                platforms: selectedPlatforms,
+                platforms: [selectedPlatform],
                 listedDate: new Date().toISOString()
             }
         };
+
         updateBooksInCollection(collection, updatedBooks);
         setShowListingModal(false);
         setCurrentListingBook(null);
-        setSelectedPlatforms([]);
+        setSelectedPlatform(null);
         showAlert(t('alerts.success'), t('status.listedRedirect'), 'success');
     };
 
@@ -501,12 +507,8 @@ const CollectionsScreen = () => {
         setCurrentListingBook(null);
     };
 
-    const togglePlatform = (platform: 'amazon' | 'allegro' | 'olx') => {
-        setSelectedPlatforms(prev =>
-            prev.includes(platform)
-                ? prev.filter(p => p !== platform)
-                : [...prev, platform]
-        );
+    const selectPlatform = (platform: 'amazon' | 'allegro' | 'olx') => {
+        setSelectedPlatform(platform);
     };
 
     const formatCurrency = (value: string): string => {
@@ -885,8 +887,8 @@ const CollectionsScreen = () => {
             <ListingModal
                 visible={showListingModal}
                 onClose={() => setShowListingModal(false)}
-                selectedPlatforms={selectedPlatforms}
-                onTogglePlatform={togglePlatform}
+                selectedPlatform={selectedPlatform}
+                onSelectPlatform={selectPlatform}
                 onConfirm={confirmListing}
             />
             <StatusChangeModal
