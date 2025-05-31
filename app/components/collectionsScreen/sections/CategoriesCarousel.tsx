@@ -3,29 +3,25 @@ import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, Scroll
 import { colors } from '@/styles/styles';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/context/AppContext';
 
 interface CategoriesCarouselProps {
     collectionName: string;
-    collectionCategories: Record<string, string[]>;
-    onAddCategory: (collectionName: string, category: string) => void;
-    onRemoveCategory: (collectionName: string, category: string) => void;
 }
 
 const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
-                                                                   collectionName,
-                                                                   collectionCategories,
-                                                                   onAddCategory,
-                                                                   onRemoveCategory
+                                                                   collectionName
                                                                }) => {
     const { t } = useTranslation();
     const [newCategoryName, setNewCategoryName] = useState('');
     const [isAddingCategory, setIsAddingCategory] = useState(false);
+    const { collectionCategories, addCategoryToCollection, removeCategoryFromCollection } = useAppContext();
 
-    const categories = collectionCategories[collectionName] || [];
+    const categories = collectionName ? (collectionCategories[collectionName] || []) : [];
 
     const handleAddCategory = () => {
-        if (newCategoryName.trim()) {
-            onAddCategory(collectionName, newCategoryName);
+        if (newCategoryName.trim() && collectionName) {
+            addCategoryToCollection(collectionName, newCategoryName);
             setNewCategoryName('');
             setIsAddingCategory(false);
         }
@@ -43,7 +39,7 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
                     <View key={index} style={styles.categoryItem}>
                         <Text style={styles.categoryText}>{category}</Text>
                         <TouchableOpacity
-                            onPress={() => onRemoveCategory(collectionName, category)}
+                            onPress={() => removeCategoryFromCollection(collectionName, category)}
                         >
                             <Ionicons name="close" size={16} color={colors.error} />
                         </TouchableOpacity>
@@ -51,35 +47,37 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
                 ))}
 
                 {/* Add category button */}
-                <View style={styles.addContainer}>
-                    {isAddingCategory ? (
-                        <View style={styles.addCategoryContainer}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder={t('placeholders.categoryName')}
-                                value={newCategoryName}
-                                onChangeText={setNewCategoryName}
-                                autoFocus
-                                onSubmitEditing={handleAddCategory}
-                            />
+                {collectionName && (
+                    <View style={styles.addContainer}>
+                        {isAddingCategory ? (
+                            <View style={styles.addCategoryContainer}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder={t('placeholders.categoryName')}
+                                    value={newCategoryName}
+                                    onChangeText={setNewCategoryName}
+                                    autoFocus
+                                    onSubmitEditing={handleAddCategory}
+                                />
+                                <TouchableOpacity
+                                    style={[styles.confirmButton, !newCategoryName.trim() && styles.disabledButton]}
+                                    onPress={handleAddCategory}
+                                    disabled={!newCategoryName.trim()}
+                                >
+                                    <Ionicons name="checkmark" size={16} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
                             <TouchableOpacity
-                                style={[styles.confirmButton, !newCategoryName.trim() && styles.disabledButton]}
-                                onPress={handleAddCategory}
-                                disabled={!newCategoryName.trim()}
+                                style={styles.addButton}
+                                onPress={() => setIsAddingCategory(true)}
                             >
-                                <Ionicons name="checkmark" size={16} color="white" />
+                                <Ionicons name="add" size={16} color={colors.primary} />
+                                <Text style={styles.addButtonText}>{t('buttons.addCategory')}</Text>
                             </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.addButton}
-                            onPress={() => setIsAddingCategory(true)}
-                        >
-                            <Ionicons name="add" size={16} color={colors.primary} />
-                            <Text style={styles.addButtonText}>{t('buttons.addCategory')}</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                        )}
+                    </View>
+                )}
             </ScrollView>
         </View>
     );

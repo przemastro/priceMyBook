@@ -1,20 +1,21 @@
 import React, { useMemo } from 'react';
-import {View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Dimensions, ScrollView} from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Dimensions, ScrollView } from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/context/AppContext';
 
 interface Collection {
     name: string;
     icon: string;
-    createdAt?: string; // Dodajemy datę utworzenia
+    createdAt?: string;
 }
 
 type CollectionsSectionProps = {
     collections: Collection[];
     books: Record<string, any[]>;
-    selectedCollection: string;
+    selectedCollection: string | null;
     onSelectCollection: (collection: string) => void;
     onAddCollection: () => void;
     searchQuery: string;
@@ -31,13 +32,14 @@ const CollectionsSection = ({
                                 onSearchChange,
                             }: CollectionsSectionProps) => {
     const { t, i18n } = useTranslation();
+    const { collectionCategories } = useAppContext();
     const { height } = Dimensions.get('window');
 
     const getBookWord = (count: number, lang: string) => {
         if (lang === 'pl') {
             if (count === 1) return 'labels.book_one';
             if (count % 100 >= 12 && count % 100 <= 14) return 'labels.book_many';
-            if ([2,3,4].includes(count % 10)) return 'labels.book_few';
+            if ([2, 3, 4].includes(count % 10)) return 'labels.book_few';
             return 'labels.book_many';
         }
         return count === 1 ? 'labels.book_one' : 'labels.book_other';
@@ -70,8 +72,8 @@ const CollectionsSection = ({
     const renderItem = ({ item }: { item: Collection }) => {
         const bookCount = books[item.name]?.length || 0;
         const isSelected = selectedCollection === item.name;
+        const categories = collectionCategories[item.name] || [];
 
-        // Formatowanie daty
         const formattedDate = item.createdAt
             ? `${new Date(item.createdAt).toLocaleString(i18n.language, { month: 'short' })}, ${new Date(item.createdAt).getFullYear()}`
             : t('labels.noDate');
@@ -111,6 +113,7 @@ const CollectionsSection = ({
                         <View style={styles.collectionMetaContainer}>
                             <Text style={styles.collectionBookCount}>
                                 {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                                {categories.length > 0 && ` • ${categories.join(', ')}`}
                             </Text>
                             <Text style={styles.collectionDate}>
                                 {formattedDate}

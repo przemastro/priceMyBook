@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, Dimensions, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Dimensions, Modal, ActivityIndicator } from 'react-native';
 import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
+import { useAppContext } from '@/context/AppContext';
 
 interface CollectionCarouselProps {
     collections: { name: string; icon: string }[];
@@ -34,7 +35,6 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                                                                    onNavigateToBooks,
                                                                }) => {
     const { t, i18n } = useTranslation();
-    const [searchQuery, setSearchQuery] = React.useState('');
     const [menuVisible, setMenuVisible] = useState<string | null>(null);
     const [menuPosition, setMenuPosition] = useState({
         x: 0,
@@ -43,25 +43,24 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
     });
     const [isProcessing, setIsProcessing] = useState(false);
     const { width, height } = Dimensions.get('window');
+    const { collectionCategories } = useAppContext();
 
-    // Alert state
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertTitle, setAlertTitle] = useState('');
     const [alertMessage, setAlertMessage] = useState('');
-    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => { });
 
     const filteredCollections = useMemo(() => {
-        if (!searchQuery) return collections;
-        return collections.filter(collection =>
-            collection.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }, [collections, searchQuery]);
+        if (!collections) return [];
+        return collections;
+    }, [collections]);
 
     const showDeleteConfirmation = (collectionName: string) => {
+        const bookCount = books[collectionName]?.length || 0;
         setAlertTitle(t('alerts.confirmDeleteTitle'));
         setAlertMessage(t('alerts.confirmDeleteMessage', {
             collectionName,
-            bookCount: books[collectionName]?.length || 0
+            bookCount
         }));
         setConfirmAction(() => () => {
             onDeleteCollection(collectionName);
@@ -99,6 +98,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
     const renderItem = ({ item }: { item: { name: string; icon: string } }) => {
         const bookCount = books[item.name]?.length || 0;
         const isSelected = selectedCollection === item.name;
+        const categories = collectionCategories[item.name] || [];
 
         return (
             <View style={styles.itemContainer}>
@@ -139,6 +139,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                                 </Text>
                                 <Text style={styles.collectionBookCount}>
                                     {bookCount} {t(getBookWord(bookCount, i18n.language))}
+                                    {categories.length > 0 && ` • ${categories.length} ${t('labels.categories')}`}
                                 </Text>
                                 <Text style={styles.collectionValue}>
                                     {formatCurrency(calculateCollectionTotal(item.name).toString())}
@@ -148,7 +149,7 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                             <TouchableOpacity
                                 style={styles.menuButton}
                                 onPress={(e) => showMenu(item.name, e)}
-                                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <Ionicons
                                     name="ellipsis-vertical"
@@ -165,27 +166,27 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
     return (
         <View style={styles.container}>
-            {/* Collections list */}
-            <ScrollView
-                style={styles.listContainer}
-                nestedScrollEnabled={true}
-            >
-                {filteredCollections.length > 0 ? (
-                    <FlatList
-                        scrollEnabled={false}
-                        data={filteredCollections}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item.name}
-                        contentContainerStyle={styles.listContent}
-                    />
-                ) : (
-                    <View style={styles.noCollectionsContainer}>
-                        <Text style={styles.noCollectionsText}>{t('labels.noCollectionsFound')}</Text>
-                    </View>
-                )}
-            </ScrollView>
+            <FlatList
+                data={filteredCollections}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.name}
+                contentContainerStyle={styles.listContent}
+            />
 
-            {/* Menu Modal */}
+            <CustomAlertModal
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                type="warning"
+                onConfirm={() => {
+                    confirmAction();
+                    setAlertVisible(false);
+                }}
+                closeButtonStyle={styles.closeButton}
+                closeButtonTextStyle={styles.closeButtonText}
+                buttonFullWidth={true}
+            />
+
             <Modal
                 visible={!!menuVisible}
                 transparent={true}
@@ -268,20 +269,6 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                     </View>
                 </TouchableOpacity>
             </Modal>
-
-            <CustomAlertModal
-                visible={alertVisible}
-                title={alertTitle}
-                message={alertMessage}
-                type="warning"
-                onConfirm={() => {
-                    confirmAction();
-                    setAlertVisible(false);
-                }}
-                closeButtonStyle={styles.closeButton}
-                closeButtonTextStyle={styles.closeButtonText}
-                buttonFullWidth={true}
-            />
         </View>
     );
 };
@@ -290,49 +277,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.grayLight,
-    },
-    searchHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        paddingHorizontal: 16,
-        paddingTop: 10,
-    },
-    searchContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderWidth: 1,
-        borderColor: colors.buttonSelected1,
-        marginRight: 5,
-        marginLeft: 5
-    },
-    searchIcon: {
-        marginRight: 8,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: colors.black,
-    },
-    headerButtons: {
-        flexDirection: 'row',
-    },
-    headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    headerButtonGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     itemContainer: {
         marginBottom: 12,
@@ -400,22 +344,8 @@ const styles = StyleSheet.create({
         padding: 8,
         marginLeft: 8,
     },
-    listContainer: {
-        flex: 1,
-        paddingHorizontal: 16,
-    },
     listContent: {
         paddingBottom: 20,
-    },
-    noCollectionsContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    noCollectionsText: {
-        fontSize: 14,
-        color: colors.grayDark,
-        textAlign: 'center',
     },
     modalOverlay: {
         flex: 1,
@@ -485,21 +415,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: colors.primary,
         lineHeight: 24,
-    },
-    confirmButton: {
-        width: '100%',
-        borderRadius: 10,
-        overflow: 'hidden',
-        marginTop: 16,
-    },
-    confirmButtonGradient: {
-        padding: 15,
-        alignItems: 'center',
-    },
-    confirmButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
 

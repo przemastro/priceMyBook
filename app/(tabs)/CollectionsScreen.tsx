@@ -205,11 +205,13 @@ const CollectionsScreen = () => {
         loadSelected();
     }, [collections]);
 
+
     const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
         if (!name.trim()) return;
         addCollection(name, icon);
-        categories.forEach(category => addCategoryToCollection(name, category));
-        setShowAddModal(false);
+        // Dodaj kategorie do nowo utworzonej kolekcji
+        categories.forEach(category => addCategoryToCollection(name, category.trim()));
+        setShowAddCollectionModal(false);
     };
 
     const handleEditCollection = async (

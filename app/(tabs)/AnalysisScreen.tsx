@@ -570,7 +570,7 @@ export default function AnalysisScreen() {
   };
 
   const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
-    addCollection(name, icon);
+    addCollection(name, icon, categories);
     setSelectedCollection(name);
     setShowAddCollectionModal(false);
   };
