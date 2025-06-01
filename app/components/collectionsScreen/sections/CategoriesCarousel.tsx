@@ -1,34 +1,25 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { colors } from '@/styles/styles';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/context/AppContext';
 
 interface CategoriesCarouselProps {
     collectionName: string;
-    collectionCategories: { [key: string]: string[] }; // Dodaj tę linię
+    collectionCategories: { [key: string]: string[] };
     onAddCategory: (collectionName: string, category: string) => void;
     onRemoveCategory: (collectionName: string, category: string) => void;
 }
 
 const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
-                                                                   collectionName
+                                                                   collectionName,
+                                                                   onAddCategory,
+                                                                   onRemoveCategory
                                                                }) => {
     const { t } = useTranslation();
-    const [newCategoryName, setNewCategoryName] = useState('');
-    const [isAddingCategory, setIsAddingCategory] = useState(false);
-    const { collectionCategories, addCategoryToCollection, removeCategoryFromCollection } = useAppContext();
+    const { collectionCategories } = useAppContext();
 
     const categories = collectionName ? (collectionCategories[collectionName] || []) : [];
-
-    const handleAddCategory = () => {
-        if (newCategoryName.trim() && collectionName) {
-            addCategoryToCollection(collectionName, newCategoryName);
-            setNewCategoryName('');
-            setIsAddingCategory(false);
-        }
-    };
 
     return (
         <View style={styles.container}>
@@ -37,48 +28,17 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Existing categories */}
+                {/* Existing categories - read only */}
                 {categories.map((category, index) => (
                     <View key={index} style={styles.categoryItem}>
                         <Text style={styles.categoryText}>{category}</Text>
-                        <TouchableOpacity
-                            onPress={() => removeCategoryFromCollection(collectionName, category)}
-                        >
-                            <Ionicons name="close" size={16} color={colors.error} />
-                        </TouchableOpacity>
                     </View>
                 ))}
 
-                {/* Add category button */}
-                {collectionName && (
-                    <View style={styles.addContainer}>
-                        {isAddingCategory ? (
-                            <View style={styles.addCategoryContainer}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={t('placeholders.categoryName')}
-                                    value={newCategoryName}
-                                    onChangeText={setNewCategoryName}
-                                    autoFocus
-                                    onSubmitEditing={handleAddCategory}
-                                />
-                                <TouchableOpacity
-                                    style={[styles.confirmButton, !newCategoryName.trim() && styles.disabledButton]}
-                                    onPress={handleAddCategory}
-                                    disabled={!newCategoryName.trim()}
-                                >
-                                    <Ionicons name="checkmark" size={16} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <TouchableOpacity
-                                style={styles.addButton}
-                                onPress={() => setIsAddingCategory(true)}
-                            >
-                                <Ionicons name="add" size={16} color={colors.primary} />
-                                <Text style={styles.addButtonText}>{t('buttons.addCategory')}</Text>
-                            </TouchableOpacity>
-                        )}
+                {/* Empty state */}
+                {categories.length === 0 && (
+                    <View style={styles.emptyCategoryItem}>
+                        <Text style={styles.emptyCategoryText}>{t('labels.noCategories')}</Text>
                     </View>
                 )}
             </ScrollView>
@@ -96,10 +56,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    addContainer: {
-        height: 40,
-        justifyContent: 'center',
-    },
     categoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -112,48 +68,18 @@ const styles = StyleSheet.create({
     categoryText: {
         fontSize: 14,
         color: colors.grayDark,
-        marginRight: 4,
     },
-    addButton: {
+    emptyCategoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderStyle: 'dashed',
-        borderRadius: 16,
         paddingVertical: 6,
         paddingHorizontal: 12,
         height: 32,
     },
-    addButtonText: {
-        color: colors.primary,
+    emptyCategoryText: {
         fontSize: 14,
-        marginLeft: 4,
-    },
-    addCategoryContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    input: {
-        height: 32,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderRadius: 16,
-        paddingHorizontal: 12,
-        backgroundColor: colors.white,
-        marginRight: 8,
-        minWidth: 120,
-    },
-    confirmButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    disabledButton: {
-        opacity: 0.5,
+        color: colors.gray,
+        fontStyle: 'italic',
     },
 });
 

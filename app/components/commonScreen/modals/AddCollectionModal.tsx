@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, FlatList } from 'react-native';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
-import CategoriesManager from '../../collectionsScreen/CategoriesManager';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -13,66 +12,35 @@ interface AddCollectionModalProps {
 }
 
 const BOOK_ICONS = [
-    // Podstawowe ikony książek
     'book', 'menu-book', 'auto-stories', 'library-books', 'school',
-
-    // Nauki ścisłe
     'science', 'biotech', 'calculate', 'functions', 'psychology',
     'memory', 'data-usage', 'insights',
-
-    // Technologia i informatyka
     'computer', 'code', 'developer-mode', 'terminal', 'smartphone',
     'wifi', 'settings', 'storage', 'security', 'cloud',
-
-    // Przyroda i środowisko
     'nature', 'pets', 'spa', 'grass', 'forest',
     'water', 'eco', 'bug-report',
-
-    // Medycyna i zdrowie
     'medical-services', 'healing', 'fitness-center', 'health-and-safety', 'sanitizer',
     'vaccines', 'medication', 'monitor-heart', 'elderly', 'accessible',
-
-    // Sztuka i kultura
     'palette', 'brush', 'colorize', 'music-note', 'theater-comedy',
     'mic', 'movie', 'photo-camera', 'museum', 'draw',
-
-    // Sport i rekreacja
     'sports-baseball', 'sports-basketball', 'sports-football', 'sports-soccer', 'sports-tennis',
     'sports-volleyball', 'sports-golf', 'sports-handball', 'sports-kabaddi', 'sports-martial-arts',
-
-    // Podróże i geografia
     'travel-explore', 'map', 'public', 'language', 'flight',
     'train', 'directions-boat', 'directions-car', 'motorcycle', 'commute',
-
-    // Historia i archeologia
     'history-edu', 'castle', 'account-balance', 'temple-buddhist',
     'temple-hindu', 'mosque', 'church', 'synagogue', 'fort',
-
-    // Biznes i finanse
     'business-center', 'work', 'attach-money', 'savings', 'trending-up',
     'account-balance-wallet', 'euro', 'currency-exchange', 'receipt', 'credit-card',
-
-    // Kulinaria
     'restaurant', 'local-cafe', 'nightlife', 'cake', 'wine-bar',
     'bakery-dining', 'icecream', 'set-meal', 'ramen-dining', 'rice-bowl',
-
-    // Dom i ogród
     'home', 'apartment', 'yard', 'balcony', 'bathtub',
     'bed', 'chair', 'flatware', 'kitchen', 'light',
-
-    // Fantasy i sci-fi
     'auto-awesome', 'star', 'rocket', 'public-off', 'visibility-off',
     'sunny', 'thunderstorm', 'whatshot', 'flare',
-
-    // Kryminały i thrillery
     'fingerprint', 'search', 'gavel', 'policy', 'security',
     'visibility', 'remove-red-eye', 'lock', 'vpn-key', 'shield',
-
-    // Romans i literatura obyczajowa
     'favorite', 'celebration', 'mood', 'sentiment-satisfied', 'heart-broken',
     'diamond', 'spa', 'hotel',
-
-    // Literatura dziecięca
     'child-friendly', 'toys', 'crib', 'school', 'face',
     'emoji-people', 'cake', 'park',
 ];
@@ -83,12 +51,16 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
     const [categories, setCategories] = useState<string[]>([]);
     const [selectedIcon, setSelectedIcon] = useState('book');
     const [showIcons, setShowIcons] = useState(false);
+    const [newCategory, setNewCategory] = useState('');
 
-    const handleAddCategory = (collectionName: string, category: string) => {
-        setCategories([...categories, category]);
+    const handleAddCategory = () => {
+        if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+            setCategories([...categories, newCategory.trim()]);
+            setNewCategory('');
+        }
     };
 
-    const handleRemoveCategory = (collectionName: string, category: string) => {
+    const handleRemoveCategory = (category: string) => {
         setCategories(categories.filter(c => c !== category));
     };
 
@@ -125,7 +97,6 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        {/* Icon preview at the top */}
                         <View style={styles.iconPreviewContainer}>
                             <View style={styles.iconPreviewCircle}>
                                 <MaterialIcons
@@ -145,7 +116,6 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             autoFocus
                         />
 
-                        {/* Icon Selection */}
                         <TouchableOpacity
                             style={styles.iconSelector}
                             onPress={() => setShowIcons(!showIcons)}
@@ -179,14 +149,42 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             </View>
                         )}
 
-                        <CategoriesManager
-                            collectionName="new"
-                            collectionCategories={{ new: categories }}
-                            onAddCategory={handleAddCategory}
-                            onRemoveCategory={handleRemoveCategory}
-                        />
+                        <View style={styles.categoriesSection}>
+                            <Text style={styles.sectionTitle}>{t('labels.categories')}</Text>
 
-                        {/* Close button with border radius 20 */}
+                            <View style={styles.categoriesList}>
+                                {categories.map((category, index) => (
+                                    <View key={index} style={styles.categoryItem}>
+                                        <Text style={styles.categoryText}>{category}</Text>
+                                        <TouchableOpacity onPress={() => handleRemoveCategory(category)}>
+                                            <MaterialIcons name="close" size={16} color={colors.error} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+
+                            <View style={styles.addCategoryContainer}>
+                                <TextInput
+                                    style={styles.categoryInput}
+                                    placeholder={t('placeholders.addCategory')}
+                                    value={newCategory}
+                                    onChangeText={setNewCategory}
+                                    onSubmitEditing={handleAddCategory}
+                                />
+                                <TouchableOpacity
+                                    style={styles.addCategoryButton}
+                                    onPress={handleAddCategory}
+                                    disabled={!newCategory.trim()}
+                                >
+                                    <MaterialIcons
+                                        name="add"
+                                        size={24}
+                                        color={newCategory.trim() ? colors.primary : colors.gray}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={onClose}
@@ -197,7 +195,6 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             </View>
                         </TouchableOpacity>
 
-                        {/* Full width confirm button */}
                         <TouchableOpacity
                             style={[styles.confirmButton, !localCollectionName.trim() && styles.disabledButton]}
                             onPress={handleConfirm}
@@ -205,9 +202,7 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             activeOpacity={0.7}
                         >
                             <LinearGradient
-                                colors={!localCollectionName.trim() ?
-                                    [colors.primary, colors.primary] :
-                                    [colors.primary, colors.primary]}
+                                colors={[colors.primary, colors.primary]}
                                 style={styles.buttonGradient}
                             >
                                 <Text style={styles.confirmButtonText}>{t('buttons.add')}</Text>
@@ -353,6 +348,57 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    categoriesSection: {
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        color: colors.secondary,
+        marginBottom: 8,
+    },
+    categoriesList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 12,
+    },
+    categoryItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.gray,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    categoryText: {
+        fontSize: 14,
+        color: colors.grayDark,
+        marginRight: 4,
+    },
+    addCategoryContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    categoryInput: {
+        flex: 1,
+        height: 40,
+        borderWidth: 1,
+        borderColor: colors.gray,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        marginRight: 8,
+    },
+    addCategoryButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.gray,
     },
 });
 

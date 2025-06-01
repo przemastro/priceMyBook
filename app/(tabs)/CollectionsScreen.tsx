@@ -277,6 +277,8 @@ const CollectionsScreen = () => {
                 isbn: book.isbn,
                 title: book.title,
                 authors: book.authors,
+                publisher: book.publisher || '', // Add publisher
+                description: book.description || '', // Add description
                 originalPrice: book.originalPrice,
                 fromHistory: 'false',
                 editMode: 'true',

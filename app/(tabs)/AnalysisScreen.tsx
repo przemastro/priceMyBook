@@ -643,14 +643,13 @@ export default function AnalysisScreen() {
     const bookData = {
       isbn: isbnInput,
       title: titleInput,
-      imageUri: bookImage, // Dodane przekazanie obrazka
       authors: authors,
       publisher: publisher,
       price: priceValue,
       displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
       originalPrice: originalPriceInput,
-      description: description, // Dodane przekazanie opisu
+      description: description,
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
         ...acc,
         [defect.id]: {
