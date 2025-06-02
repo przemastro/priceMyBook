@@ -34,6 +34,7 @@ import UniquenessSection from "@/app/components/analysisScreen/sections/Uniquene
 import MarketFactorsSection from "@/app/components/analysisScreen/sections/MarketFactorsSection";
 import {LinearGradient} from "expo-linear-gradient";
 import {CustomAlertModal} from "@/app/components/alerts/CustomAlertModal";
+import {LIMITS} from "@/app/utils/constants";
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -635,6 +636,15 @@ export default function AnalysisScreen() {
 
 
   const handleSaveBook = () => {
+    const currentBooksCount = books[selectedCollection]?.length || 0;
+    if (currentBooksCount >= LIMITS.MAX_BOOKS_PER_COLLECTION) {
+      showAlert(
+          t('alerts.error'),
+          t('alerts.bookLimitReached', { limit: LIMITS.MAX_BOOKS_PER_COLLECTION }),
+          'error'
+      );
+      return;
+    }
     const priceValue = finalPrice.toFixed(2);
     const defaultListingStatus: ListingStatus = {
       status: 'notListed',

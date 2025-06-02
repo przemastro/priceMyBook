@@ -1,0 +1,4 @@
+export const LIMITS = {
+    MAX_COLLECTIONS: 5,
+    MAX_BOOKS_PER_COLLECTION: 10
+};

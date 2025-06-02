@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getExchangeRate, ExchangeRateResult } from '@/services/currencyService';
 import i18n from '@/app/i18n/config';
+import { LIMITS } from '@/app/utils/constants';
+import {t} from "i18next";
+import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
+
 
 interface BookDefect {
     selected: boolean;
@@ -136,6 +140,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
     const [updateTrigger, setUpdateTrigger] = useState(0);
     const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        type: 'error' as 'info' | 'success' | 'error' | 'warning'
+    });
 
     const forceUpdateCollections = useCallback(() => {
         setUpdateTrigger(prev => prev + 1);
@@ -226,6 +236,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const addCollection = useCallback((name: string, icon: string = 'book', initialCategories: string[] = []) => {
         if (!name.trim()) return;
 
+        if (collections.length >= LIMITS.MAX_COLLECTIONS) {
+            setAlertConfig({
+                visible: true,
+                title: t('alerts.error'),
+                message: t('alerts.collectionLimitReached', { limit: LIMITS.MAX_COLLECTIONS }),
+                type: 'error'
+            });
+            return;
+        }
+
         setCollections(prev => [...prev, {
             name,
             icon,
@@ -234,9 +254,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
         setCollectionCategories(prev => ({
             ...prev,
-            [name]: initialCategories // Tutaj ustawiasz kategorie dla nowej kolekcji
+            [name]: initialCategories
         }));
-    }, []);
+    }, [collections.length, t]);
 
     const renameCollection = useCallback(async (oldName: string, newName: string, categories: string[] = [], icon: string = 'book') => {
         if (!newName.trim() || oldName === newName) return;
@@ -316,6 +336,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         collectionName: string,
         bookData: Omit<BookData, 'createdAt'>
     ) => {
+        if (books[collectionName]?.length >= LIMITS.MAX_BOOKS_PER_COLLECTION) {
+            setAlertConfig({
+                visible: true,
+                title: t('alerts.error'),
+                message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_BOOKS_PER_COLLECTION }),
+                type: 'error'
+            });
+            return;
+        }
+
         setBooks(prev => {
             const newBooks = { ...prev };
             if (!newBooks[collectionName]) {
@@ -341,7 +371,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 [collectionName]: [...newBooks[collectionName], bookWithDefaults]
             };
         });
-    }, [formatCurrency]);
+    }, [books, formatCurrency, t]);
 
     const addBooksToCollection = useCallback(async (
         collectionName: string,
@@ -482,6 +512,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }}
         >
             {children}
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
         </AppContext.Provider>
     );
 };
