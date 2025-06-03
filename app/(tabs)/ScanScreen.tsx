@@ -460,28 +460,6 @@ export default function ScanScreen() {
                       : StyleSheet.absoluteFillObject
                 }
             >
-              <View style={styles.limitsContainer}>
-                <View style={styles.limitItem}>
-                  <Text style={styles.limitText}>
-                    {t('limits.collections')}: {collections.length}/{LIMITS.MAX_COLLECTIONS}
-                  </Text>
-                  <ProgressBar
-                      progress={collectionProgress}
-                      color={collectionProgress >= 1 ? colors.error : colors.primary}
-                      style={styles.progressBar}
-                  />
-                </View>
-                <View style={styles.limitItem}>
-                  <Text style={styles.limitText}>
-                    {t('limits.books')}: {totalBooks}/{LIMITS.MAX_TOTAL_BOOKS}
-                  </Text>
-                  <ProgressBar
-                      progress={booksProgress}
-                      color={booksProgress >= 1 ? colors.error : colors.primary}
-                      style={styles.progressBar}
-                  />
-                </View>
-              </View>
               <CameraOverlay
                   pulseAnim={pulseAnim}
                   onManualEntryPress={() => setIsManualMode(true)}

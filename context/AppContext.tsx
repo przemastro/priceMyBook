@@ -9,8 +9,6 @@ export const LIMITS = {
     MAX_COLLECTIONS: 1,
     MAX_TOTAL_BOOKS: 5,
     MAX_BOOKS_PER_COLLECTION: 5,
-    MAX_AMAZON_REQUESTS: 10,
-    AMAZON_RESET_DAY: 1
 };
 
 interface BookDefect {
