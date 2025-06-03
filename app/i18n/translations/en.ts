@@ -43,7 +43,10 @@ export default {
         rateLimitTitle: "Request Limit",
         rateLimitMessage: "The weekly limit of {limit} requests to the Amazon API has been reached. The limit will reset on Monday.",
         imageSizeLimit: "Image size must be less than 200KB",
-        imageUploadError: "Failed to upload image"
+        imageUploadError: "Failed to upload image",
+        amazonLimitReached: 'You have reached the maximum number of Amazon API requests ({{limit}}). The limit will reset on Monday. Until then, you can only scan books that are already in your collections.',
+        collectionLimitReached: 'You have reached the maximum number of collections ({{limit}}). To scan new books, please delete an existing collection or add the book to an existing collection.',
+        bookLimitReached: 'You have reached the maximum number of books ({{limit}}) in this collection. To scan new books, please delete some books or add to another collection.',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -310,7 +313,16 @@ export default {
     rateLimit: {
         noData: "No rate limit data available",
         status: "Used {{used}} out of {{limit}} requests. Remaining: {{remaining}}. Reset: {{resetDate}}",
-        error: "Error while checking the rate limit"
+        error: "Error while checking the rate limit",
+        statusHeader: 'Usage Limits',
+        collections: 'Collections',
+        books: 'Books',
+        perCollection: 'per collection',
+        amazonRequests: 'Amazon API Requests',
+        remaining: 'remaining',
+        remainingPerCollection: 'remaining per collection',
+        resetOn: 'Resets on',
+        allLimitsReset: 'All limits reset weekly on Monday',
     },
     stepTitles: {
         scanForDefects: "SCAN FOR DEFECTS",

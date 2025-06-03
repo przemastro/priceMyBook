@@ -2,10 +2,16 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getExchangeRate, ExchangeRateResult } from '@/services/currencyService';
 import i18n from '@/app/i18n/config';
-import { LIMITS } from '@/app/utils/constants';
-import {t} from "i18next";
+import { t } from "i18next";
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
 
+export const LIMITS = {
+    MAX_COLLECTIONS: 1,
+    MAX_TOTAL_BOOKS: 5,
+    MAX_BOOKS_PER_COLLECTION: 5,
+    MAX_AMAZON_REQUESTS: 10,
+    AMAZON_RESET_DAY: 1
+};
 
 interface BookDefect {
     selected: boolean;
@@ -47,9 +53,9 @@ interface BookData {
     displayPrice: string;
     foundInApi: boolean;
     originalPrice: string;
-    description?: string; // Dodane
-    publisher?: string; // Dodane
-    imageUri?: string; // Dodane
+    description?: string;
+    publisher?: string;
+    imageUri?: string;
     defects: Record<string, BookDefect>;
     createdAt: string;
     rating: number;
@@ -94,6 +100,14 @@ interface AppContextType {
     ) => Promise<void>;
     selectedCollection: string | null;
     setSelectedCollection: (collection: string | null) => void;
+    checkGlobalLimits: () => {
+        collectionLimitReached: boolean;
+        booksLimitReached: boolean;
+        canAddMoreCollections: boolean;
+        canAddMoreBooks: boolean;
+        totalBooks: number;
+        totalCollections: number;
+    };
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -151,7 +165,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUpdateTrigger(prev => prev + 1);
     }, []);
 
-    // Load all persisted data on app start
+    const checkGlobalLimits = useCallback(() => {
+        const totalBooks = Object.values(books).reduce((sum, collection) => sum + collection.length, 0);
+        const collectionLimitReached = collections.length >= LIMITS.MAX_COLLECTIONS;
+        const booksLimitReached = totalBooks >= LIMITS.MAX_TOTAL_BOOKS;
+
+        return {
+            collectionLimitReached,
+            booksLimitReached,
+            canAddMoreCollections: !collectionLimitReached,
+            canAddMoreBooks: !booksLimitReached,
+            totalBooks,
+            totalCollections: collections.length
+        };
+    }, [books, collections.length]);
+
     useEffect(() => {
         const loadPersistedData = async () => {
             try {
@@ -185,7 +213,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loadPersistedData();
     }, []);
 
-    // Persist data changes
     useEffect(() => {
         AsyncStorage.setItem(STORAGE_KEYS.SCAN_HISTORY, JSON.stringify(scanHistory));
     }, [scanHistory]);
@@ -236,7 +263,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const addCollection = useCallback((name: string, icon: string = 'book', initialCategories: string[] = []) => {
         if (!name.trim()) return;
 
-        if (collections.length >= LIMITS.MAX_COLLECTIONS) {
+        const { collectionLimitReached } = checkGlobalLimits();
+        if (collectionLimitReached) {
             setAlertConfig({
                 visible: true,
                 title: t('alerts.error'),
@@ -256,7 +284,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ...prev,
             [name]: initialCategories
         }));
-    }, [collections.length, t]);
+    }, [checkGlobalLimits, t]);
 
     const renameCollection = useCallback(async (oldName: string, newName: string, categories: string[] = [], icon: string = 'book') => {
         if (!newName.trim() || oldName === newName) return;
@@ -336,11 +364,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         collectionName: string,
         bookData: Omit<BookData, 'createdAt'>
     ) => {
-        if (books[collectionName]?.length >= LIMITS.MAX_BOOKS_PER_COLLECTION) {
+        const { booksLimitReached } = checkGlobalLimits();
+        if (booksLimitReached) {
             setAlertConfig({
                 visible: true,
                 title: t('alerts.error'),
-                message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_BOOKS_PER_COLLECTION }),
+                message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }),
                 type: 'error'
             });
             return;
@@ -371,12 +400,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 [collectionName]: [...newBooks[collectionName], bookWithDefaults]
             };
         });
-    }, [books, formatCurrency, t]);
+    }, [checkGlobalLimits, formatCurrency, t]);
 
     const addBooksToCollection = useCallback(async (
         collectionName: string,
         booksData: Array<Omit<BookData, 'createdAt'>>
     ) => {
+        const { booksLimitReached } = checkGlobalLimits();
+        if (booksLimitReached) {
+            setAlertConfig({
+                visible: true,
+                title: t('alerts.error'),
+                message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }),
+                type: 'error'
+            });
+            return Promise.reject(new Error('Book limit reached'));
+        }
+
         return new Promise<void>((resolve) => {
             setBooks(prev => {
                 const newBooks = { ...prev };
@@ -405,7 +445,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
             resolve();
         });
-    }, [formatCurrency]);
+    }, [checkGlobalLimits, formatCurrency, t]);
 
     const updateBookInCollection = useCallback((
         collectionName: string,
@@ -509,6 +549,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 forceUpdateCollections,
                 selectedCollection,
                 setSelectedCollection,
+                checkGlobalLimits
             }}
         >
             {children}

@@ -7,17 +7,14 @@ import {
     ActivityIndicator,
     StyleSheet,
     Text,
-    Modal,
-    Image
+    Modal
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BookInfo } from './types';
 import { colors } from '@/styles/styles';
 import { BookInfoDisplay } from './BookInfoDisplay';
 import { AmazonPriceButtons } from './AmazonPriceButtons';
-import { RateLimitStatus } from './RateLimitStatus';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialIcons } from '@expo/vector-icons';
 
 interface ScanResultModalProps {
     visible: boolean;
@@ -74,7 +71,6 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                         ) : (
                             <>
                                 <BookInfoDisplay bookInfo={bookInfo} isbn={isbn} />
-                                <RateLimitStatus style={styles.rateLimitContainer} />
 
                                 <View style={styles.priceInputContainer}>
                                     {bookInfo?.price && (
@@ -159,7 +155,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 16,
         right: 16,
-        zIndex: 1, // Ensure it's above other elements
+        zIndex: 1,
     },
     closeButtonCircle: {
         width: 32,
@@ -225,13 +221,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
-    },
-    rateLimitContainer: {
-        position: 'absolute',
-        marginTop: 80,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 5,
-        padding: 5,
-        width: 320
     },
 });

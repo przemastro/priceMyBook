@@ -39,7 +39,10 @@ export default {
         rateLimitTitle: "Limit requestów",
         rateLimitMessage: "Osiągnięto limit {limit} requestów tygodniowo do Amazon API. Limit zostanie zresetowany w poniedziałek.",
         imageSizeLimit: "Rozmiar obrazu musi być mniejszy niż 200KB",
-        imageUploadError: "Błąd podczas przesyłania obrazu"
+        imageUploadError: "Błąd podczas przesyłania obrazu",
+        amazonLimitReached: 'Osiągnięto maksymalną liczbę requestów do Amazon API ({{limit}}). Limit zostanie zresetowany w poniedziałek. Do tego czasu możesz skanować tylko książki, które są już w Twoich księgozbiorach.',
+        collectionLimitReached: 'Osiągnięto maksymalną liczbę księgozbiorów ({{limit}}). Aby skanować nowe książki, usuń istniejący księgozbiór lub dodaj książkę do istniejącego księgozbioru.',
+        bookLimitReached: 'Osiągnięto maksymalną liczbę książek ({{limit}}) w tym księgozbiorze. Aby skanować nowe książki, usuń niektóre książki lub dodaj do innego księgozbioru.',
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -304,7 +307,16 @@ export default {
     rateLimit: {
         noData: "Brak danych o limitach",
         status: "Użyto {{used}} z {{limit}} requestów. Pozostało: {{remaining}}. Reset: {{resetDate}}",
-        error: "Błąd podczas sprawdzania limitu"
+        error: "Błąd podczas sprawdzania limitu",
+        statusHeader: 'Limity wykorzystania',
+        collections: 'Księgozbiory',
+        books: 'Książki',
+        perCollection: 'na księgozbiór',
+        amazonRequests: 'Requesty Amazon API',
+        remaining: 'pozostało',
+        remainingPerCollection: 'pozostało na księgozbiór',
+        resetOn: 'Reset w dniu',
+        allLimitsReset: 'Wszystkie limity resetują się w każdy poniedziałek',
     },
     stepTitles: {
         scanForDefects: "WYSZUKAJ WADY KSIĄŻKI",

@@ -1,23 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Modal,
-  View,
-  ActivityIndicator,
-  Text,
-  Dimensions,
-  Platform,
-  Alert,
-  StyleSheet,
-  TouchableOpacity
-} from 'react-native';
+import { Modal, View, ActivityIndicator, Text, Dimensions, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import Animated, {
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
+import { ProgressBar, useTheme } from 'react-native-paper';
 import { useAppContext } from '@/context/AppContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -28,12 +13,11 @@ import { BookInfo, BookUniqueness, MarketFactors, BookAgeInfo } from '../compone
 import { CameraOverlay } from '../components/scanScreen/CameraOverlay';
 import { ManualEntryModal } from '../components/scanScreen/ManualEntryModal';
 import { ScanResultModal } from '../components/scanScreen/ScanResultModal';
-import { RateLimitStatus } from '../components/scanScreen/RateLimitStatus';
-
+import { LIMITS } from '../utils/constants';
+import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
 
 const { width, height } = Dimensions.get('window');
 
-// Default values
 const defaultUniqueness: BookUniqueness = {
   isMassMarket: false,
   isFirstEdition: false,
@@ -55,8 +39,9 @@ const defaultAgeInfo: BookAgeInfo = {
 
 export default function ScanScreen() {
   const { t, i18n } = useTranslation();
-  const { isbn, setISBN, addToScanHistory, exchangeRate } = useAppContext();
+  const { isbn, setISBN, addToScanHistory, exchangeRate, books, collections, checkGlobalLimits } = useAppContext();
   const router = useRouter();
+  const theme = useTheme();
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
@@ -69,6 +54,12 @@ export default function ScanScreen() {
   const [currentLang, setCurrentLang] = useState(i18n.language);
   const [isManualMode, setIsManualMode] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'error' as 'info' | 'success' | 'error' | 'warning'
+  });
 
   const pulseAnim = useSharedValue(1);
 
@@ -99,7 +90,12 @@ export default function ScanScreen() {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
       setHasPermission(status === 'granted');
       if (status !== 'granted') {
-        Alert.alert(t('alerts.error'), t('status.noCameraAccess'));
+        setAlertConfig({
+          visible: true,
+          title: t('alerts.error'),
+          message: t('status.noCameraAccess'),
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error('Error getting camera permission:', error);
@@ -121,7 +117,6 @@ export default function ScanScreen() {
   useFocusEffect(
       useCallback(() => {
         let isActive = true;
-
         const prepareScanner = async () => {
           try {
             await getBarCodeScannerPermissions();
@@ -132,23 +127,45 @@ export default function ScanScreen() {
             console.error('Error preparing scanner:', error);
           }
         };
-
         prepareScanner();
-
         return () => {
           isActive = false;
         };
       }, [resetScanner])
   );
 
+  const checkLimits = () => {
+    const { totalBooks, booksLimitReached, collectionLimitReached } = checkGlobalLimits();
+    const collectionProgress = collections.length / LIMITS.MAX_COLLECTIONS;
+    const booksProgress = totalBooks / LIMITS.MAX_TOTAL_BOOKS;
+
+    return {
+      collectionProgress,
+      booksProgress,
+      collectionLimitReached,
+      booksLimitReached,
+      totalBooks
+    };
+  };
+
   const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     if (scanned) return;
+
+    const { booksLimitReached } = checkLimits();
+    if (booksLimitReached) {
+      setAlertConfig({
+        visible: true,
+        title: t('alerts.error'),
+        message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }),
+        type: 'error'
+      });
+      return;
+    }
 
     setScanned(true);
     setISBN(data);
     setLoading(true);
     setModalVisible(true);
-
     addToScanHistory({
       isbn: data,
       title: t('status.searching'),
@@ -164,17 +181,13 @@ export default function ScanScreen() {
       marketFactors: defaultMarketFactors,
       ageInfo: defaultAgeInfo
     });
-
     try {
       let book = await fetchBookInfoFromGoogleAPI(data);
-
       if (!book) {
         book = await fetchBookInfoFromAmazon(data, i18n.language);
       }
-
       if (book) {
         setBookInfo(book);
-
         if (book.source === 'google' && !book.price) {
           const amazonData = await fetchBookPriceFromAmazonAPI(data, i18n.language);
           if (amazonData.prices.length > 0) {
@@ -185,7 +198,6 @@ export default function ScanScreen() {
             }));
           }
         }
-
         addToScanHistory({
           isbn: data,
           title: book.title || t('bookInfo.notFound'),
@@ -231,14 +243,29 @@ export default function ScanScreen() {
 
   const handleManualSubmit = async () => {
     if (!manualISBN.trim()) {
-      Alert.alert(t('alerts.error'), t('alerts.enterISBN'));
+      setAlertConfig({
+        visible: true,
+        title: t('alerts.error'),
+        message: t('alerts.enterISBN'),
+        type: 'error'
+      });
+      return;
+    }
+
+    const { booksLimitReached } = checkLimits();
+    if (booksLimitReached) {
+      setAlertConfig({
+        visible: true,
+        title: t('alerts.error'),
+        message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }),
+        type: 'error'
+      });
       return;
     }
 
     setISBN(manualISBN);
     setModalVisible(true);
     setLoading(true);
-
     addToScanHistory({
       isbn: manualISBN,
       title: t('status.searching'),
@@ -254,17 +281,13 @@ export default function ScanScreen() {
       marketFactors: defaultMarketFactors,
       ageInfo: defaultAgeInfo
     });
-
     try {
       let book = await fetchBookInfoFromGoogleAPI(manualISBN);
-
       if (!book) {
         book = await fetchBookInfoFromAmazon(manualISBN, i18n.language);
       }
-
       if (book) {
         setBookInfo(book);
-
         if (book.source === 'google' && !book.price) {
           const amazonData = await fetchBookPriceFromAmazonAPI(manualISBN, i18n.language);
           if (amazonData.prices.length > 0) {
@@ -275,7 +298,6 @@ export default function ScanScreen() {
             }));
           }
         }
-
         addToScanHistory({
           isbn: manualISBN,
           title: book.title || t('bookInfo.notFound'),
@@ -320,7 +342,6 @@ export default function ScanScreen() {
     let priceValue = manualPrice;
     let priceSource = 'manual';
     let currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
-
     if (selectedPrice !== null) {
       priceValue = selectedPrice.toString();
       priceSource = 'amazon';
@@ -332,13 +353,16 @@ export default function ScanScreen() {
       currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
     }
     else if (!priceValue) {
-      Alert.alert(t('alerts.error'), t('alerts.enterPrice'));
+      setAlertConfig({
+        visible: true,
+        title: t('alerts.error'),
+        message: t('alerts.enterPrice'),
+        type: 'error'
+      });
       return;
     }
-
     let numericPrice = parseFloat(priceValue);
     let displayPrice = '';
-
     if (i18n.language === 'pl') {
       if (currency === 'USD') {
         numericPrice = numericPrice * exchangeRate;
@@ -350,7 +374,6 @@ export default function ScanScreen() {
       }
       displayPrice = `$${numericPrice.toFixed(2)}`;
     }
-
     addToScanHistory({
       isbn: isbn!,
       title: bookInfo?.title || t('bookInfo.manualEntry'),
@@ -366,7 +389,6 @@ export default function ScanScreen() {
       marketFactors: defaultMarketFactors,
       ageInfo: defaultAgeInfo
     });
-
     router.push({
       pathname: '/AnalysisScreen',
       params: {
@@ -416,6 +438,8 @@ export default function ScanScreen() {
     );
   }
 
+  const { collectionProgress, booksProgress, totalBooks } = checkLimits();
+
   return (
       <View style={styles.fullScreenContainer}>
         {!isManualMode && !scanned && (
@@ -436,13 +460,34 @@ export default function ScanScreen() {
                       : StyleSheet.absoluteFillObject
                 }
             >
+              <View style={styles.limitsContainer}>
+                <View style={styles.limitItem}>
+                  <Text style={styles.limitText}>
+                    {t('limits.collections')}: {collections.length}/{LIMITS.MAX_COLLECTIONS}
+                  </Text>
+                  <ProgressBar
+                      progress={collectionProgress}
+                      color={collectionProgress >= 1 ? colors.error : colors.primary}
+                      style={styles.progressBar}
+                  />
+                </View>
+                <View style={styles.limitItem}>
+                  <Text style={styles.limitText}>
+                    {t('limits.books')}: {totalBooks}/{LIMITS.MAX_TOTAL_BOOKS}
+                  </Text>
+                  <ProgressBar
+                      progress={booksProgress}
+                      color={booksProgress >= 1 ? colors.error : colors.primary}
+                      style={styles.progressBar}
+                  />
+                </View>
+              </View>
               <CameraOverlay
                   pulseAnim={pulseAnim}
                   onManualEntryPress={() => setIsManualMode(true)}
               />
             </BarCodeScanner>
         )}
-
         <ManualEntryModal
             visible={isManualMode}
             onRequestClose={() => setIsManualMode(false)}
@@ -450,7 +495,6 @@ export default function ScanScreen() {
             manualISBN={manualISBN}
             setManualISBN={setManualISBN}
         />
-
         <ScanResultModal
             visible={modalVisible}
             onRequestClose={handleCancel}
@@ -463,6 +507,13 @@ export default function ScanScreen() {
             selectedPrice={selectedPrice}
             setSelectedPrice={setSelectedPrice}
             currentLang={currentLang}
+        />
+        <CustomAlertModal
+            visible={alertConfig.visible}
+            title={alertConfig.title}
+            message={alertConfig.message}
+            type={alertConfig.type}
+            onConfirm={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
         />
       </View>
   );
@@ -499,5 +550,27 @@ const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  limitsContainer: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  limitItem: {
+    marginBottom: 8,
+  },
+  limitText: {
+    color: 'white',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
 });
