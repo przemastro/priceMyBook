@@ -4,15 +4,16 @@ import { Tabs } from 'expo-router';
 import { useColorScheme } from '@/app/components/useColorScheme';
 import { AppProvider } from '@/context/AppContext';
 import { useTranslation } from 'react-i18next';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { colors } from "@/styles/styles";
-
+import { Svg, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import {Ionicons} from "@expo/vector-icons";
 
 function TabBarIcon(props: {
     name: React.ComponentProps<typeof FontAwesome>['name'];
     color: string;
 }) {
-    return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
+    return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -29,24 +30,46 @@ export default function TabLayout() {
             <Tabs
                 initialRouteName="tabOne"
                 screenOptions={{
-                    tabBarActiveTintColor: colors.primary, // Wymuszamy kolor primary
-                    tabBarInactiveTintColor: '#8e8e93', // Szary dla nieaktywnych
+                    tabBarActiveTintColor: colors.primary,
+                    tabBarInactiveTintColor: '#8e8e93',
                     headerShown: false,
                     tabBarStyle: {
                         ...styles.tabBar,
-                        backgroundColor: '#ffffff', // Stałe białe tło niezależne od motywu
-                        borderTopWidth: 0,
-                        shadowColor: '#000',
-                        shadowOffset: {
-                            width: 0,
-                            height: -2, // Cień od góry
-                        },
-                        shadowOpacity: 0.08,
-                        shadowRadius: 4,
-                        elevation: 8, // Dla Androida
+                        backgroundColor: 'transparent',
+                        borderTopWidth: 1,
+                        borderTopColor: colors.white,
+                        elevation: 0,
                     },
+                    tabBarBackground: () => (
+                        <View style={styles.tabBarBackground}>
+                            {/* Górna część z białym tłem */}
+                            <View style={styles.topBackground} />
+
+                            {/* Łuk z gradientem */}
+                            <View style={styles.arcContainer}>
+                                <Svg width="100%" height={125} viewBox="0 0 100 15" preserveAspectRatio="none">
+                                    <Defs>
+                                        <LinearGradient id="gradient" x1="0" y1="0" x2="0" y2="0">
+                                            <Stop offset="0%" stopColor="#f8f9ff" />
+                                            <Stop offset="100%" stopColor="#f8f9ff" />
+                                        </LinearGradient>
+                                    </Defs>
+                                    <Path
+                                        d="M0 0
+                                           H30
+                                           C38 0, 40 5, 50 5
+                                           C60 5, 62 0, 70 0
+                                           H100"
+                                        fill="url(#gradient)"
+                                    />
+                                </Svg>
+                            </View>
+
+                            {/* Dolna część z białym tłem i cieniem */}
+                            <View style={styles.bottomBackground} />
+                        </View>
+                    ),
                     tabBarLabelStyle: styles.tabBarLabel,
-                    tabBarItemStyle: styles.tabBarItem,
                 }}
             >
                 <Tabs.Screen
@@ -59,6 +82,7 @@ export default function TabLayout() {
                                 color={focused ? colors.primary : color}
                             />
                         ),
+                        tabBarItemStyle: styles.regularTabItem,
                     }}
                 />
                 <Tabs.Screen
@@ -71,18 +95,26 @@ export default function TabLayout() {
                                 color={focused ? colors.primary : color}
                             />
                         ),
+                        tabBarItemStyle: styles.regularTabItem,
                     }}
                 />
                 <Tabs.Screen
                     name="ScanScreen"
                     options={{
-                        title: t('titlesShort.scan'),
+                        title: '',
                         tabBarIcon: ({ color, focused }) => (
-                            <TabBarIcon
-                                name="camera"
-                                color={focused ? colors.primary : color}
-                            />
+                            <View style={[
+                                styles.scanButton,
+                                focused && styles.scanButtonActive
+                            ]}>
+                                <Ionicons
+                                    name="scan"
+                                    size={30}
+                                    color={focused ? colors.white : colors.white}
+                                />
+                            </View>
                         ),
+                        tabBarItemStyle: styles.scanTabItem,
                     }}
                 />
                 <Tabs.Screen
@@ -95,6 +127,7 @@ export default function TabLayout() {
                                 color={focused ? colors.primary : color}
                             />
                         ),
+                        tabBarItemStyle: styles.regularTabItem,
                     }}
                 />
                 <Tabs.Screen
@@ -107,6 +140,7 @@ export default function TabLayout() {
                                 color={focused ? colors.primary : color}
                             />
                         ),
+                        tabBarItemStyle: styles.regularTabItem,
                     }}
                 />
             </Tabs>
@@ -114,17 +148,60 @@ export default function TabLayout() {
     );
 }
 
+const ARC_HEIGHT = 15;
+const SCAN_BUTTON_SIZE = 70;
+const SCAN_BUTTON_TOP = -30;
+
 const styles = StyleSheet.create({
     tabBar: {
         height: Platform.select({
-            ios: 80,
+            ios: 70,
             android: 60,
         }),
-        paddingBottom: Platform.select({
-            ios: 20,
-            android: 5,
-        }),
-        paddingTop: 5,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+    },
+    tabBarBackground: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: '100%',
+        backgroundColor: 'transparent',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    topBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '50%',
+        backgroundColor: 'white',
+    },
+    bottomBackground: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '50%',
+        backgroundColor: 'white',
+    },
+    arcContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: ARC_HEIGHT,
+        zIndex: 2,
     },
     tabBarLabel: {
         fontSize: 12,
@@ -134,8 +211,41 @@ const styles = StyleSheet.create({
             android: 5,
         }),
     },
-    tabBarItem: {
+    regularTabItem: {
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+        paddingTop: 10,
+    },
+    scanTabItem: {
+        height: '100%',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        paddingTop: SCAN_BUTTON_TOP,
+        zIndex: 1,
+    },
+    scanButton: {
+        width: SCAN_BUTTON_SIZE,
+        height: SCAN_BUTTON_SIZE,
+        borderRadius: SCAN_BUTTON_SIZE / 2,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.primary,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
+        marginBottom: 40
+    },
+    scanButtonActive: {
+        borderColor: colors.primary,
+        shadowColor: colors.primary,
+        shadowOpacity: 0.2,
     },
 });
