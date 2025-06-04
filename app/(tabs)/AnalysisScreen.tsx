@@ -1233,9 +1233,9 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 100,
+    left: 30,
+    right: 30,
     borderRadius: 10,
     height: 50,
     overflow: 'hidden',

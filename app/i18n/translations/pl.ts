@@ -335,11 +335,12 @@ export default {
         clearAllFields: "Czy na pewno chcesz wyczyścić wszystkie pola?"
     },
     home: {
-        welcome: "Witaj w BookScanner!",
+        welcome: "Witaj w Price My Book!",
         welcomeSubtitle: "Wybierz jedną z opcji aby rozpocząć",
         scanDescription: "Skanuj nowe książki i dodawaj je do kolekcji",
         historyDescription: "Przeglądaj historię zeskanowanych książek",
         analyzeDescription: "Analizuj stan książek i szacuj ich wartość",
-        collectionsDescription: "Zarządzaj swoimi kolekcjami książek"
+        collectionsDescription: "Zarządzaj swoimi kolekcjami książek",
+        more: "Więcej"
     }
 }

@@ -37,7 +37,7 @@ export default function TabLayout() {
                         ...styles.tabBar,
                         backgroundColor: 'transparent',
                         borderTopWidth: 1,
-                        borderTopColor: colors.white,
+                        borderTopColor: colors.background,
                         elevation: 0,
                     },
                     tabBarBackground: () => (

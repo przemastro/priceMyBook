@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 16,
         marginHorizontal: 16,
-        marginVertical: 16,
+        marginVertical: 85,
         alignItems: 'center' as const, // Dodane 'as const' dla typu
         justifyContent: 'center' as const, // Dodane 'as const' dla typu
         shadowColor: colors.blackDark,
