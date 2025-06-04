@@ -159,7 +159,8 @@ export default {
         analyzeCondition: 'Analysis',
         manageCollections: 'Collections',
         history: 'History',
-        editBook: "Analysis"
+        editBook: "Analysis",
+        home: "Home"
     },
     buttons: {
         addToCollection: 'Add to Collection',
@@ -339,4 +340,12 @@ export default {
         title: "Confirmation",
         clearAllFields: "\"Are you sure you want to clear all fields?"
     },
+    home: {
+        welcome: "Witaj w BookScanner!",
+        welcomeSubtitle: "Wybierz jedną z opcji aby rozpocząć",
+        scanDescription: "Skanuj nowe książki i dodawaj je do kolekcji",
+        historyDescription: "Przeglądaj historię zeskanowanych książek",
+        analyzeDescription: "Analizuj stan książek i szacuj ich wartość",
+        collectionsDescription: "Zarządzaj swoimi kolekcjami książek"
+    }
 }

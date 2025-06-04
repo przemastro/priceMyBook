@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
     }, []);
 
     if (showApp) {
-        return <Redirect href="/(tabs)/ScanScreen" />;
+        return <Redirect href="/(tabs)/HomeScreen" />;
     }
 
     return (

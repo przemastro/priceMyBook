@@ -50,12 +50,12 @@ export default function TabLayout() {
                 }}
             >
                 <Tabs.Screen
-                    name="ScanScreen"
+                    name="HomeScreen"
                     options={{
-                        title: t('titlesShort.scan'),
+                        title: t('titlesShort.home'),
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
-                                name="camera"
+                                name="home"
                                 color={focused ? colors.primary : color}
                             />
                         ),
@@ -68,6 +68,18 @@ export default function TabLayout() {
                         tabBarIcon: ({ color, focused }) => (
                             <TabBarIcon
                                 name="history"
+                                color={focused ? colors.primary : color}
+                            />
+                        ),
+                    }}
+                />
+                <Tabs.Screen
+                    name="ScanScreen"
+                    options={{
+                        title: t('titlesShort.scan'),
+                        tabBarIcon: ({ color, focused }) => (
+                            <TabBarIcon
+                                name="camera"
                                 color={focused ? colors.primary : color}
                             />
                         ),
