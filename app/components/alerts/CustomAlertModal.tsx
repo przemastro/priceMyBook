@@ -12,7 +12,6 @@ interface CustomAlertModalProps {
     message: string;
     confirmText?: string;
     onConfirm: () => void;
-    onCancel?: () => void;
     type?: AlertType;
     closeButtonStyle?: any;
     closeButtonTextStyle?: any;
@@ -53,7 +52,7 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
             animationType="fade"
             transparent={true}
             visible={visible}
-            onRequestClose={onConfirm} // Zamknięcie modala po kliknięciu OK lub X
+            onRequestClose={onConfirm}
         >
             <View style={styles.alertModalOverlay}>
                 <View style={styles.alertModalContainer}>
@@ -132,29 +131,16 @@ const styles = StyleSheet.create({
         color: colors.grayDark,
         textAlign: 'center',
     },
-    alertModalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
     alertModalButton: {
         borderRadius: 8,
         overflow: 'hidden',
         width: '100%'
     },
-    alertModalConfirmButton: {
-        flex: 1,
-        backgroundColor: colors.primary
-    },
     alertModalButtonGradient: {
         padding: 12,
         alignItems: 'center',
-        justifyContent: 'center', // Dodaj to jeśli brakuje
-        width: '100%', // Upewnij się że ma pełną szerokość
-    },
-    alertModalConfirmButtonText: {
-        color: colors.white,
-        fontWeight: '500',
+        justifyContent: 'center',
+        width: '100%',
     },
     closeButton: {
         position: 'absolute',

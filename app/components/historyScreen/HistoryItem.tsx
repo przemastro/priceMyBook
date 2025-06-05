@@ -8,7 +8,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 
-type HistoryItemProps = {
+// Dodajemy interfejsy dla brakujących typów
+interface BookUniqueness {
+    isMassMarket: boolean;
+    isFirstEdition: boolean;
+    isCollectorsEdition: boolean;
+    hasAuthorSignature: boolean;
+    isLimitedEdition: boolean;
+    isPublisherDefunct: boolean;
+}
+
+interface MarketFactors {
+    demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
+    supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
+    publicationYear?: number;
+}
+
+interface MarketData {
+    demand: MarketFactors['demand'];
+    supply: MarketFactors['supply'];
+    priceRange: [number, number];
+    priceHistory: { date: string; price: number }[];
+    lastUpdated: Date;
+    source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
+}
+
+interface HistoryItemProps {
     item: {
         isbn: string;
         title?: string;
@@ -16,7 +41,27 @@ type HistoryItemProps = {
         price?: string;
         originalPrice?: string;
         createdAt?: string;
+        marketFactors?: MarketFactors;
+        uniqueness?: BookUniqueness;
+        marketData?: MarketData;
+        publisher?: string;
+        description?: string;
     };
+}
+
+// Dodajemy domyślne wartości
+const defaultUniqueness: BookUniqueness = {
+    isMassMarket: false,
+    isFirstEdition: false,
+    isCollectorsEdition: false,
+    hasAuthorSignature: false,
+    isLimitedEdition: false,
+    isPublisherDefunct: false
+};
+
+const defaultMarketFactors: MarketFactors = {
+    demand: 'medium',
+    supply: 'medium'
 };
 
 const HistoryItem = ({ item }: HistoryItemProps) => {
@@ -40,7 +85,22 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                         averagePrice: item.price,
                         originalPrice: item.originalPrice || item.price,
                         fromHistory: 'true',
-                        editMode: 'true'
+                        editMode: 'true',
+                        marketFactors: JSON.stringify(item.marketFactors || defaultMarketFactors),
+                        uniqueness: JSON.stringify(item.uniqueness || defaultUniqueness),
+                        marketData: item.marketData ? JSON.stringify(item.marketData) : undefined,
+                        bookInfo: JSON.stringify({
+                            title: item.title,
+                            authors: item.authors,
+                            publisher: item.publisher,
+                            description: item.description,
+                            amazonData: item.marketData ? {
+                                data: {
+                                    marketFactors: item.marketFactors,
+                                    priceRange: item.marketData.priceRange
+                                }
+                            } : undefined
+                        })
                     }
                 });
             }}

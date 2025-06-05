@@ -43,6 +43,7 @@ export default {
         amazonLimitReached: 'Osiągnięto maksymalną liczbę requestów do Amazon API ({{limit}}). Limit zostanie zresetowany w poniedziałek. Do tego czasu możesz skanować tylko książki, które są już w Twoich księgozbiorach.',
         collectionLimitReached: 'Osiągnięto maksymalną liczbę księgozbiorów ({{limit}}). Aby skanować nowe książki, usuń istniejący księgozbiór lub dodaj książkę do istniejącego księgozbioru.',
         bookLimitReached: 'Osiągnięto maksymalną liczbę książek ({{limit}}) w tym księgozbiorze. Aby skanować nowe książki, usuń niektóre książki lub dodaj do innego księgozbioru.',
+        collectionDeleted: "Kolekcja '{{collectionName}}' została usunięta",
     },
     bookInfo: {
         isbn: 'ISBN',

@@ -47,6 +47,7 @@ export default {
         amazonLimitReached: 'You have reached the maximum number of Amazon API requests ({{limit}}). The limit will reset on Monday. Until then, you can only scan books that are already in your collections.',
         collectionLimitReached: 'You have reached the maximum number of collections ({{limit}}). To scan new books, please delete an existing collection or add the book to an existing collection.',
         bookLimitReached: 'You have reached the maximum number of books ({{limit}}) in this collection. To scan new books, please delete some books or add to another collection.',
+        collectionDeleted: "Collection '{{collectionName}}' has been deleted",
     },
     bookInfo: {
         isbn: 'ISBN',

@@ -58,13 +58,16 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
     const showDeleteConfirmation = (collectionName: string) => {
         const bookCount = books[collectionName]?.length || 0;
         setAlertTitle(t('alerts.confirmDeleteTitle'));
-        setAlertMessage(t('alerts.confirmDeleteMessage', {
-            collectionName,
-            bookCount
-        }));
+        setAlertMessage(bookCount > 0
+            ? t('alerts.confirmDeleteMessage', { collectionName, bookCount })
+            : t('alerts.confirmEmptyDeleteMessage', { collectionName }));
         setConfirmAction(() => () => {
             onDeleteCollection(collectionName);
             setMenuVisible(null);
+            // Tutaj dodajemy alert o sukcesie
+            setAlertTitle(t('alerts.success'));
+            setAlertMessage(t('alerts.collectionDeleted', { collectionName }));
+            setAlertVisible(true);
         });
         setAlertVisible(true);
     };
@@ -177,11 +180,12 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                 visible={alertVisible}
                 title={alertTitle}
                 message={alertMessage}
-                type="warning"
+                type={alertTitle === t('alerts.confirmDeleteTitle') ? 'warning' : 'success'}
                 onConfirm={() => {
                     confirmAction();
                     setAlertVisible(false);
                 }}
+                confirmText={t('buttons.confirm')}
                 closeButtonStyle={styles.closeButton}
                 closeButtonTextStyle={styles.closeButtonText}
                 buttonFullWidth={true}

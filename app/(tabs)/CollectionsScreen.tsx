@@ -234,18 +234,8 @@ const CollectionsScreen = () => {
     };
 
     const handleDeleteCollection = (collectionName: string) => {
-        const bookCount = books[collectionName]?.length || 0;
-        showAlert(
-            t('alerts.confirmDeleteTitle'),
-            bookCount > 0 ?
-                t('alerts.confirmDeleteMessage', { collectionName, bookCount }) :
-                t('alerts.confirmEmptyDeleteMessage', { collectionName }),
-            'warning',
-            () => {
-                removeCollection(collectionName);
-                if (selectedCollection === collectionName) setSelectedCollection(null);
-            }
-        );
+        removeCollection(collectionName);
+        if (selectedCollection === collectionName) setSelectedCollection(null);
     };
 
     const handleAddCategory = (collectionName: string, category: string) => {

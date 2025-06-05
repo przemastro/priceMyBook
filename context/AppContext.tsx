@@ -4,6 +4,7 @@ import { getExchangeRate, ExchangeRateResult } from '@/services/currencyService'
 import i18n from '@/app/i18n/config';
 import { t } from "i18next";
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
+import {MarketData} from "@/app/components/scanScreen/types";
 
 export const LIMITS = {
     MAX_COLLECTIONS: 1,
@@ -64,6 +65,7 @@ interface BookData {
     ageInfo: BookAgeInfo;
     isExpanded?: boolean;
     listingStatus?: ListingStatus;
+    marketData?: MarketData;
 }
 
 interface AppContextType {
@@ -507,7 +509,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 marketFactors: bookData.marketFactors || defaultMarketFactors,
                 ageInfo: bookData.ageInfo || defaultAgeInfo,
                 listingStatus: bookData.listingStatus || defaultListingStatus,
-                isExpanded: false
+                isExpanded: false,
+                marketData: bookData.marketData
             };
 
             return [newItem, ...prev.filter(item => item.isbn !== bookData.isbn)];
