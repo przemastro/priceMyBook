@@ -6,11 +6,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 
+type TabScreen = 'ScanScreen' | 'HistoryScreen' | 'AnalysisScreen' | 'CollectionsScreen' | 'FinancialReport';
+type NonTabScreen = 'Settings';
+
 type HomeButton = {
     name: React.ComponentProps<typeof Ionicons>['name'];
     title: string;
-    screen: 'ScanScreen' | 'HistoryScreen' | 'AnalysisScreen' | 'CollectionsScreen' | 'FinancialReport' | 'Settings';
+    screen: TabScreen | NonTabScreen;
     iconColor: string;
+    isTab?: boolean;
 };
 
 const COLUMNS = 3;
@@ -29,37 +33,43 @@ const HomeScreen = () => {
             name: 'scan',
             title: t('titlesShort.scan'),
             screen: 'ScanScreen',
-            iconColor: colors.primary
+            iconColor: colors.primary,
+            isTab: true
         },
         {
             name: 'time-outline',
             title: t('titlesShort.history'),
             screen: 'HistoryScreen',
-            iconColor: '#386641'
+            iconColor: '#386641',
+            isTab: true
         },
         {
             name: 'settings-outline',
             title: t('titlesShort.analyzeCondition'),
             screen: 'AnalysisScreen',
-            iconColor: '#184e77'
+            iconColor: '#184e77',
+            isTab: true
         },
         {
             name: 'book-outline',
             title: t('titlesShort.manageCollections'),
             screen: 'CollectionsScreen',
-            iconColor: '#5e548e'
+            iconColor: '#5e548e',
+            isTab: true
         },
         {
             name: 'bar-chart-outline',
             title: t('titlesShort.financialReport'),
             screen: 'FinancialReport',
-            iconColor: '#168aad'
+            iconColor: '#168aad',
+            isTab: true
         },
         {
             name: 'settings-sharp',
             title: t('titlesShort.settings'),
             screen: 'Settings',
-            iconColor: '#184e77'
+            iconColor: '#184e77',
+            isTab: false
         }
     ];
 
@@ -68,6 +78,11 @@ const HomeScreen = () => {
             return text.substring(0, MAX_DESCRIPTION_LENGTH) + '...';
         }
         return text;
+    };
+
+    const navigateToScreen = (screen: TabScreen | NonTabScreen, isTab?: boolean) => {
+        const path = isTab ? `/(tabs)/${screen}` : `/${screen}`;
+        router.push(path as any);
     };
 
     return (
@@ -93,7 +108,7 @@ const HomeScreen = () => {
                                 </Text>
                             </View>
                             <TouchableOpacity
-                                onPress={() => router.push('/(tabs)/Settings')}
+                                onPress={() => navigateToScreen('Settings', false)}
                                 style={styles.moreButton}
                             >
                                 <Text style={styles.moreButtonText}>{t('home.more')}</Text>
@@ -114,7 +129,7 @@ const HomeScreen = () => {
                                     height: buttonSize,
                                     marginHorizontal: BUTTON_MARGIN
                                 }]}
-                                onPress={() => router.push(`/(tabs)/${button.screen}`)}
+                                onPress={() => navigateToScreen(button.screen, button.isTab)}
                                 activeOpacity={0.7}
                             >
                                 <View style={[styles.buttonIconContainer, {backgroundColor: colors.whiteBlue}]}>
@@ -150,12 +165,12 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     headerGradient: {
-        padding: 2, // This creates the border effect
+        padding: 2,
         opacity: 0.85
     },
     headerContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        borderRadius: 18, // Slightly less than headerOuterContainer to account for the border
+        borderRadius: 18,
     },
     header: {
         padding: 20,
@@ -185,11 +200,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
         marginTop: 20
-    },
-    moreButtonGradient: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 8,
     },
     moreButtonText: {
         color: colors.primary,

@@ -70,7 +70,7 @@ function RootLayoutNav() {
   });
 
   const navigateToSettings = () => {
-    router.push('/(tabs)/Settings');
+    router.push('/Settings');
   };
 
   const handleRateApp = () => {
@@ -132,14 +132,7 @@ function RootLayoutNav() {
               onPress={handleRateApp}
               activeOpacity={0.7}
           >
-            <Ionicons name="heart-outline" size={24} color={colors.black} />
-          </TouchableOpacity>
-          <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={navigateToSettings}
-              activeOpacity={0.7}
-          >
-            <Ionicons name="settings-outline" size={24} color={colors.black} />
+            <Ionicons name="heart-outline" size={24} color={colors.blackDark} />
           </TouchableOpacity>
         </View>
       </>

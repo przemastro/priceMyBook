@@ -3,12 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/context/AppContext';
-import { formatCurrency } from './utils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 
-// Dodajemy interfejsy dla brakujących typów
 interface BookUniqueness {
     isMassMarket: boolean;
     isFirstEdition: boolean;
@@ -49,7 +47,6 @@ interface HistoryItemProps {
     };
 }
 
-// Dodajemy domyślne wartości
 const defaultUniqueness: BookUniqueness = {
     isMassMarket: false,
     isFirstEdition: false,
@@ -67,7 +64,6 @@ const defaultMarketFactors: MarketFactors = {
 const HistoryItem = ({ item }: HistoryItemProps) => {
     const router = useRouter();
     const { t } = useTranslation();
-    const { exchangeRate, exchangeRateError } = useAppContext();
     const [isPressed, setIsPressed] = useState(false);
 
     return (
@@ -82,8 +78,6 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                         isbn: item.isbn,
                         title: item.title,
                         authors: item.authors,
-                        averagePrice: item.price,
-                        originalPrice: item.originalPrice || item.price,
                         fromHistory: 'true',
                         editMode: 'true',
                         marketFactors: JSON.stringify(item.marketFactors || defaultMarketFactors),
@@ -113,6 +107,14 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                 end={{ x: 1, y: 0 }}
             >
                 <View style={styles.content}>
+                    <View style={[styles.imagePlaceholder, isPressed && styles.pressedImage]}>
+                        <Ionicons
+                            name="image-outline"
+                            size={28}
+                            color={isPressed ? colors.white : colors.primary}
+                        />
+                    </View>
+
                     <View style={styles.textContainer}>
                         <Text style={[styles.title, isPressed && styles.pressedText]}>
                             {item.title || t('bookInfo.unknownTitle')}
@@ -120,28 +122,6 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                         <Text style={[styles.isbn, isPressed && styles.pressedText]}>
                             ISBN: {item.isbn}
                         </Text>
-
-                        {item.price && item.price !== '0' ? (
-                            <>
-                                <Text style={[styles.price, isPressed && styles.pressedText]}>
-                                    {t('bookInfo.basePrice')}: {formatCurrency(item.price, exchangeRate)}
-                                </Text>
-                                {item.originalPrice && item.originalPrice !== item.price && (
-                                    <Text style={[styles.originalPrice, isPressed && styles.pressedText]}>
-                                        {t('bookInfo.originalPrice')}: {formatCurrency(item.originalPrice, exchangeRate)}
-                                    </Text>
-                                )}
-                                {exchangeRateError && (
-                                    <Text style={styles.rateError}>
-                                        {t('alerts.exchangeRateError')} (1 USD = {exchangeRate.toFixed(2)} PLN)
-                                    </Text>
-                                )}
-                            </>
-                        ) : (
-                            <Text style={[styles.noPrice, isPressed && styles.pressedText]}>
-                                {t('bookInfo.priceNotAvailable')}
-                            </Text>
-                        )}
                     </View>
                     <Ionicons
                         name="chevron-forward"
@@ -174,6 +154,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
+    imagePlaceholder: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    pressedImage: {
+        backgroundColor: colors.primary,
+    },
     textContainer: {
         flex: 1,
     },
@@ -189,28 +181,12 @@ const styles = StyleSheet.create({
     isbn: {
         fontSize: 14,
         color: colors.grayDark,
-        marginBottom: 8,
+        marginBottom: 4,
     },
-    price: {
-        fontSize: 14,
-        color: colors.primary,
-        fontWeight: '500',
-    },
-    originalPrice: {
-        fontSize: 14,
-        color: colors.grayDark,
-        textDecorationLine: 'line-through',
-        marginTop: 4,
-    },
-    noPrice: {
+    authors: {
         fontSize: 14,
         color: colors.grayDark,
         fontStyle: 'italic',
-    },
-    rateError: {
-        fontSize: 12,
-        color: colors.error,
-        marginTop: 4,
     },
 });
 
