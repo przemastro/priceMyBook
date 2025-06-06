@@ -30,7 +30,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                                                             }) => {
     return (
         <LinearGradient
-            colors={[colors.buttonSelected1, colors.buttonSelected2]}
+            colors={['transparent', 'transparent']}
             start={[0, 0]}
             end={[1, 1]}
             style={[styles.ratingOuterContainer, { paddingVertical: 12 }]}

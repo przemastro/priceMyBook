@@ -2,49 +2,64 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 
 type HomeButton = {
-    name: React.ComponentProps<typeof FontAwesome>['name'];
+    name: React.ComponentProps<typeof Ionicons>['name'];
     title: string;
-    description: string;
-    screen: 'ScanScreen' | 'HistoryScreen' | 'AnalysisScreen' | 'CollectionsScreen';
+    screen: 'ScanScreen' | 'HistoryScreen' | 'AnalysisScreen' | 'CollectionsScreen' | 'FinancialReport' | 'Settings';
+    iconColor: string;
 };
 
-const MAX_DESCRIPTION_LENGTH = 100;
+const COLUMNS = 3;
+const BUTTON_MARGIN = 15;
+const MAX_DESCRIPTION_LENGTH = 193;
 
 const HomeScreen = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const { width } = Dimensions.get('window');
-    const buttonSize = width * 0.4;
+
+    const buttonSize = (width - 40 - (BUTTON_MARGIN * (COLUMNS - 1) * 2.7)) / COLUMNS;
 
     const buttons: HomeButton[] = [
         {
-            name: 'camera',
+            name: 'scan',
             title: t('titlesShort.scan'),
-            description: t('home.scanDescription'),
-            screen: 'ScanScreen'
+            screen: 'ScanScreen',
+            iconColor: colors.primary
         },
         {
-            name: 'history',
+            name: 'time-outline',
             title: t('titlesShort.history'),
-            description: t('home.historyDescription'),
-            screen: 'HistoryScreen'
+            screen: 'HistoryScreen',
+            iconColor: '#386641'
         },
         {
-            name: 'cogs',
+            name: 'settings-outline',
             title: t('titlesShort.analyzeCondition'),
-            description: t('home.analyzeDescription'),
-            screen: 'AnalysisScreen'
+            screen: 'AnalysisScreen',
+            iconColor: '#184e77'
         },
         {
-            name: 'book',
+            name: 'book-outline',
             title: t('titlesShort.manageCollections'),
-            description: t('home.collectionsDescription'),
-            screen: 'CollectionsScreen'
+            screen: 'CollectionsScreen',
+            iconColor: '#5e548e'
+        },
+        {
+            name: 'bar-chart-outline',
+            title: t('titlesShort.financialReport'),
+            screen: 'FinancialReport',
+            iconColor: '#168aad'
+        },
+        {
+            name: 'settings-sharp',
+            title: t('titlesShort.settings'),
+            screen: 'Settings',
+            iconColor: '#184e77'
         }
     ];
 
@@ -57,55 +72,63 @@ const HomeScreen = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
-                <View style={styles.descriptionContainer}>
-                    <Text style={styles.welcomeSubtitle}>
-                        {truncateDescription(t('settings.appDescription'))}
-                    </Text>
-                    <TouchableOpacity
-                        onPress={() => router.push('/settings')}
-                        style={styles.moreButton}
-                    >
-                        <LinearGradient
-                            colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                            style={styles.moreButtonGradient}
-                        >
-                            <Text style={styles.moreButtonText}>{t('home.more')}</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
+            <LinearGradient
+                colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                style={styles.backgroundGradient}
+            />
+
+            <View style={styles.headerOuterContainer}>
+                <LinearGradient
+                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                    style={styles.headerGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                >
+                    <View style={styles.headerContainer}>
+                        <View style={styles.header}>
+                            <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
+                            <View style={styles.descriptionContainer}>
+                                <Text style={styles.welcomeSubtitle}>
+                                    {truncateDescription(t('settings.appDescription'))}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => router.push('/(tabs)/Settings')}
+                                style={styles.moreButton}
+                            >
+                                <Text style={styles.moreButtonText}>{t('home.more')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </LinearGradient>
             </View>
 
-            <View style={styles.buttonsContainer}>
-                {buttons.map((button, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        style={[styles.button, { width: buttonSize + 10, height: buttonSize }]}
-                        onPress={() => router.push(`/(tabs)/${button.screen}`)}
-                        activeOpacity={0.7}
-                    >
-                        <LinearGradient
-                            colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                            style={styles.buttonGradient}
-                        >
-                            <View style={styles.buttonIconContainer}>
-                                <LinearGradient
-                                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                    style={styles.iconGradient}
-                                >
-                                    <FontAwesome
+            <View style={styles.servicesContainer}>
+                <Text style={styles.sectionTitle}>{t('home.services')}</Text>
+                <View style={styles.buttonsContainer}>
+                    {buttons.map((button, index) => (
+                        <View key={index} style={styles.buttonWrapper}>
+                            <TouchableOpacity
+                                style={[styles.button, {
+                                    width: buttonSize,
+                                    height: buttonSize,
+                                    marginHorizontal: BUTTON_MARGIN
+                                }]}
+                                onPress={() => router.push(`/(tabs)/${button.screen}`)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.buttonIconContainer, {backgroundColor: colors.whiteBlue}]}>
+                                    <Ionicons
                                         name={button.name}
                                         size={24}
-                                        color={colors.primary}
+                                        color={button.iconColor}
                                     />
-                                </LinearGradient>
-                            </View>
+                                </View>
+                            </TouchableOpacity>
                             <Text style={styles.buttonTitle}>{button.title}</Text>
-                            <Text style={styles.buttonDescription}>{button.description}</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                ))}
+                        </View>
+                    ))}
+                </View>
             </View>
         </View>
     );
@@ -114,27 +137,35 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-        padding: 20,
-        paddingTop: 120
+        padding: 10,
+        paddingTop: 120,
+        position: 'relative',
+    },
+    backgroundGradient: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    headerOuterContainer: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        marginBottom: 30,
+    },
+    headerGradient: {
+        padding: 2, // This creates the border effect
+        opacity: 0.85
+    },
+    headerContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        borderRadius: 18, // Slightly less than headerOuterContainer to account for the border
     },
     header: {
-        marginBottom: 30,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderRadius: 20,
         padding: 20,
-        backgroundColor: colors.white,
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderRadius: 15,
+        marginBottom: 0,
     },
     welcomeTitle: {
         fontSize: 24,
         fontWeight: '700',
-        color: colors.primary,
+        color: colors.blackDark,
         marginBottom: 8,
         textAlign: 'center',
     },
@@ -145,7 +176,7 @@ const styles = StyleSheet.create({
     },
     welcomeSubtitle: {
         fontSize: 16,
-        color: colors.grayDark,
+        color: colors.black,
         flex: 1,
         marginRight: 10,
     },
@@ -153,6 +184,7 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-end',
         borderRadius: 8,
         overflow: 'hidden',
+        marginTop: 20
     },
     moreButtonGradient: {
         paddingVertical: 6,
@@ -162,56 +194,63 @@ const styles = StyleSheet.create({
     moreButtonText: {
         color: colors.primary,
         fontSize: 16,
-        fontWeight: '500'
+        fontWeight: '500',
+    },
+    servicesContainer: {
+        flex: 1,
+        marginTop: 10,
+        backgroundColor: colors.background,
+        padding: 20,
+        borderRadius: 15,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: colors.blackDark,
+        marginBottom: 15,
+        marginLeft: BUTTON_MARGIN,
+        textAlign: 'left'
     },
     buttonsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
+        marginHorizontal: -BUTTON_MARGIN,
+    },
+    buttonWrapper: {
+        alignItems: 'center',
+        marginBottom: 20,
     },
     button: {
         borderRadius: 16,
-        marginBottom: 20,
         overflow: 'hidden',
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-    },
-    buttonGradient: {
-        width: '100%',
-        height: '100%',
-        padding: 16,
-        alignItems: 'center',
+        backgroundColor: colors.white,
         justifyContent: 'center',
+        alignItems: 'center',
     },
     buttonIconContainer: {
-        width: 60,
-        height: 60,
+        width: 50,
+        height: 50,
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
-        overflow: 'hidden',
-    },
-    iconGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 30,
     },
     buttonTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.primary,
-        marginBottom: 6,
-        textAlign: 'center',
-    },
-    buttonDescription: {
-        fontSize: 12,
-        color: colors.grayDark,
+        fontSize: 13,
+        fontWeight: '500',
+        color: colors.black,
+        marginTop: 8,
         textAlign: 'center',
     },
 });

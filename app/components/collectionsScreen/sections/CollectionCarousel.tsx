@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Dimensions, Modal, ActivityIndicator } from 'react-native';
 import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,6 +41,11 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         y: 0,
         opensUpward: false
     });
+    useEffect(() => {
+        if (collections.length > 0 && !selectedCollection) {
+            onSelectCollection(collections[0].name);
+        }
+    }, [collections]);
     const [isProcessing, setIsProcessing] = useState(false);
     const { width, height } = Dimensions.get('window');
     const { collectionCategories } = useAppContext();

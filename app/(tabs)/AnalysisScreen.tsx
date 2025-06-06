@@ -916,11 +916,15 @@ export default function AnalysisScreen() {
   }
 
   return (
-      <View style={{flex: 1}}>
-        <ScrollView
-            contentContainerStyle={[styles.container, {paddingBottom: 80}]}
-            showsVerticalScrollIndicator={false}
-        >
+      <LinearGradient
+          colors={[colors.buttonSelected1, colors.buttonSelected2]}
+          style={{flex: 1}}
+      >
+        <View style={{flex: 1}}>
+          <ScrollView
+              contentContainerStyle={[styles.container, {paddingBottom: 80}]}
+              showsVerticalScrollIndicator={false}
+          >
           <RatingSection
               bookRating={bookRating}
               averageUsedPrice={averageUsedPrice}
@@ -1075,15 +1079,16 @@ export default function AnalysisScreen() {
             onConfirm={handleAddCollection}
         />
       </View>
+      </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 16,
+    padding: 6,
     paddingTop: 82,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
@@ -1258,7 +1263,14 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 0,
     marginLeft: 0,
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
+    borderTopRightRadius: 16,
+    borderTopLeftRadius: 16,
+    shadowColor: colors.lightPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   navArrowContainer: {
     marginLeft: 5,

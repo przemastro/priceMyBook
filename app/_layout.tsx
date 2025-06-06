@@ -70,7 +70,7 @@ function RootLayoutNav() {
   });
 
   const navigateToSettings = () => {
-    router.push('/settings');
+    router.push('/(tabs)/Settings');
   };
 
   const handleRateApp = () => {

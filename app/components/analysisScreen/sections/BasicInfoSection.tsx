@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.8;
-const CARD_HEIGHT = 400;
+const CARD_HEIGHT = Dimensions.get('window').height * 0.5;
 const ACTION_BUTTONS_WIDTH = 60;
 const SCROLL_BUTTON_HEIGHT = 24;
 
@@ -275,6 +275,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
         overflow: 'hidden',
+        marginBottom: 30
     },
     bookCardGradient: {
         flex: 1,

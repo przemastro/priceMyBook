@@ -348,6 +348,7 @@ export default {
         historyDescription: "Przeglądaj historię zeskanowanych książek",
         analyzeDescription: "Analizuj stan książek i szacuj ich wartość",
         collectionsDescription: "Zarządzaj swoimi kolekcjami książek",
-        more: "More"
+        more: "More",
+        services: "Services"
     }
 }

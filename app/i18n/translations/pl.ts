@@ -151,7 +151,7 @@ export default {
         analyzeCondition: 'Analiza',
         manageCollections: 'Księgozbiory',
         history: 'Historia skanowań',
-        editBook: "Analiza stanu książki"
+        editBook: "Analiza stanu książki",
     },
     titlesShort: {
         scan: 'Skanuj ISBN',
@@ -159,7 +159,9 @@ export default {
         manageCollections: 'Księgozbiory',
         history: 'Historia',
         editBook: "Analiza",
-        home: "Home"
+        home: "Home",
+        financialReport: "Raport finansowy",
+        settings: "Settings"
     },
     buttons: {
         addToCollection: 'Dodaj do księgozbioru',
@@ -342,6 +344,7 @@ export default {
         historyDescription: "Przeglądaj historię zeskanowanych książek",
         analyzeDescription: "Analizuj stan książek i szacuj ich wartość",
         collectionsDescription: "Zarządzaj swoimi kolekcjami książek",
-        more: "Więcej"
+        more: "Więcej",
+        services: "Usługi"
     }
 }
