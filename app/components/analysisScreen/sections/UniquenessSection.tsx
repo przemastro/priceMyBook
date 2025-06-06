@@ -15,7 +15,6 @@ const UniquenessSection = ({ uniqueness, onToggleUniqueness }: UniquenessSection
 
     return (
         <View style={styles.combinedSection}>
-            <Text style={styles.stepTitle}>{t('stepTitles.uniqueness')}</Text>
             <FlatList
                 data={UNIQUENESS_TYPES}
                 renderItem={({ item }) => (

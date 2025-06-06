@@ -733,113 +733,114 @@ export default function AnalysisScreen() {
       t('stepTitles.addToCollection')
     ];
 
-    switch (currentStep) {
-      case 0:
-        return (
-            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
-              <View style={styles.combinedSection}>
-                <Text style={styles.stepTitle}>{stepTitles[0]}</Text>
-                <BasicInfoSection
-                    bookImage={bookImage}
-                    title={title}
-                    titleInput={titleInput}
-                    isbn={isbn}
-                    isbnInput={isbnInput}
-                    originalPrice={originalPrice}
-                    authors={authors}
-                    publisher={publisher}
-                    description={description}
-                    onPickImage={pickImage}
-                    onEditPress={openEditModal}
-                    onScanPress={startScanning}
-                    onClearPress={handleClearPress}
-                    formatPrice={(price) => formatCurrency({price, exchangeRate})}
-                    isScanning={isScanning}
-                />
+    return (
+        <View style={styles.stepContainer}>
+          <View style={styles.stepHeader}>
+            <Text style={styles.stepTitle} numberOfLines={1} ellipsizeMode="tail">
+              {stepTitles[currentStep]}
+            </Text>
+
+            <View style={styles.navigationContainer}>
+              {currentStep > 0 ? (
+                  <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
+                    <Ionicons name="chevron-back" size={24} color={colors.primary}/>
+                  </TouchableOpacity>
+              ) : (
+                  <View style={{width: 24}} />
+              )}
+
+              <View style={styles.progressDots}>
+                {Array.from({length: totalSteps}).map((_, i) => (
+                    <View
+                        key={i}
+                        style={[
+                          styles.dot,
+                          i === currentStep ? styles.activeDot : styles.inactiveDot
+                        ]}
+                    />
+                ))}
               </View>
-              <EditBookDetailsModal
-                  visible={showEditModal}
-                  onClose={closeEditModal}
-                  bookImage={bookImage}
-                  titleInput={titleInput}
-                  setTitleInput={setTitleInput}
-                  authors={authors}
-                  setAuthors={setAuthors}
-                  publisher={publisher}
-                  setPublisher={setPublisher}
-                  isbnInput={isbnInput}
-                  setIsbnInput={setIsbnInput}
-                  originalPriceInput={originalPriceInput}
-                  setOriginalPriceInput={setOriginalPriceInput}
-                  description={description}
-                  setDescription={setDescription}
-                  onPickImage={pickImage}
-                  onSave={() => {
-                    if (validateFields()) {
-                      saveTitle();
-                      saveIsbn();
-                      saveOriginalPrice();
-                      closeEditModal();
-                    }
-                  }}
-                  onClearFields={handleClearFields}
-              />
-            </Animated.View>
-        );
 
-      case 1:
-        return (
-            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
-              <DefectsSection
-                  defects={defects}
-                  onToggleDefect={toggleDefectSelection}
-              />
-            </Animated.View>
-        );
+              {currentStep < totalSteps - 1 ? (
+                  <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
+                    <Ionicons name="chevron-forward" size={24} color={colors.primary}/>
+                  </TouchableOpacity>
+              ) : (
+                  <View style={{width: 24}} />
+              )}
+            </View>
+          </View>
 
-      case 2:
-        return (
-            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
-              <UniquenessSection
-                  uniqueness={uniqueness}
-                  onToggleUniqueness={toggleUniquenessSelection}
-              />
-            </Animated.View>
-        );
-
-      case 3:
-        return (
-            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
-              <MarketFactorsSection
-                  marketFactors={MARKET_FACTOR_TOGGLES}
-                  includedMarketFactors={includedMarketFactors}
-                  onToggleMarketFactor={(id) => setIncludedMarketFactors(prev => ({
-                    ...prev,
-                    [id]: !prev[id]
-                  }))}
-                  marketData={marketData}
-              />
-            </Animated.View>
-        );
-
-      case 4:
-        return (
-            <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
-              <CollectionsSection
-                  collections={collections}
-                  books={books}
-                  selectedCollection={selectedCollection}
-                  onSelectCollection={setSelectedCollection}
-                  onAddCollection={() => setShowAddCollectionModal(true)}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-              />
-            </Animated.View>
-        );
-
-      default:
-        return null;
-    }
+          <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
+            {(() => {
+              switch (currentStep) {
+                case 0:
+                  return (
+                      <View style={styles.combinedSection}>
+                        <BasicInfoSection
+                            bookImage={bookImage}
+                            title={title}
+                            titleInput={titleInput}
+                            isbn={isbn}
+                            isbnInput={isbnInput}
+                            originalPrice={originalPrice}
+                            authors={authors}
+                            publisher={publisher}
+                            description={description}
+                            onPickImage={pickImage}
+                            onEditPress={openEditModal}
+                            onScanPress={startScanning}
+                            onClearPress={handleClearPress}
+                            formatPrice={(price) => formatCurrency({price, exchangeRate})}
+                            isScanning={isScanning}
+                        />
+                      </View>
+                  );
+                case 1:
+                  return (
+                      <DefectsSection
+                          defects={defects}
+                          onToggleDefect={toggleDefectSelection}
+                      />
+                  );
+                case 2:
+                  return (
+                      <UniquenessSection
+                          uniqueness={uniqueness}
+                          onToggleUniqueness={toggleUniquenessSelection}
+                      />
+                  );
+                case 3:
+                  return (
+                      <MarketFactorsSection
+                          marketFactors={MARKET_FACTOR_TOGGLES}
+                          includedMarketFactors={includedMarketFactors}
+                          onToggleMarketFactor={(id) => setIncludedMarketFactors(prev => ({
+                            ...prev,
+                            [id]: !prev[id]
+                          }))}
+                          marketData={marketData}
+                      />
+                  );
+                case 4:
+                  return (
+                      <CollectionsSection
+                          collections={collections}
+                          books={books}
+                          selectedCollection={selectedCollection}
+                          onSelectCollection={setSelectedCollection}
+                          onAddCollection={() => setShowAddCollectionModal(true)}
+                          searchQuery={searchQuery}
+                          onSearchChange={setSearchQuery}
+                      />
+                  );
+                default:
+                  return null;
+              }
+            })()}
+          </Animated.View>
+        </View>
+    );
   };
 
   if (!permission) {
@@ -922,7 +923,8 @@ export default function AnalysisScreen() {
       >
         <View style={{flex: 1}}>
           <ScrollView
-              contentContainerStyle={[styles.container, {paddingBottom: 80}]}
+              contentContainerStyle={[styles.container, {paddingBottom: 0}]}
+              style={styles.backgroundGradient}
               showsVerticalScrollIndicator={false}
           >
           <RatingSection
@@ -945,33 +947,19 @@ export default function AnalysisScreen() {
             />
           </RatingSection>
 
-          <View style={styles.stepContainer}>
-            <View style={styles.navArrowContainer}>
-              {currentStep > 0 ? (
-                  <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
-                    <Ionicons name="chevron-back" size={32} color={colors.primary}/>
-                  </TouchableOpacity>
-              ) : (
-                  <Ionicons name="chevron-back" size={32} color={colors.white}/>
-              )}
-            </View>
+            <View style={styles.stepContainer}>
 
-            <View style={styles.stepContent}>
-              <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1, width: '120%'}}>
-                {renderStep()}
-              </Animated.View>
+              <View style={styles.stepContent}>
+                <Animated.View style={{
+                  transform: [{translateX: slideAnim}],
+                  flex: 1,
+                  width: '100%',
+                  alignSelf: 'stretch'
+                }}>
+                  {renderStep()}
+                </Animated.View>
+              </View>
             </View>
-
-            <View style={styles.navArrowContainer}>
-              {currentStep < totalSteps - 1 ? (
-                  <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
-                    <Ionicons name="chevron-forward" size={32} color={colors.primary}/>
-                  </TouchableOpacity>
-              ) : (
-                  <Ionicons name="chevron-forward" size={32} color={colors.white}/>
-              )}
-            </View>
-          </View>
         </ScrollView>
 
         {currentStep === totalSteps - 1 && (
@@ -1086,9 +1074,12 @@ export default function AnalysisScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 6,
-    paddingTop: 82,
+    padding: 10,
+    paddingTop: 100,
     backgroundColor: 'transparent',
+  },
+  backgroundGradient: {
+    ...StyleSheet.absoluteFillObject,
   },
   loadingContainer: {
     flex: 1,
@@ -1113,13 +1104,6 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     marginTop: 10,
     marginBottom: 0,
-  },
-  stepTitle: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 30,
-    textAlign: 'center',
   },
   fullScreenContainer: {
     flex: 1,
@@ -1256,36 +1240,63 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    minHeight: 400,
+    flex: 1,
     width: '100%',
-    marginTop: 0,
-    marginLeft: 0,
     backgroundColor: colors.background,
-    borderTopRightRadius: 16,
-    borderTopLeftRadius: 16,
+    borderTopRightRadius: 15,
+    borderTopLeftRadius: 15,
     shadowColor: colors.lightPrimary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
   },
-  navArrowContainer: {
-    marginLeft: 5,
-    marginRight: 5,
+  stepHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.grayLight,
+  },
+  stepTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '500',
+    color: colors.blackDark,
+    marginRight: 10,
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressDots: {
+    flexDirection: 'row',
+    marginHorizontal: 10,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 3,
+  },
+  activeDot: {
+    backgroundColor: colors.primary,
+  },
+  inactiveDot: {
+    backgroundColor: colors.gray,
+  },
+  navArrowContainer: {
     justifyContent: 'center',
-    paddingTop: 25,
-    zIndex: 100
+    paddingHorizontal: 5,
+    minWidth: 40, // Zamiast stałej szerokości
   },
   stepContent: {
     flex: 1,
     justifyContent: 'flex-start',
-    alignItems: 'center',
-    minHeight: 400,
-    marginTop: 20
+    alignSelf: 'stretch',
+    minHeight: 500,
   },
   marketFactorsContainer: {
     width: '100%',

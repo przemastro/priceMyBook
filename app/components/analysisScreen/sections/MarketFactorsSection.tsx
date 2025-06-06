@@ -23,7 +23,6 @@ const MarketFactorsSection = ({
 
     return (
         <View style={styles.combinedSection}>
-            <Text style={styles.stepTitle}>{t('stepTitles.marketFactors')}</Text>
             <FlatList
                 data={marketFactors}
                 renderItem={({ item }) => (

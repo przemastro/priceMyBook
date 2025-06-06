@@ -327,11 +327,11 @@ export default {
         allLimitsReset: 'All limits reset weekly on Monday',
     },
     stepTitles: {
-        scanForDefects: "SCAN FOR DEFECTS",
-        detectedDefects: "DETECTED BOOK DEFECTS",
-        uniqueness: "BOOK UNIQUENESS",
-        marketFactors: "MARKET FACTORS",
-        addToCollection: "ADD TO COLLECTION"
+        scanForDefects: "Start analysis",
+        detectedDefects: "Detected book defects",
+        uniqueness: "Book uniqueness",
+        marketFactors: "Market factors",
+        addToCollection: "Add to collection"
     },
     modals: {
         addToCollectionTitle: "Add Book To the Collection",

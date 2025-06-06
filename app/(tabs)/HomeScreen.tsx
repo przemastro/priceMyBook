@@ -132,15 +132,25 @@ const HomeScreen = () => {
                                 onPress={() => navigateToScreen(button.screen, button.isTab)}
                                 activeOpacity={0.7}
                             >
-                                <View style={[styles.buttonIconContainer, {backgroundColor: colors.whiteBlue}]}>
-                                    <Ionicons
-                                        name={button.name}
-                                        size={24}
-                                        color={button.iconColor}
-                                    />
-                                </View>
+                                <LinearGradient
+                                    colors={[colors.white, colors.whiteBlue]}
+                                    style={styles.buttonGradient}
+                                >
+                                    <View style={styles.iconContainer}>
+                                        <Ionicons
+                                            name={button.name}
+                                            size={24}
+                                            color={button.iconColor}
+                                        />
+                                    </View>
+                                </LinearGradient>
                             </TouchableOpacity>
-                            <Text style={styles.buttonTitle}>{button.title}</Text>
+                            <Text style={styles.buttonTitle}
+                                  numberOfLines={2}
+                                  ellipsizeMode="tail"
+                            >
+                                {button.title}
+                            </Text>
                         </View>
                     ))}
                 </View>
@@ -153,7 +163,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        paddingTop: 120,
+        paddingTop: 100,
         position: 'relative',
     },
     backgroundGradient: {
@@ -245,16 +255,17 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        backgroundColor: colors.white,
+    },
+    buttonGradient: {
+        width: '100%',
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    buttonIconContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
+    iconContainer: {
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 20,
+        padding: 8,
     },
     buttonTitle: {
         fontSize: 13,

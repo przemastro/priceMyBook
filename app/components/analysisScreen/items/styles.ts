@@ -102,4 +102,16 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.black,
     },
+    button: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });

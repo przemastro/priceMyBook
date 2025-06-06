@@ -1,15 +1,13 @@
 import React, {useRef, useState} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 
-const CARD_WIDTH = Dimensions.get('window').width * 0.8;
-const CARD_HEIGHT = Dimensions.get('window').height * 0.5;
-const ACTION_BUTTONS_WIDTH = 60;
-const SCROLL_BUTTON_HEIGHT = 24;
+const IMAGE_SIZE = 120;
+const CARD_PADDING = 15;
 
 interface BasicBookInfoProps {
     bookImage: string | null;
@@ -48,7 +46,6 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                }) => {
     const { t } = useTranslation();
     const [showClearAlert, setShowClearAlert] = useState(false);
-    const scrollViewRef = useRef<ScrollView>(null);
 
     const handleClearPress = () => {
         setShowClearAlert(true);
@@ -59,17 +56,9 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
         onClearPress();
     };
 
-    const scrollContentUp = () => {
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    };
-
-    const scrollContentDown = () => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-    };
-
     const renderActionButtons = () => {
         return (
-            <View style={styles.actionsColumn}>
+            <View style={styles.actionsRow}>
                 {/* Edit Button */}
                 <TouchableOpacity
                     style={styles.actionButton}
@@ -149,108 +138,78 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <ScrollView
-                        ref={scrollViewRef}
-                        style={styles.scrollView}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View style={styles.imageContainer}>
-                            <TouchableOpacity
-                                style={styles.bookImageContainer}
-                                onPress={onPickImage}
-                                activeOpacity={0.8}
-                            >
-                                {bookImage ? (
-                                    <Image
-                                        key={bookImage}
-                                        source={{ uri: bookImage }}
-                                        style={styles.bookImage}
-                                        resizeMode="contain"
-                                        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+                    <View style={styles.cardContent}>
+                        {/* Left Column - Book Image */}
+                        <TouchableOpacity
+                            style={styles.bookImageContainer}
+                            onPress={onPickImage}
+                            activeOpacity={0.8}
+                        >
+                            {bookImage ? (
+                                <Image
+                                    source={{ uri: bookImage }}
+                                    style={styles.bookImage}
+                                    resizeMode="contain"
+                                    onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+                                />
+                            ) : (
+                                <LinearGradient
+                                    colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
+                                    style={styles.bookImagePlaceholder}
+                                >
+                                    <Ionicons
+                                        name="book"
+                                        size={50}
+                                        color={colors.primary}
                                     />
-                                ) : (
-                                    <LinearGradient
-                                        colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
-                                        style={styles.bookImagePlaceholder}
-                                    >
-                                        <Ionicons
-                                            name="book"
-                                            size={50}
-                                            color={colors.primary}
-                                        />
-                                    </LinearGradient>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                                </LinearGradient>
+                            )}
+                        </TouchableOpacity>
 
-                        {/* Scroll up button */}
-                        <View style={styles.scrollButtonsContainer}>
-                            <TouchableOpacity
-                                style={styles.scrollButton}
-                                onPress={scrollContentUp}
-                            >
-                                <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.primary} />
-                            </TouchableOpacity>
-                        </View>
-
+                        {/* Right Column - Book Details */}
                         <View style={styles.bookDetails}>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.bookTitle} numberOfLines={2}>
-                                    {titleInput || title || t('bookInfo.noTitle')}
-                                </Text>
+                            <Text style={styles.bookTitle} numberOfLines={2}>
+                                {titleInput || title || t('bookInfo.noTitle')}
+                            </Text>
+
+                            <View style={styles.detailItem}>
+                                <Text style={styles.detailLabel}>{t('bookInfo.isbn')}:</Text>
+                                <Text style={styles.detailValue}>{isbnInput || isbn || t('bookInfo.noIsbn')}</Text>
                             </View>
 
-                            <View style={styles.detailRow}>
-                                <Text style={styles.bookInfo}>
-                                    {t('bookInfo.isbn')}: {isbnInput || isbn || t('bookInfo.noIsbn')}
-                                </Text>
-                            </View>
-
-                            <View style={styles.detailRow}>
-                                <Text style={styles.bookPrice}>
-                                    {t('bookInfo.price')}: {formatPrice(originalPrice)}
+                            <View style={styles.detailItem}>
+                                <Text style={styles.detailLabel}>{t('bookInfo.price')}:</Text>
+                                <Text style={[styles.detailValue, styles.priceValue]}>
+                                    {formatPrice(originalPrice)}
                                 </Text>
                             </View>
 
                             {authors && (
-                                <View style={styles.detailRow}>
-                                    <Text style={styles.bookInfo}>
-                                        {t('bookInfo.authors')}: {authors}
-                                    </Text>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>{t('bookInfo.authors')}:</Text>
+                                    <Text style={styles.detailValue} numberOfLines={2}>{authors}</Text>
                                 </View>
                             )}
 
                             {publisher && (
-                                <View style={styles.detailRow}>
-                                    <Text style={styles.bookInfo}>
-                                        {t('bookInfo.publisher')}: {publisher}
-                                    </Text>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>{t('bookInfo.publisher')}:</Text>
+                                    <Text style={styles.detailValue}>{publisher}</Text>
                                 </View>
                             )}
 
                             {description && (
-                                <View style={styles.detailRow}>
-                                    <Text style={styles.bookInfo}>
-                                        {t('bookInfo.description')}: {description}
-                                    </Text>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>{t('bookInfo.description')}:</Text>
+                                    <Text style={styles.detailValue} numberOfLines={3}>{description}</Text>
                                 </View>
                             )}
                         </View>
-                    </ScrollView>
-
-                    {/* Scroll down button */}
-                    <View style={styles.scrollButtonsContainer}>
-                        <TouchableOpacity
-                            style={styles.scrollButton}
-                            onPress={scrollContentDown}
-                        >
-                            <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.primary} />
-                        </TouchableOpacity>
                     </View>
                 </LinearGradient>
             </View>
 
+            {/* Action Buttons Row */}
             {renderActionButtons()}
         </View>
     );
@@ -258,108 +217,84 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
         width: '100%',
-        marginVertical: 0,
+        paddingHorizontal: 10,
+        marginBottom: 20,
     },
     bookCard: {
-        width: CARD_WIDTH - 80,
-        height: CARD_HEIGHT,
+        width: '100%',
         borderRadius: 12,
-        marginLeft: 10,
         shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 5,
         overflow: 'hidden',
-        marginBottom: 30
+        marginBottom: 15,
     },
     bookCardGradient: {
-        flex: 1,
+        padding: CARD_PADDING,
     },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: 4,
-        paddingBottom: 20,
-    },
-    scrollButtonsContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: SCROLL_BUTTON_HEIGHT,
-    },
-    scrollButton: {
-        padding: 4,
-    },
-    imageContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
     },
     bookImageContainer: {
-        width: 150,
-        height: 150,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 0,
-        marginTop: 10,
-        borderRadius: 75,
+        width: IMAGE_SIZE,
+        height: IMAGE_SIZE,
+        borderRadius: 8,
         overflow: 'hidden',
+        marginRight: CARD_PADDING,
+        backgroundColor: colors.whiteBlue,
     },
     bookImage: {
-        width: 150,
-        height: 150,
-        borderRadius: 75,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: '100%',
+        height: '100%',
     },
     bookImagePlaceholder: {
-        width: 150,
-        height: 150,
-        borderRadius: 75,
+        width: '100%',
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
     bookDetails: {
         flex: 1,
-    },
-    detailRow: {
-        marginBottom: 6,
+        flexShrink: 1,
     },
     bookTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: colors.primary,
-        textAlign: 'center',
-        textShadowColor: 'rgba(0,0,0,0.1)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
+        marginBottom: 10,
     },
-    bookInfo: {
+    detailItem: {
+        flexDirection: 'row',
+        marginBottom: 6,
+    },
+    detailLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: colors.primary,
+        marginRight: 5,
+        minWidth: 80,
+    },
+    detailValue: {
         fontSize: 14,
         color: colors.primary,
-        textAlign: 'center',
+        flex: 1,
     },
-    bookPrice: {
-        fontSize: 16,
-        color: colors.primary,
+    priceValue: {
         fontWeight: '600',
-        textAlign: 'center',
     },
-    actionsColumn: {
-        width: ACTION_BUTTONS_WIDTH,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: 10,
+    actionsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 10,
     },
     actionButton: {
         alignItems: 'center',
-        marginBottom: 20,
-        width: '100%',
+        width: '30%',
     },
     actionIconContainer: {
         width: 50,
@@ -367,7 +302,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 5,
     },
     actionButtonText: {
         fontSize: 12,

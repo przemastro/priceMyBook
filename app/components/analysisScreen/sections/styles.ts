@@ -56,7 +56,7 @@ export const styles = StyleSheet.create({
         elevation: 5,
     },
     averagePriceContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: 'transparent',
         borderRadius: 8,
         padding: 12,
         flexDirection: 'row',
@@ -88,7 +88,7 @@ export const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
     detailsContainer: {
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
         borderRadius: 12,
         padding: 1,
     },
@@ -148,7 +148,7 @@ export const styles = StyleSheet.create({
         color: colors.primary,
     },
     marketFactors: {
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
         borderRadius: 8,
         padding: 10,
         marginTop: 6,
@@ -352,12 +352,12 @@ export const styles = StyleSheet.create({
     // Style dla DefectsSection
     defectsGrid: {
         marginBottom: 16,
+        borderColor: 'red',
+        borderWidth: 1
     },
     columnWrapper: {
         justifyContent: 'space-between',
         marginBottom: 12,
-        marginLeft: 10,
-        marginRight: 10
     },
     defectItemContainer: {
         width: '30%',

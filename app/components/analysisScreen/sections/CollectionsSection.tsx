@@ -127,8 +127,6 @@ const CollectionsSection = ({
 
     return (
         <View style={styles.combinedSection}>
-            <Text style={styles.stepTitle}>{t('stepTitles.addToCollection')}</Text>
-
             <View style={styles.searchHeader}>
                 <View style={styles.searchContainer}>
                     <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />

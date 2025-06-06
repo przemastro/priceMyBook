@@ -1,10 +1,10 @@
 // components/analysisScreen/RatingSection.tsx
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '@/styles/styles';
-import { styles } from './styles';
 import Animated from 'react-native-reanimated';
 
 interface RatingSectionProps {
@@ -26,24 +26,31 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                                                                 toggleExpanded,
                                                                 onShowMarketAnalysis,
                                                                 formatPrice,
-                                                                children
+                                                                children,
                                                             }) => {
+    const getRatingLabel = (rating: number) => {
+        if (rating >= 8) return 'Doskonały';
+        if (rating >= 6) return 'Dobry';
+        if (rating >= 4) return 'Średni';
+        return 'Słaby';
+    };
+
     return (
-        <LinearGradient
-            colors={['transparent', 'transparent']}
-            start={[0, 0]}
-            end={[1, 1]}
-            style={[styles.ratingOuterContainer, { paddingVertical: 12 }]}
-        >
-            <View style={[styles.ratingContainer, { gap: 0 }]}>
-                <View style={[styles.ratingHeader, { gap: 0 }]}>
-                    <Text style={styles.ratingTitle}>Stan książki</Text>
-                    <View style={styles.ratingStars}>
+        <View style={styles.container}>
+            <LinearGradient
+                colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                style={styles.card}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+            >
+                <View style={styles.headerRow}>
+                    <Text style={styles.sectionTitle}>Stan książki</Text>
+                    <View style={styles.stars}>
                         {[...Array(10)].map((_, i) => (
                             <Ionicons
                                 key={i}
                                 name={i < bookRating ? 'star' : 'star-outline'}
-                                size={18}
+                                size={16}
                                 color={i < bookRating ? colors.primary : colors.grayLight}
                             />
                         ))}
@@ -51,82 +58,119 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                 </View>
 
                 <TouchableOpacity
-                    style={styles.priceSummarySection}
+                    style={styles.infoBox}
                     onPress={toggleExpanded}
-                    activeOpacity={0.9}
+                    activeOpacity={0.8}
                 >
-                    <LinearGradient
-                        colors={[colors.white, colors.whiteBlue]}
-                        style={[styles.priceSummaryGradient, { paddingVertical: 10 }]}
-                    >
+                    <View style={styles.row}>
+                        <Ionicons name="book-outline" size={14} color={colors.secondary} />
+                        <Text style={styles.label}>Stan:</Text>
+                        <Text style={styles.value}>{`${bookRating}/10 - ${getRatingLabel(bookRating)}`}</Text>
+                    </View>
 
-                        <View style={[styles.priceRowCentered, { marginBottom: 6 }]}>
-                            <View style={styles.priceLabelContainer}>
-                                <Ionicons name="book-outline" size={14} color={colors.secondary} />
-                                <Text style={[styles.priceLabel, { fontSize: 13 }]}>
-                                    Stan:
-                                </Text>
-                            </View>
-                            <Text style={[styles.ratingText, { fontSize: 14 }]}>
-                                {`${bookRating}/10 - ${
-                                    bookRating >= 8 ? 'Doskonały' :
-                                        bookRating >= 6 ? 'Dobry' :
-                                            bookRating >= 4 ? 'Średni' :
-                                                'Słaby'
-                                }`}
-                            </Text>
+                    <View style={styles.separator} />
+
+                    <View style={styles.row}>
+                        <Ionicons name="pricetag-outline" size={14} color={colors.secondary} />
+                        <Text style={styles.label}>Średnia cena używana:</Text>
+                        <Text style={styles.value}>
+                            {averageUsedPrice ? formatPrice(averageUsedPrice) : 'Brak danych'}
+                        </Text>
+                    </View>
+
+                    <View style={styles.separator} />
+
+                    <View style={styles.row}>
+                        <Ionicons name="cash-outline" size={14} color={colors.primary} />
+                        <Text style={[styles.label, { fontWeight: '600' }]}>Szacowana wartość:</Text>
+                        <View style={styles.estimatedRow}>
+                            <Text style={[styles.value, { fontWeight: '600' }]}>{formatPrice(finalPrice)}</Text>
+                            <Ionicons
+                                name={expanded ? 'chevron-up' : 'chevron-down'}
+                                size={14}
+                                color={colors.primary}
+                            />
                         </View>
-
-                        <View style={[styles.separator, { marginVertical: 6 }]} />
-
-                        <View style={[styles.priceRow, { marginBottom: 6 }]}>
-                            <View style={styles.priceLabelContainer}>
-                                <Ionicons name="book-outline" size={14} color={colors.secondary} />
-                                <Text style={[styles.priceLabel, { fontSize: 13 }]}>
-                                    Średnia cena używana:
-                                </Text>
-                            </View>
-                            <Text style={[styles.priceValue, { fontSize: 13 }]}>
-                                {averageUsedPrice ? formatPrice(averageUsedPrice) : 'Brak danych'}
-                            </Text>
-                        </View>
-
-                        <View style={[styles.separator, { marginVertical: 6 }]} />
-
-                        <View style={styles.priceRow}>
-                            <View style={styles.priceLabelContainer}>
-                                <Ionicons name="cash-outline" size={14} color={colors.primary} />
-                                <Text style={[styles.priceLabel, styles.estimatedPriceLabel, { fontSize: 13 }]}>
-                                    Szacowana wartość:
-                                </Text>
-                            </View>
-                            <View style={styles.estimatedPriceContainer}>
-                                <Text style={[styles.priceValue, styles.estimatedPriceValue, { fontSize: 13 }]}>
-                                    {formatPrice(finalPrice)}
-                                </Text>
-                                <Ionicons
-                                    name={expanded ? "chevron-up" : "chevron-down"}
-                                    size={14}
-                                    color={colors.primary}
-                                    style={styles.expandIcon}
-                                />
-                            </View>
-                        </View>
-                    </LinearGradient>
+                    </View>
                 </TouchableOpacity>
 
                 <Animated.View
                     style={[
-                        styles.tooltip,
+                        styles.expandedContainer,
                         {
                             opacity: expanded ? 1 : 0,
                             display: expanded ? 'flex' : 'none',
-                        }
+                        },
                     ]}
                 >
                     {children}
                 </Animated.View>
-            </View>
-        </LinearGradient>
+            </LinearGradient>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        marginBottom: 20,
+        paddingHorizontal: 0,
+    },
+    card: {
+        borderRadius: 20,
+        padding: 16,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.blackDark,
+    },
+    stars: {
+        flexDirection: 'row',
+    },
+    infoBox: {
+        backgroundColor: 'transparent',
+        borderRadius: 12,
+        padding: 12,
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 8,
+    },
+    estimatedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginLeft: 'auto',
+    },
+    label: {
+        fontSize: 13,
+        color: colors.black,
+    },
+    value: {
+        fontSize: 13,
+        color: colors.blackDark,
+        marginLeft: 'auto',
+    },
+    separator: {
+        height: 1,
+        backgroundColor: colors.grayLight,
+        marginVertical: 6,
+        opacity: 0.3,
+    },
+    expandedContainer: {
+        marginTop: 12,
+    },
+});

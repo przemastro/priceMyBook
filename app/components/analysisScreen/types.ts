@@ -87,16 +87,64 @@ export const SUPPLY_OPTIONS = [
     { id: 'flooded', label: 'labels.flooded' }
 ];
 
+// Dodaj kolory do typu BookDefect
+export interface BookDefect {
+    id: string;
+    selected: boolean;
+    priceReduction: number;
+    count: number;
+    confidence?: number;
+    icon: string;
+    color?: string; // Dodane pole
+}
+
+// Zaktualizowana lista defektów z kolorami
 export const DEFECT_TYPES = [
-    { id: 'tornPages', icon: 'document-text-outline' },
-    { id: 'brokenSpine', icon: 'book-outline' },
-    { id: 'missingPages', icon: 'remove-outline' },
-    { id: 'heavyWear', icon: 'alert-circle-outline' },
-    { id: 'stainedPages', icon: 'color-filter-outline' },
-    { id: 'looseBinding', icon: 'unlink-outline' },
-    { id: 'writtingMarks', icon: 'pencil-outline' },
-    { id: 'foldedCorners', icon: 'copy-outline' },
-    { id: 'fadedCover', icon: 'sunny-outline' }
+    {
+        id: 'tornPages',
+        icon: 'document-text-outline',
+        color: '#e74c3c' // Czerwony
+    },
+    {
+        id: 'brokenSpine',
+        icon: 'book-outline',
+        color: '#3498db' // Niebieski
+    },
+    {
+        id: 'missingPages',
+        icon: 'remove-outline',
+        color: '#2980b9' // Ciemniejszy niebieski
+    },
+    {
+        id: 'heavyWear',
+        icon: 'alert-circle-outline',
+        color: '#2c3e50' // Granatowy
+    },
+    {
+        id: 'stainedPages',
+        icon: 'color-filter-outline',
+        color: '#e67e22' // Pomarańczowy
+    },
+    {
+        id: 'looseBinding',
+        icon: 'unlink-outline',
+        color: '#16a085' // Turkusowy
+    },
+    {
+        id: 'writtingMarks',
+        icon: 'pencil-outline',
+        color: '#8e44ad' // Fioletowy
+    },
+    {
+        id: 'foldedCorners',
+        icon: 'copy-outline',
+        color: '#1abc9c' // Morski
+    },
+    {
+        id: 'fadedCover',
+        icon: 'sunny-outline',
+        color: '#27ae60' // Zielony
+    }
 ] as const;
 
 export const UNIQUENESS_TYPES = [

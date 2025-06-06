@@ -323,11 +323,11 @@ export default {
         allLimitsReset: 'Wszystkie limity resetują się w każdy poniedziałek',
     },
     stepTitles: {
-        scanForDefects: "WYSZUKAJ WADY KSIĄŻKI",
-        detectedDefects: "WYKRYTE WADY KSIĄŻKI",
-        uniqueness: "UNIKATOWOŚĆ KSIĄŻKI",
-        marketFactors: "CZYNNIKI RYNKOWE",
-        addToCollection: "DODAJ DO KSIĘGOZBIORU"
+        scanForDefects: "Rozpocznij analizę",
+        detectedDefects: "Wykryte wady książki",
+        uniqueness: "Unikatowość książki",
+        marketFactors: "Czynniki rynkowe",
+        addToCollection: "Dodaj do księgozbioru"
     },
     modals: {
         addToCollectionTitle: "Dodaj książkę do księgozbioru",
