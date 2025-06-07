@@ -6,15 +6,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 
-type TabScreen = 'ScanScreen' | 'HistoryScreen' | 'AnalysisScreen' | 'CollectionsScreen' | 'FinancialReport';
-type NonTabScreen = 'Settings';
-
 type HomeButton = {
     name: React.ComponentProps<typeof Ionicons>['name'];
     title: string;
-    screen: TabScreen | NonTabScreen;
+    screen: string;
     iconColor: string;
     isTab?: boolean;
+    customPath?: string;
 };
 
 const COLUMNS = 3;
@@ -62,26 +60,25 @@ const HomeScreen = () => {
             title: t('titlesShort.financialReport'),
             screen: 'FinancialReport',
             iconColor: '#168aad',
-            isTab: true
+            customPath: '/customScreens/FinancialReport'
         },
         {
             name: 'settings-sharp',
             title: t('titlesShort.settings'),
             screen: 'Settings',
             iconColor: '#184e77',
-            isTab: false
+            customPath: '/customScreens/Settings'
         }
     ];
 
     const truncateDescription = (text: string) => {
-        if (text.length > MAX_DESCRIPTION_LENGTH) {
-            return text.substring(0, MAX_DESCRIPTION_LENGTH) + '...';
-        }
-        return text;
+        return text.length > MAX_DESCRIPTION_LENGTH
+            ? text.substring(0, MAX_DESCRIPTION_LENGTH) + '...'
+            : text;
     };
 
-    const navigateToScreen = (screen: TabScreen | NonTabScreen, isTab?: boolean) => {
-        const path = isTab ? `/(tabs)/${screen}` : `/${screen}`;
+    const navigateToScreen = (screen: string, isTab?: boolean, customPath?: string) => {
+        const path = customPath ? customPath : isTab ? `/(tabs)/${screen}` : `/${screen}`;
         router.push(path as any);
     };
 
@@ -108,7 +105,7 @@ const HomeScreen = () => {
                                 </Text>
                             </View>
                             <TouchableOpacity
-                                onPress={() => navigateToScreen('Settings', false)}
+                                onPress={() => navigateToScreen('Settings', false, '/customScreens/Settings')}
                                 style={styles.moreButton}
                             >
                                 <Text style={styles.moreButtonText}>{t('home.more')}</Text>
@@ -124,12 +121,17 @@ const HomeScreen = () => {
                     {buttons.map((button, index) => (
                         <View key={index} style={styles.buttonWrapper}>
                             <TouchableOpacity
-                                style={[styles.button, {
-                                    width: buttonSize,
-                                    height: buttonSize,
-                                    marginHorizontal: BUTTON_MARGIN
-                                }]}
-                                onPress={() => navigateToScreen(button.screen, button.isTab)}
+                                style={[
+                                    styles.button,
+                                    {
+                                        width: buttonSize,
+                                        height: buttonSize,
+                                        marginHorizontal: BUTTON_MARGIN
+                                    }
+                                ]}
+                                onPress={() =>
+                                    navigateToScreen(button.screen, button.isTab, button.customPath)
+                                }
                                 activeOpacity={0.7}
                             >
                                 <LinearGradient
@@ -145,9 +147,10 @@ const HomeScreen = () => {
                                     </View>
                                 </LinearGradient>
                             </TouchableOpacity>
-                            <Text style={styles.buttonTitle}
-                                  numberOfLines={2}
-                                  ellipsizeMode="tail"
+                            <Text
+                                style={styles.buttonTitle}
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
                             >
                                 {button.title}
                             </Text>
@@ -164,15 +167,15 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 10,
         paddingTop: 100,
-        position: 'relative',
+        position: 'relative'
     },
     backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFillObject
     },
     headerOuterContainer: {
         borderRadius: 20,
         overflow: 'hidden',
-        marginBottom: 30,
+        marginBottom: 30
     },
     headerGradient: {
         padding: 2,
@@ -180,30 +183,30 @@ const styles = StyleSheet.create({
     },
     headerContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        borderRadius: 18,
+        borderRadius: 18
     },
     header: {
         padding: 20,
         borderRadius: 15,
-        marginBottom: 0,
+        marginBottom: 0
     },
     welcomeTitle: {
         fontSize: 24,
         fontWeight: '700',
         color: colors.blackDark,
         marginBottom: 8,
-        textAlign: 'center',
+        textAlign: 'center'
     },
     descriptionContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-end',
+        alignItems: 'flex-end'
     },
     welcomeSubtitle: {
         fontSize: 16,
         color: colors.black,
         flex: 1,
-        marginRight: 10,
+        marginRight: 10
     },
     moreButton: {
         alignSelf: 'flex-end',
@@ -214,7 +217,7 @@ const styles = StyleSheet.create({
     moreButtonText: {
         color: colors.primary,
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '500'
     },
     servicesContainer: {
         flex: 1,
@@ -227,7 +230,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
-        elevation: 3,
+        elevation: 3
     },
     sectionTitle: {
         fontSize: 20,
@@ -241,11 +244,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
-        marginHorizontal: -BUTTON_MARGIN,
+        marginHorizontal: -BUTTON_MARGIN
     },
     buttonWrapper: {
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 20
     },
     button: {
         borderRadius: 16,
@@ -254,26 +257,26 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 3
     },
     buttonGradient: {
         width: '100%',
         height: '100%',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'center'
     },
     iconContainer: {
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderRadius: 30,
-        padding: 12,
+        padding: 12
     },
     buttonTitle: {
         fontSize: 13,
         fontWeight: '500',
         color: colors.black,
         marginTop: 8,
-        textAlign: 'center',
-    },
+        textAlign: 'center'
+    }
 });
 
 export default HomeScreen;

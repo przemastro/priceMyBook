@@ -205,11 +205,9 @@ const CollectionsScreen = () => {
         loadSelected();
     }, [collections]);
 
-
     const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
         if (!name.trim()) return;
         addCollection(name, icon);
-        // Dodaj kategorie do nowo utworzonej kolekcji
         categories.forEach(category => addCategoryToCollection(name, category.trim()));
         setShowAddCollectionModal(false);
     };
@@ -267,8 +265,8 @@ const CollectionsScreen = () => {
                 isbn: book.isbn,
                 title: book.title,
                 authors: book.authors,
-                publisher: book.publisher || '', // Add publisher
-                description: book.description || '', // Add description
+                publisher: book.publisher || '',
+                description: book.description || '',
                 originalPrice: book.originalPrice,
                 fromHistory: 'false',
                 editMode: 'true',
@@ -615,281 +613,291 @@ const CollectionsScreen = () => {
             t('labels.yourBooks')
         ];
 
-        switch (currentStep) {
-            case 0:
-                return (
-                    <Animated.View style={{ transform: [{ translateX: slideAnim }], flex: 1, width: '120%' }}>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.slideTitle}>{stepTitles[0]}</Text>
-                        </View>
+        return (
+            <View style={styles.stepContainer}>
+                <View style={styles.stepHeader}>
+                    <Text style={styles.stepTitle} numberOfLines={1} ellipsizeMode="tail">
+                        {stepTitles[currentStep]}
+                    </Text>
 
-                        <View style={styles.searchHeader}>
-                            <View style={styles.searchContainer}>
-                                <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder={t('placeholders.searchCollections')}
-                                    placeholderTextColor={colors.grayDark}
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                />
-                            </View>
-
-                            <View style={styles.headerButtons}>
-                                <TouchableOpacity
-                                    onPress={() => setShowAddCollectionModal(true)}
-                                    style={styles.headerButton}
-                                    activeOpacity={0.7}
-                                >
-                                    <LinearGradient
-                                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                        style={styles.headerButtonGradient}
-                                    >
-                                        <Ionicons name="add" size={20} color={colors.primary} />
-                                    </LinearGradient>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    onPress={handleImportCollection}
-                                    style={[styles.headerButton, { marginLeft: 8 }]}
-                                    activeOpacity={0.7}
-                                >
-                                    <LinearGradient
-                                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                        style={styles.headerButtonGradient}
-                                    >
-                                        <Ionicons name="download" size={20} color={colors.primary} />
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {selectedCollection && (
-                            <CategoriesCarousel
-                                collectionName={selectedCollection}
-                                collectionCategories={collectionCategories}
-                                onAddCategory={handleAddCategory}
-                                onRemoveCategory={handleRemoveCategory}
-                            />
-                        )}
-
-                        {filteredCollections.length > 0 ? (
-                            <CollectionCarousel
-                                collections={filteredCollections}
-                                books={books}
-                                selectedCollection={selectedCollection}
-                                onSelectCollection={setSelectedCollection}
-                                calculateCollectionTotal={calculateCollectionTotal}
-                                onEditCollection={(collectionName) => {
-                                    setEditingCollection(collectionName);
-                                    setShowEditModal(true);
-                                }}
-                                onDeleteCollection={handleDeleteCollection}
-                                onExportCollection={handleExportCollectionToCSV}
-                                getBookWord={getBookWord}
-                                formatCurrency={formatCurrency}
-                                onNavigateToBooks={goToNextStep}
-                            />
-                        ) : (
-                            <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>
-                                    {searchQuery
-                                        ? t('labels.noCollectionsFound')
-                                        : t('labels.noCollections')}
-                                </Text>
-                                {!searchQuery && (
-                                    <View style={styles.emptyActions}>
-                                        <TouchableOpacity
-                                            style={styles.emptyActionButton}
-                                            onPress={() => setShowAddCollectionModal(true)}
-                                        >
-                                            <Ionicons name="add" size={20} color={colors.primary} />
-                                            <Text style={styles.emptyActionText}>{t('buttons.addCollection')}</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </View>
-                        )}
-                    </Animated.View>
-                );
-            case 1:
-                return (
-                    <Animated.View style={{
-                        transform: [{ translateX: slideAnim }],
-                        flex: 1,
-                        width: '120%',
-                        minHeight: Dimensions.get('window').height * 0.7,
-                    }}>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.slideTitle}>{stepTitles[1]}</Text>
-                        </View>
-                        {selectedCollection && (
-                            <View style={styles.collectionDetails}>
-                                {books[selectedCollection]?.length === 0 ? (
-                                    <View style={styles.emptyBookContainer}>
-                                        <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
-                                    </View>
-                                ) : (
-                                    <BooksCarousel
-                                        books={books[selectedCollection]}
-                                        collectionName={selectedCollection}
-                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
-                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
-                                        onListBook={(index) => handleListBook(selectedCollection, index)}
-                                        formatDefectsSummary={formatDefectsSummary}
-                                        formatUniquenessSummary={formatUniquenessSummary}
-                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
-                                        formatListingStatus={formatListingStatus}
-                                    />
-                                )}
-                            </View>
-                        )}
-                    </Animated.View>
-                );
-            default:
-                return null;
-        }
-    };
-
-    return (
-        <View style={{ flex: 1 }}>
-            <ScrollView
-                contentContainerStyle={[styles.scrollContainer, { paddingBottom: 20 }]}
-                showsVerticalScrollIndicator={false}
-            >
-                <LinearGradient
-                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                    start={[0, 0]}
-                    end={[1, 1]}
-                    style={styles.ratingOuterContainer}
-                >
-                    <View style={styles.ratingContainer}>
-                        <View style={styles.ratingHeader}>
-                            <Text style={styles.ratingTitle}>Wartość kolekcji</Text>
-                        </View>
-
-                        <View style={styles.priceSummarySection}>
-                            <LinearGradient
-                                colors={[colors.white, colors.whiteBlue]}
-                                style={[styles.priceSummaryGradient, styles.withShadow]}
-                            >
-                                <View style={styles.priceRow}>
-                                    <View style={styles.priceLabelContainer}>
-                                        <FontAwesome5 name="coins" size={22} color={colors.primary} />
-                                        <Text style={styles.priceLabelTotal}>Wartość całkowita:</Text>
-                                    </View>
-                                    <Text style={styles.priceValueTotal}>
-                                        {formatCurrency(calculateTotalValue().toString())}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.separator} />
-
-                                <View style={styles.priceRow}>
-                                    <View style={styles.priceLabelContainer}>
-                                        <Ionicons name="book-outline" size={14} color={colors.secondary} />
-                                        <Text style={styles.priceLabel}>Wartość aktywna:</Text>
-                                    </View>
-                                    <Text style={[styles.priceValue, {color: colors.grayDark}]}>
-                                        {formatCurrency(calculateActiveValue().toString())}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.priceRow}>
-                                    <View style={styles.priceLabelContainer}>
-                                        <Ionicons name="cash-outline" size={14} color={colors.primary} />
-                                        <Text style={styles.priceLabelSold}>Wartość sprzedana:</Text>
-                                    </View>
-                                    <Text style={[styles.priceValue, {color: colors.primary}]}>
-                                        {formatCurrency(calculateSoldValue().toString())}
-                                    </Text>
-                                </View>
-                            </LinearGradient>
-                        </View>
-                    </View>
-                </LinearGradient>
-
-                <View style={styles.stepContainer}>
-                    <View style={styles.navArrowContainer}>
+                    <View style={styles.navigationContainer}>
                         {currentStep > 0 ? (
                             <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
-                                <Ionicons name="chevron-back" size={32} color={colors.primary}/>
+                                <Ionicons name="chevron-back" size={24} color={colors.primary}/>
                             </TouchableOpacity>
                         ) : (
-                            <Ionicons name="chevron-back" size={32} color={colors.white}/>
+                            <View style={{width: 24}} />
                         )}
-                    </View>
 
-                    <View style={styles.stepContent}>
-                        {renderStep()}
-                    </View>
+                        <View style={styles.progressDots}>
+                            {Array.from({length: totalSteps}).map((_, i) => (
+                                <View
+                                    key={i}
+                                    style={[
+                                        styles.dot,
+                                        i === currentStep ? styles.activeDot : styles.inactiveDot
+                                    ]}
+                                />
+                            ))}
+                        </View>
 
-                    <View style={styles.navArrowContainer}>
-                        {currentStep < totalSteps - 1 && selectedCollection ? (
+                        {currentStep < totalSteps - 1 ? (
                             <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
-                                <Ionicons name="chevron-forward" size={32} color={colors.primary}/>
+                                <Ionicons name="chevron-forward" size={24} color={colors.primary}/>
                             </TouchableOpacity>
                         ) : (
-                            <Ionicons name="chevron-forward" size={32} color={colors.white}/>
+                            <View style={{width: 24}} />
                         )}
                     </View>
                 </View>
-            </ScrollView>
 
-            <CustomAlertModal
-                visible={alertVisible}
-                title={alertTitle}
-                message={alertMessage}
-                type={alertType}
-                onConfirm={() => {
-                    confirmAction();
-                    setAlertVisible(false);
-                }}
-                confirmText={t('buttons.confirm')}
-                closeButtonStyle={styles.closeButton}
-                closeButtonTextStyle={styles.closeButtonText}
-                buttonFullWidth={true}
-            />
+                <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
+                    {(() => {
+                        switch (currentStep) {
+                            case 0:
+                                return (
+                                    <View style={styles.stepContent}>
+                                        <View style={styles.searchHeader}>
+                                            <View style={styles.searchContainer}>
+                                                <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
+                                                <TextInput
+                                                    style={styles.searchInput}
+                                                    placeholder={t('placeholders.searchCollections')}
+                                                    placeholderTextColor={colors.grayDark}
+                                                    value={searchQuery}
+                                                    onChangeText={setSearchQuery}
+                                                />
+                                            </View>
 
-            <AddCollectionModal
-                visible={showAddCollectionModal}
-                onClose={() => setShowAddCollectionModal(false)}
-                onConfirm={(name, categories, icon) => handleAddCollection(name, categories, icon)}
-            />
-            <EditCollectionModal
-                visible={showEditModal}
-                currentName={editingCollection || ''}
-                onClose={() => setShowEditModal(false)}
-                onConfirm={(newName, categories, icon) => {
-                    if (editingCollection) {
-                        handleEditCollection(editingCollection, newName, categories, icon);
-                    }
-                }}
-                collectionCategories={collectionCategories}
-            />
-            <ImportPreviewModal
-                importPreview={importPreview}
-                onCancel={cancelImport}
-                onConfirm={confirmImport}
-                formatDefectsSummary={formatDefectsSummary}
-                formatUniquenessSummary={formatUniquenessSummary}
-                formatMarketFactorsSummary={formatMarketFactorsSummary}
-                formatListingStatus={formatListingStatus}
-            />
-            <ListingModal
-                visible={showListingModal}
-                onClose={() => setShowListingModal(false)}
-                selectedPlatform={selectedPlatform}
-                onSelectPlatform={selectPlatform}
-                onConfirm={confirmListing}
-            />
-            <StatusChangeModal
-                visible={showStatusChangeModal}
-                onClose={() => setShowStatusChangeModal(false)}
-                currentStatus={currentListingBook ? books[currentListingBook.collection][currentListingBook.index].listingStatus?.status || 'notListed' : 'notListed'}
-                onChangeStatus={changeListingStatus}
-            />
-        </View>
+                                            <View style={styles.headerButtons}>
+                                                <TouchableOpacity
+                                                    onPress={() => setShowAddCollectionModal(true)}
+                                                    style={styles.headerButton}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <LinearGradient
+                                                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                                        style={styles.headerButtonGradient}
+                                                    >
+                                                        <Ionicons name="add" size={20} color={colors.primary} />
+                                                    </LinearGradient>
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    onPress={handleImportCollection}
+                                                    style={[styles.headerButton, { marginLeft: 8 }]}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <LinearGradient
+                                                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                                        style={styles.headerButtonGradient}
+                                                    >
+                                                        <Ionicons name="download" size={20} color={colors.primary} />
+                                                    </LinearGradient>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+
+                                        {selectedCollection && (
+                                            <CategoriesCarousel
+                                                collectionName={selectedCollection}
+                                                collectionCategories={collectionCategories}
+                                                onAddCategory={handleAddCategory}
+                                                onRemoveCategory={handleRemoveCategory}
+                                            />
+                                        )}
+
+                                        {filteredCollections.length > 0 ? (
+                                            <CollectionCarousel
+                                                collections={filteredCollections}
+                                                books={books}
+                                                selectedCollection={selectedCollection}
+                                                onSelectCollection={setSelectedCollection}
+                                                calculateCollectionTotal={calculateCollectionTotal}
+                                                onEditCollection={(collectionName) => {
+                                                    setEditingCollection(collectionName);
+                                                    setShowEditModal(true);
+                                                }}
+                                                onDeleteCollection={handleDeleteCollection}
+                                                onExportCollection={handleExportCollectionToCSV}
+                                                getBookWord={getBookWord}
+                                                formatCurrency={formatCurrency}
+                                                onNavigateToBooks={goToNextStep}
+                                            />
+                                        ) : (
+                                            <View style={styles.emptyContainer}>
+                                                <Text style={styles.emptyText}>
+                                                    {searchQuery
+                                                        ? t('labels.noCollectionsFound')
+                                                        : t('labels.noCollections')}
+                                                </Text>
+                                                {!searchQuery && (
+                                                    <View style={styles.emptyActions}>
+                                                        <TouchableOpacity
+                                                            style={styles.emptyActionButton}
+                                                            onPress={() => setShowAddCollectionModal(true)}
+                                                        >
+                                                            <Ionicons name="add" size={20} color={colors.primary} />
+                                                            <Text style={styles.emptyActionText}>{t('buttons.addCollection')}</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            case 1:
+                                return (
+                                    <View style={styles.stepContent}>
+                                        {selectedCollection && (
+                                            <View style={styles.collectionDetails}>
+                                                {books[selectedCollection]?.length === 0 ? (
+                                                    <View style={styles.emptyBookContainer}>
+                                                        <Text style={styles.emptyText}>{t('labels.noBooksInCollection')}</Text>
+                                                    </View>
+                                                ) : (
+                                                    <BooksCarousel
+                                                        books={books[selectedCollection]}
+                                                        collectionName={selectedCollection}
+                                                        onEditBook={(index) => handleEditBook(selectedCollection, index)}
+                                                        onDeleteBook={(index) => removeBookFromCollection(selectedCollection, index)}
+                                                        onListBook={(index) => handleListBook(selectedCollection, index)}
+                                                        formatDefectsSummary={formatDefectsSummary}
+                                                        formatUniquenessSummary={formatUniquenessSummary}
+                                                        formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                                        formatListingStatus={formatListingStatus}
+                                                    />
+                                                )}
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            default:
+                                return null;
+                        }
+                    })()}
+                </Animated.View>
+            </View>
+        );
+    };
+
+    return (
+        <LinearGradient
+            colors={[colors.buttonSelected1, colors.buttonSelected2]}
+            style={{flex: 1}}
+        >
+            <View style={{ flex: 1 }}>
+                <ScrollView
+                    contentContainerStyle={[styles.container, { paddingBottom: 20 }]}
+                    style={styles.backgroundGradient}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <LinearGradient
+                        colors={['transparent', 'transparent']}
+                        start={[0, 0]}
+                        end={[1, 1]}
+                        style={styles.ratingOuterContainer}
+                    >
+                        <View style={styles.ratingContainer}>
+                            <View style={styles.priceSummarySection}>
+                                <LinearGradient
+                                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                    style={[styles.priceSummaryGradient, styles.withShadow]}
+                                >
+                                    <View style={styles.priceRow}>
+                                        <View style={styles.priceLabelContainer}>
+                                            <FontAwesome5 name="coins" size={22} color={colors.primary} />
+                                            <Text style={styles.priceLabelTotal}>Wartość kolekcji:</Text>
+                                        </View>
+                                        <Text style={styles.priceValueTotal}>
+                                            {formatCurrency(calculateTotalValue().toString())}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.separator} />
+
+                                    <View style={styles.priceRow}>
+                                        <View style={styles.priceLabelContainer}>
+                                            <Ionicons name="book-outline" size={14} color={colors.secondary} />
+                                            <Text style={styles.priceLabel}>Wartość aktywna:</Text>
+                                        </View>
+                                        <Text style={[styles.priceValue, {color: colors.grayDark}]}>
+                                            {formatCurrency(calculateActiveValue().toString())}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.priceRow}>
+                                        <View style={styles.priceLabelContainer}>
+                                            <Ionicons name="cash-outline" size={14} color={colors.primary} />
+                                            <Text style={styles.priceLabelSold}>Wartość sprzedana:</Text>
+                                        </View>
+                                        <Text style={[styles.priceValue, {color: colors.primary}]}>
+                                            {formatCurrency(calculateSoldValue().toString())}
+                                        </Text>
+                                    </View>
+                                </LinearGradient>
+                            </View>
+                        </View>
+                    </LinearGradient>
+
+                    {renderStep()}
+                </ScrollView>
+
+                <CustomAlertModal
+                    visible={alertVisible}
+                    title={alertTitle}
+                    message={alertMessage}
+                    type={alertType}
+                    onConfirm={() => {
+                        confirmAction();
+                        setAlertVisible(false);
+                    }}
+                    confirmText={t('buttons.confirm')}
+                    closeButtonStyle={styles.closeButton}
+                    closeButtonTextStyle={styles.closeButtonText}
+                    buttonFullWidth={true}
+                />
+
+                <AddCollectionModal
+                    visible={showAddCollectionModal}
+                    onClose={() => setShowAddCollectionModal(false)}
+                    onConfirm={(name, categories, icon) => handleAddCollection(name, categories, icon)}
+                />
+                <EditCollectionModal
+                    visible={showEditModal}
+                    currentName={editingCollection || ''}
+                    onClose={() => setShowEditModal(false)}
+                    onConfirm={(newName, categories, icon) => {
+                        if (editingCollection) {
+                            handleEditCollection(editingCollection, newName, categories, icon);
+                        }
+                    }}
+                    collectionCategories={collectionCategories}
+                />
+                <ImportPreviewModal
+                    importPreview={importPreview}
+                    onCancel={cancelImport}
+                    onConfirm={confirmImport}
+                    formatDefectsSummary={formatDefectsSummary}
+                    formatUniquenessSummary={formatUniquenessSummary}
+                    formatMarketFactorsSummary={formatMarketFactorsSummary}
+                    formatListingStatus={formatListingStatus}
+                />
+                <ListingModal
+                    visible={showListingModal}
+                    onClose={() => setShowListingModal(false)}
+                    selectedPlatform={selectedPlatform}
+                    onSelectPlatform={selectPlatform}
+                    onConfirm={confirmListing}
+                />
+                <StatusChangeModal
+                    visible={showStatusChangeModal}
+                    onClose={() => setShowStatusChangeModal(false)}
+                    currentStatus={currentListingBook ? books[currentListingBook.collection][currentListingBook.index].listingStatus?.status || 'notListed' : 'notListed'}
+                    onChangeStatus={changeListingStatus}
+                />
+            </View>
+        </LinearGradient>
     );
 };
 
@@ -898,139 +906,10 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 6,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
-    valueRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginVertical: 8,
-    },
-    navArrow: {
-        marginHorizontal: 10,
-        marginTop: 10
-    },
-    emptyBookContainer: {
-        padding: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-    collectionDetails: {
-        marginTop: 0,
-    },
-    totalValueContent: {
-        alignItems: 'center',
-    },
-    coinIconContainer: {
-        borderRadius: 20,
-        width: 45,
-        height: 45,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-        marginRight: 10,
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    coinIconGradient: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
-    },
-    priceContainer: {
-        backgroundColor: colors.background,
-        borderRadius: 20,
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    valueBreakdownContainer: {
-        width: '100%',
-        marginTop: 16,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
-    },
-    valueBreakdownRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-        alignItems: 'center',
-    },
-    valueBreakdownLabel: {
-        fontSize: 14,
-        color: colors.white,
-    },
-    valueBreakdownAmount: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    activeValue: {
-        color: colors.white,
-    },
-    soldValue: {
-        color: colors.white,
-    },
-    totalValueContainer: {
-        padding: 24,
-        paddingTop: 60,
-        marginTop: -20,
-        marginBottom: 20,
-        marginHorizontal: -16,
-        borderBottomLeftRadius: 22,
-        borderBottomRightRadius: 22,
-    },
-    mainValueRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    valueTextContainer: {
-        marginLeft: 12,
-    },
-    totalValueLabel: {
-        fontSize: 14,
-        color: colors.white,
-        opacity: 0.9,
-    },
-    totalValueAmount: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: colors.white,
-    },
-    breakdownRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    breakdownItem: {
-        flex: 1,
-    },
-    breakdownLabel: {
-        fontSize: 13,
-        color: colors.white,
-        opacity: 0.8,
-        marginBottom: 4,
-    },
-    breakdownValue: {
-        fontSize: 16,
-        fontWeight: '600',
+    backgroundGradient: {
+        ...StyleSheet.absoluteFillObject,
     },
     ratingOuterContainer: {
         padding: 20,
@@ -1038,21 +917,10 @@ const styles = StyleSheet.create({
         marginHorizontal: -16,
         paddingTop: 60,
         marginTop: -20,
-        borderBottomLeftRadius: 22,
-        borderBottomRightRadius: 22,
+        borderRadius: 0,
     },
     ratingContainer: {
         gap: 10,
-    },
-    ratingHeader: {
-        marginTop: 20,
-        gap: 6,
-    },
-    ratingTitle: {
-        color: colors.primary,
-        fontSize: 18,
-        fontWeight: '700',
-        textAlign: 'center',
     },
     priceRow: {
         flexDirection: 'row',
@@ -1071,7 +939,7 @@ const styles = StyleSheet.create({
     },
     priceLabelTotal: {
         fontSize: 18,
-        color: colors.primary,
+        color: colors.blackDark,
         marginLeft: 5
     },
     priceLabelSold: {
@@ -1109,6 +977,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
+        marginTop: 50
     },
     priceSummaryGradient: {
         padding: 16,
@@ -1126,47 +995,17 @@ const styles = StyleSheet.create({
         color: colors.primary,
         lineHeight: 24,
     },
-    stepContainer: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        minHeight: 400,
-        width: '100%',
-        marginTop: 0,
-    },
-    navArrowContainer: {
-        width: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 5,
-    },
-    stepContent: {
-        flex: 1,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        minHeight: 480,
-        maxHeight: 480,
-        width: Dimensions.get('window').width - 80,
-        paddingHorizontal: 10,
-    },
-    scrollContainer: {
-        flexGrow: 1,
+    emptyBookContainer: {
         padding: 16,
-        paddingTop: 6,
-        backgroundColor: colors.background,
-    },
-    titleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 10,
-        marginTop: 10
+        alignItems: 'center',
+        backgroundColor: colors.background,
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
-    slideTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-        marginRight: 30,
+    collectionDetails: {
+        marginTop: 0,
     },
     emptyContainer: {
         justifyContent: 'center',
@@ -1249,6 +1088,58 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         marginLeft: 5,
+    },
+    stepContainer: {
+        flex: 1,
+        width: '100%',
+        backgroundColor: colors.background,
+        borderTopRightRadius: 15,
+        borderTopLeftRadius: 15,
+        shadowColor: colors.lightPrimary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    stepHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.grayLight,
+    },
+    stepTitle: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '500',
+        color: colors.blackDark,
+        marginRight: 10,
+    },
+    navigationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    progressDots: {
+        flexDirection: 'row',
+        marginHorizontal: 10,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginHorizontal: 3,
+    },
+    activeDot: {
+        backgroundColor: colors.primary,
+    },
+    inactiveDot: {
+        backgroundColor: colors.gray,
+    },
+    stepContent: {
+        flex: 1,
+        paddingHorizontal: 10,
     },
 });
 
