@@ -579,6 +579,11 @@ const CollectionsScreen = () => {
         return `${t(`labels.${marketFactors.demand}`)} ${t('labels.demand')}, ${t(`labels.${marketFactors.supply}`)} ${t('labels.supply')}`;
     };
 
+    const navigateToScreen = (screen: string, isTab?: boolean, customPath?: string) => {
+        const path = customPath ? customPath : isTab ? `/(tabs)/${screen}` : `/${screen}`;
+        router.push(path as any);
+    };
+
     const formatListingStatus = (status?: ListingStatus): string => {
         if (!status) return t('listingStatus.notListed', 'Not listed');
         switch (status.status) {
@@ -835,6 +840,12 @@ const CollectionsScreen = () => {
                                             {formatCurrency(calculateSoldValue().toString())}
                                         </Text>
                                     </View>
+                                    <TouchableOpacity
+                                        onPress={() => navigateToScreen('Settings', false, '/customScreens/FinancialReport')}
+                                        style={styles.moreButton}
+                                    >
+                                        <Text style={styles.moreButtonText}>{t('home.more')}</Text>
+                                    </TouchableOpacity>
                                 </LinearGradient>
                             </View>
                         </View>
@@ -904,7 +915,7 @@ const CollectionsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        padding: 16,
+        padding: 10,
         paddingTop: 6,
         backgroundColor: 'transparent',
     },
@@ -912,7 +923,7 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
     },
     ratingOuterContainer: {
-        padding: 20,
+        padding: 10,
         marginBottom: 20,
         marginHorizontal: -16,
         paddingTop: 60,
@@ -1100,6 +1111,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
+        marginLeft:0
     },
     stepHeader: {
         flexDirection: 'row',
@@ -1140,6 +1152,17 @@ const styles = StyleSheet.create({
     stepContent: {
         flex: 1,
         paddingHorizontal: 10,
+    },
+    moreButton: {
+        alignSelf: 'flex-end',
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginTop: 20
+    },
+    moreButtonText: {
+        color: colors.primary,
+        fontSize: 16,
+        fontWeight: '500'
     },
 });
 
