@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 20,
-        padding: 8,
+        borderRadius: 30,
+        padding: 12,
     },
     countBadge: {
         position: 'absolute',

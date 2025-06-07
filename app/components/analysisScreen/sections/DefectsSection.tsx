@@ -11,9 +11,9 @@ type DefectsSectionProps = {
 };
 
 const COLUMNS = 3;
-const BUTTON_MARGIN = 20;
+const BUTTON_MARGIN = 15;
 const { width } = Dimensions.get('window');
-const buttonSize = (width - 40 - (BUTTON_MARGIN * (COLUMNS - 1) * 2)) / COLUMNS;
+const buttonSize = (width - 40 - (BUTTON_MARGIN * (COLUMNS - 1) * 2.7)) / COLUMNS;
 
 const DefectsSection = ({ defects, onToggleDefect }: DefectsSectionProps) => {
     const { t } = useTranslation();
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     },
     columnWrapper: {
         justifyContent: 'space-between',
-        marginBottom: 25,
+        marginBottom: 15,
     },
     itemContainer: {
         alignItems: 'center',

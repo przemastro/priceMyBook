@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 
+// Główne interfejsy
 export interface BookDefect {
     id: string;
     selected: boolean;
@@ -7,8 +8,24 @@ export interface BookDefect {
     count: number;
     confidence?: number;
     icon: string;
+    color: string;
 }
 
+export interface MarketFactorToggle {
+    id: 'includePublicationYear' | 'includeDemand' | 'includeSupply';
+    icon: string;
+    label: string;
+    color: string;
+}
+
+export interface UniquenessType {
+    id: string;
+    icon: string;
+    label: string;
+    color: string;
+}
+
+// Pozostałe interfejsy pozostają bez zmian
 export interface MarketData {
     demand: MarketFactors['demand'];
     supply: MarketFactors['supply'];
@@ -16,12 +33,6 @@ export interface MarketData {
     priceHistory?: { date: string; price: number }[];
     lastUpdated: Date;
     source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
-}
-
-export interface MarketFactorToggle {
-    id: 'includePublicationYear' | 'includeDemand' | 'includeSupply';
-    icon: string;
-    label: string;
 }
 
 export interface ListingStatus {
@@ -42,7 +53,7 @@ export interface BookUniqueness {
     hasAuthorSignature: boolean;
     isLimitedEdition: boolean;
     isPublisherDefunct: boolean;
-    [key: string]: boolean; // Dodane dla zgodności z Record<string, boolean>
+    [key: string]: boolean;
 }
 
 export interface MarketFactors {
@@ -59,46 +70,65 @@ export interface PriceCalculation {
     finalPrice: number;
 }
 
+// Stałe z kolorami
 export const MARKET_FACTOR_TYPES = [
-    { id: 'publicationYear', icon: 'calendar-outline', label: 'labels.publicationYear' },
-    { id: 'demand', icon: 'trending-up-outline', label: 'labels.demand' },
-    { id: 'supply', icon: 'trending-down-outline', label: 'labels.supply' }
+    {
+        id: 'publicationYear',
+        icon: 'calendar-outline',
+        label: 'labels.publicationYear',
+        color: '#3498db' // Niebieski
+    },
+    {
+        id: 'demand',
+        icon: 'trending-up-outline',
+        label: 'labels.demand',
+        color: '#2ecc71' // Zielony
+    },
+    {
+        id: 'supply',
+        icon: 'trending-down-outline',
+        label: 'labels.supply',
+        color: '#e74c3c' // Czerwony
+    }
 ] as const;
 
 export const MARKET_FACTOR_TOGGLES: MarketFactorToggle[] = [
-    { id: 'includePublicationYear', icon: 'calendar-outline', label: 'labels.includePublicationYear' },
-    { id: 'includeDemand', icon: 'trending-up-outline', label: 'labels.includeDemand' },
-    { id: 'includeSupply', icon: 'trending-down-outline', label: 'labels.includeSupply' }
+    {
+        id: 'includePublicationYear',
+        icon: 'calendar-outline',
+        label: 'labels.includePublicationYear',
+        color: '#3498db'
+    },
+    {
+        id: 'includeDemand',
+        icon: 'trending-up-outline',
+        label: 'labels.includeDemand',
+        color: '#2ecc71'
+    },
+    {
+        id: 'includeSupply',
+        icon: 'trending-down-outline',
+        label: 'labels.includeSupply',
+        color: '#e74c3c'
+    }
 ];
 
 export const DEMAND_OPTIONS = [
-    { id: 'veryHigh', label: 'labels.veryHigh' },
-    { id: 'high', label: 'labels.high' },
-    { id: 'medium', label: 'labels.medium' },
-    { id: 'low', label: 'labels.low' },
-    { id: 'veryLow', label: 'labels.veryLow' }
+    { id: 'veryHigh', label: 'labels.veryHigh', color: '#27ae60' },
+    { id: 'high', label: 'labels.high', color: '#2ecc71' },
+    { id: 'medium', label: 'labels.medium', color: '#f39c12' },
+    { id: 'low', label: 'labels.low', color: '#e67e22' },
+    { id: 'veryLow', label: 'labels.veryLow', color: '#e74c3c' }
 ];
 
 export const SUPPLY_OPTIONS = [
-    { id: 'veryLow', label: 'labels.veryLow' },
-    { id: 'low', label: 'labels.low' },
-    { id: 'medium', label: 'labels.medium' },
-    { id: 'high', label: 'labels.high' },
-    { id: 'flooded', label: 'labels.flooded' }
+    { id: 'veryLow', label: 'labels.veryLow', color: '#27ae60' },
+    { id: 'low', label: 'labels.low', color: '#2ecc71' },
+    { id: 'medium', label: 'labels.medium', color: '#f39c12' },
+    { id: 'high', label: 'labels.high', color: '#e67e22' },
+    { id: 'flooded', label: 'labels.flooded', color: '#e74c3c' }
 ];
 
-// Dodaj kolory do typu BookDefect
-export interface BookDefect {
-    id: string;
-    selected: boolean;
-    priceReduction: number;
-    count: number;
-    confidence?: number;
-    icon: string;
-    color?: string; // Dodane pole
-}
-
-// Zaktualizowana lista defektów z kolorami
 export const DEFECT_TYPES = [
     {
         id: 'tornPages',
@@ -131,7 +161,7 @@ export const DEFECT_TYPES = [
         color: '#16a085' // Turkusowy
     },
     {
-        id: 'writtingMarks',
+        id: 'writingMarks',
         icon: 'pencil-outline',
         color: '#8e44ad' // Fioletowy
     },
@@ -147,15 +177,46 @@ export const DEFECT_TYPES = [
     }
 ] as const;
 
-export const UNIQUENESS_TYPES = [
-    { id: 'isMassMarket', icon: 'copy-outline', label: 'labels.massMarket' },
-    { id: 'isFirstEdition', icon: 'book-outline', label: 'labels.firstEdition' },
-    { id: 'isCollectorsEdition', icon: 'ribbon-outline', label: 'labels.collectorsEdition' },
-    { id: 'hasAuthorSignature', icon: 'create-outline', label: 'labels.authorSignature' },
-    { id: 'isLimitedEdition', icon: 'diamond-outline', label: 'labels.limitedEdition' },
-    { id: 'isPublisherDefunct', icon: 'skull-outline', label: 'labels.defunctPublisher' }
-] as const;
+export const UNIQUENESS_TYPES: UniquenessType[] = [
+    {
+        id: 'isMassMarket',
+        icon: 'copy-outline',
+        label: 'labels.massMarket',
+        color: '#95a5a6' // Szary
+    },
+    {
+        id: 'isFirstEdition',
+        icon: 'book-outline',
+        label: 'labels.firstEdition',
+        color: '#f1c40f' // Żółty
+    },
+    {
+        id: 'isCollectorsEdition',
+        icon: 'ribbon-outline',
+        label: 'labels.collectorsEdition',
+        color: '#e67e22' // Pomarańczowy
+    },
+    {
+        id: 'hasAuthorSignature',
+        icon: 'create-outline',
+        label: 'labels.authorSignature',
+        color: '#9b59b6' // Fioletowy
+    },
+    {
+        id: 'isLimitedEdition',
+        icon: 'diamond-outline',
+        label: 'labels.limitedEdition',
+        color: '#1abc9c' // Turkusowy
+    },
+    {
+        id: 'isPublisherDefunct',
+        icon: 'skull-outline',
+        label: 'labels.defunctPublisher',
+        color: '#e74c3c' // Czerwony
+    }
+];
 
+// Pozostałe typy pozostają bez zmian
 export interface TabItem {
     id: string;
     title: string;
