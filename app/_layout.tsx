@@ -70,7 +70,7 @@ function RootLayoutNav() {
   });
 
   const navigateToSettings = () => {
-    router.push('/Settings');
+    router.push('/customScreens/Settings');
   };
 
   const handleRateApp = () => {
@@ -106,22 +106,15 @@ function RootLayoutNav() {
               }}
           />
           <Stack.Screen
-              name="settings"
+              name="customScreens/FinancialReport"
               options={{
-                title: t('settings.title'),
-                headerTitleStyle: {
-                  color: colors.black,
-                  fontSize: 20,
-                  fontWeight: 'bold',
-                },
-                headerLeft: () => (
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={{ marginLeft: 0, marginRight: 20 }}
-                    >
-                      <Ionicons name="arrow-back" size={24} color={colors.primary} />
-                    </TouchableOpacity>
-                ),
+                headerShown: false
+              }}
+          />
+          <Stack.Screen
+              name="customScreens/Settings"
+              options={{
+                headerShown: false
               }}
           />
         </Stack>

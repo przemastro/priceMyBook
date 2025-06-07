@@ -1,11 +1,12 @@
 // screens/Settings.tsx
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {useLocalSearchParams, useRouter} from 'expo-router';
-import { useState, useRef } from 'react';
+import {router, useLocalSearchParams, useRouter} from 'expo-router';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/config';
 import { colors } from "@/styles/styles";
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SettingsScreen() {
     const { t } = useTranslation();
@@ -101,88 +102,143 @@ export default function SettingsScreen() {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.tabsContainer}>
+        <View style={styles.container}>
+            <LinearGradient
+                colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                style={styles.backgroundGradient}
+            />
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'about' && styles.activeTab]}
-                    onPress={() => setActiveTab('about')}
+                    onPress={() => router.back()}
+                    style={{ marginLeft: 10, marginRight: 20, marginBottom: 20 }}
                 >
-                    <Ionicons
-                        name="information-circle"
-                        size={20}
-                        color={activeTab === 'about' ? colors.primary : colors.black}
-                    />
-                    <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
-                        {t('settings.about')}
-                    </Text>
+                    <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
                 </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'algorithm' && styles.activeTab]}
-                    onPress={() => setActiveTab('algorithm')}
-                >
-                    <Ionicons
-                        name="calculator"
-                        size={20}
-                        color={activeTab === 'algorithm' ? colors.primary : colors.black}
-                    />
-                    <Text style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}>
-                        {t('settings.priceAlgorithm')}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'language' && styles.activeTab]}
-                    onPress={() => setActiveTab('language')}
-                >
-                    <Ionicons
-                        name="language"
-                        size={20}
-                        color={activeTab === 'language' ? colors.primary : colors.black}
-                    />
-                    <Text style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}>
-                        {t('settings.language')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+                <View style={styles.tabsOuterContainer}>
+                    <LinearGradient
+                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                        style={styles.tabsGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <View style={styles.tabsContainer}>
+                            <TouchableOpacity
+                                style={[styles.tab, activeTab === 'about' && styles.activeTab]}
+                                onPress={() => setActiveTab('about')}
+                            >
+                                <Ionicons
+                                    name="information-circle"
+                                    size={20}
+                                    color={activeTab === 'about' ? colors.white : colors.white}
+                                />
+                                <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
+                                    {t('settings.about')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.tab, activeTab === 'algorithm' && styles.activeTab]}
+                                onPress={() => setActiveTab('algorithm')}
+                            >
+                                <Ionicons
+                                    name="calculator"
+                                    size={20}
+                                    color={activeTab === 'algorithm' ? colors.white : colors.white}
+                                />
+                                <Text style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}>
+                                    {t('settings.priceAlgorithm')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.tab, activeTab === 'language' && styles.activeTab]}
+                                onPress={() => setActiveTab('language')}
+                            >
+                                <Ionicons
+                                    name="language"
+                                    size={20}
+                                    color={activeTab === 'language' ? colors.white : colors.white}
+                                />
+                                <Text style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}>
+                                    {t('settings.language')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </LinearGradient>
+                </View>
 
-            {renderContent()}
-        </ScrollView>
+                <View style={styles.contentContainer}>
+                    {renderContent()}
+                </View>
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
-        padding: 20,
+        position: 'relative',
+    },
+    backgroundGradient: {
+        ...StyleSheet.absoluteFillObject,
+        opacity: 0.9
+    },
+    scrollContainer: {
+        padding: 10,
+        paddingTop: 20,
+        marginTop: 30
+    },
+    tabsOuterContainer: {
+        borderRadius: 15,
+        overflow: 'hidden',
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3
+    },
+    tabsGradient: {
+        padding: 2,
+        opacity: 0.85
     },
     tabsContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        borderRadius: 15,
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray,
-        paddingBottom: 10,
+        paddingVertical: 10
     },
     tab: {
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingHorizontal: 15,
+        paddingVertical: 8,
         borderRadius: 20,
         flexDirection: 'row',
     },
     activeTab: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.3)',
     },
     tabText: {
-        marginLeft: 5,
-        color: colors.black,
+        marginLeft: 8,
+        color: colors.white,
+        fontSize: 14,
+        fontWeight: '500'
     },
     activeTabText: {
-        color: colors.primary,
-        fontWeight: '500',
+        fontWeight: '700',
+    },
+    contentContainer: {
+        backgroundColor: colors.background,
+        borderRadius: 15,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3
     },
     tabContent: {
-        paddingBottom: 30,
+        paddingBottom: 10,
     },
     settingsTitle: {
         fontSize: 18,
@@ -248,15 +304,20 @@ const styles = StyleSheet.create({
         borderRadius: 5,
     },
     languageButton: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
+        backgroundColor: colors.primary,
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
         marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3
     },
     languageButtonText: {
-        color: colors.primary,
+        color: colors.white,
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600',
     },
 });

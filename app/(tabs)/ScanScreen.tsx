@@ -206,11 +206,12 @@ export default function ScanScreen() {
         }
 
         // Prepare market data with proper typing
+// Prepare market data with proper typing
         const marketData: MarketData | undefined = book.amazonData?.data?.marketFactors && book.amazonData.data.priceRange
             ? {
               demand: book.amazonData.data.marketFactors.demand,
               supply: book.amazonData.data.marketFactors.supply,
-              priceRange: book.amazonData.data.priceRange,
+              priceRange: book.amazonData.data.priceRange, // This is now required
               priceHistory: [
                 {date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9},
                 {date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1},

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import {View, Text, FlatList, StyleSheet, TouchableOpacity} from 'react-native';
 import { useAppContext } from '@/context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,6 +7,8 @@ import { colors } from '@/styles/styles';
 import HistoryItem from '@/app/components/historyScreen/HistoryItem';
 import SearchBar from '@/app/components/historyScreen/SearchBar';
 import ClearHistoryButton from '@/app/components/historyScreen/ClearHistoryButton';
+import {router} from "expo-router";
+import {Ionicons} from "@expo/vector-icons";
 
 export default function HistoryScreen() {
     const { scanHistory, clearScanHistory } = useAppContext();
@@ -25,9 +27,15 @@ export default function HistoryScreen() {
                 style={styles.backgroundGradient}
             />
 
-            {/* Wycentrowany nagłówek z tytułem */}
             <View style={styles.headerContainer}>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    style={styles.backButton}
+                >
+                    <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>{t('titles.history')}</Text>
+                <View style={styles.spacer} />
             </View>
 
             <View style={styles.container}>
@@ -68,17 +76,26 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
     },
     headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingTop: 48,
         marginBottom: 10,
         width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+    },
+    backButton: {
+        marginLeft: 20,
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: '500',
         color: colors.blackDark,
         textAlign: 'center',
+        flex: 1,
+    },
+    spacer: {
+        width: 44,
+        marginRight: 20,
     },
     container: {
         flex: 1,

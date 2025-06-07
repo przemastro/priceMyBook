@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
-import {useLocalSearchParams, useRouter} from 'expo-router';
+import {router, useLocalSearchParams, useRouter} from 'expo-router';
 import {colors} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
 import {Ionicons, MaterialIcons} from '@expo/vector-icons';
@@ -79,7 +79,8 @@ export default function AnalysisScreen() {
     selected: false,
     priceReduction: getDefaultReduction(defect.id),
     count: 0,
-    icon: defect.icon
+    icon: defect.icon,
+    color: defect.color
   })));
   const [ageInfo] = useState<BookAgeInfo>({years: 0});
   const initialUniqueness = parseParam<BookUniqueness>(params.uniqueness) || {
@@ -291,6 +292,7 @@ export default function AnalysisScreen() {
       const bookDefects = parseParam<Record<string, {selected: boolean, reduction: number, count: number}>>(params.defects) || {};
       const bookUniqueness = parseParam<BookUniqueness>(params.uniqueness) || initialUniqueness;
       const bookMarketFactors = parseParam<MarketFactors>(params.marketFactors) || initialMarketFactors;
+
       const updatedDefects = DEFECT_TYPES.map(defect => {
         const bookDefect = bookDefects[defect.id];
         return {
@@ -298,9 +300,11 @@ export default function AnalysisScreen() {
           selected: bookDefect?.selected || false,
           priceReduction: bookDefect?.reduction || getDefaultReduction(defect.id),
           count: bookDefect?.count || 0,
-          icon: defect.icon
+          icon: defect.icon,
+          color: defect.color // Add this line
         };
       });
+
       setDefects(updatedDefects);
       setUniqueness(bookUniqueness);
       setMarketFactors(bookMarketFactors);
@@ -476,7 +480,8 @@ export default function AnalysisScreen() {
           if (defect) {
             setScannedDefect({
               ...defect,
-              confidence: Math.floor(Math.random() * 50) + 50
+              confidence: Math.floor(Math.random() * 50) + 50,
+              color: defect.color // Make sure this is included
             });
             setShowDefectModal(true);
             setHasScanned(true);
@@ -503,7 +508,8 @@ export default function AnalysisScreen() {
         d.id === scannedDefect.id ? {
           ...d,
           selected: true,
-          count: d.count + 1
+          count: d.count + 1,
+          color: d.color
         } : d
     ));
     setShowDefectModal(false);
@@ -927,6 +933,12 @@ export default function AnalysisScreen() {
               style={styles.backgroundGradient}
               showsVerticalScrollIndicator={false}
           >
+            <TouchableOpacity
+                onPress={() => router.back()}
+                style={{ marginLeft: 10, marginRight: 20, marginBottom: 20 }}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
+            </TouchableOpacity>
           <RatingSection
               bookRating={bookRating}
               averageUsedPrice={averageUsedPrice}
@@ -1075,7 +1087,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 10,
-    paddingTop: 100,
+    paddingTop: 50,
     backgroundColor: 'transparent',
   },
   backgroundGradient: {

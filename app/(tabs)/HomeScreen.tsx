@@ -166,16 +166,16 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        paddingTop: 100,
+        paddingTop: 95,
         position: 'relative'
     },
     backgroundGradient: {
         ...StyleSheet.absoluteFillObject
     },
     headerOuterContainer: {
-        borderRadius: 20,
+        borderRadius: 15,
         overflow: 'hidden',
-        marginBottom: 30
+        marginBottom: 10
     },
     headerGradient: {
         padding: 2,

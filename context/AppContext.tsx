@@ -65,7 +65,14 @@ interface BookData {
     ageInfo: BookAgeInfo;
     isExpanded?: boolean;
     listingStatus?: ListingStatus;
-    marketData?: MarketData;
+    marketData?: {
+        demand: MarketFactors['demand'];
+        supply: MarketFactors['supply'];
+        priceRange: [number, number];
+        priceHistory: { date: string; price: number }[];
+        lastUpdated: Date;
+        source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
+    };
 }
 
 interface AppContextType {

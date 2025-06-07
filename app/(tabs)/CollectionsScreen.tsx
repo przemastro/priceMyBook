@@ -16,7 +16,7 @@ import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { useRouter } from 'expo-router';
+import {router, useRouter} from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
@@ -793,10 +793,16 @@ const CollectionsScreen = () => {
         >
             <View style={{ flex: 1 }}>
                 <ScrollView
-                    contentContainerStyle={[styles.container, { paddingBottom: 20 }]}
+                    contentContainerStyle={[styles.container, { paddingBottom: 0 }]}
                     style={styles.backgroundGradient}
                     showsVerticalScrollIndicator={false}
                 >
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ marginLeft: 10, marginRight: 20, marginBottom: 0 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
+                    </TouchableOpacity>
                     <LinearGradient
                         colors={['transparent', 'transparent']}
                         start={[0, 0]}
@@ -915,19 +921,17 @@ const CollectionsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        padding: 10,
-        paddingTop: 6,
+        padding: 8,
+        paddingTop: 50,
         backgroundColor: 'transparent',
     },
     backgroundGradient: {
         ...StyleSheet.absoluteFillObject,
     },
     ratingOuterContainer: {
-        padding: 10,
+        paddingTop: 0,
         marginBottom: 20,
-        marginHorizontal: -16,
-        paddingTop: 60,
-        marginTop: -20,
+        marginHorizontal: -2,
         borderRadius: 0,
     },
     ratingContainer: {
@@ -980,7 +984,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     priceSummarySection: {
-        borderRadius: 12,
+        borderRadius: 15,
         overflow: 'hidden',
         marginHorizontal: 4,
         shadowColor: colors.lightPrimary,
@@ -988,7 +992,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
-        marginTop: 50
+        marginTop: 20
     },
     priceSummaryGradient: {
         padding: 16,

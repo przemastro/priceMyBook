@@ -6,8 +6,9 @@ import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Easing } from 'react-native-reanimated';
+import {router} from "expo-router";
 
-const chartWidth = Dimensions.get('window').width - 40;
+const chartWidth = Dimensions.get('window').width - 70;
 
 const chartConfig = {
     backgroundGradientFrom: colors.background,
@@ -19,23 +20,66 @@ const chartConfig = {
     useShadowColorFromDataset: false,
     propsForBackgroundLines: {
         stroke: colors.grayLight
+    },
+    decimalPlaces: 0,
+    propsForLabels: {
+        fontSize: 10
     }
 };
 
-const dummyBarData = {
+// Dane dla wykresu sprzedaży książek per miesiąc
+const monthlySalesData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{ data: [150, 200, 170, 220, 180, 210] }],
+    datasets: [{ data: [45, 60, 52, 78, 65, 90] }],
 };
 
-const dummyLineData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-    datasets: [{ data: [80, 90, 70, 95, 85], strokeWidth: 2 }],
+// Dane dla wykresu skumulowanej sprzedaży
+const cumulativeSalesData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [{
+        data: [45, 105, 157, 235, 300, 390], // Skumulowana suma
+        color: (opacity = 1) => colors.primary,
+        strokeWidth: 3
+    }],
 };
 
-const dummyPieData = [
-    { name: 'Sales', population: 45, color: colors.primary, legendFontColor: colors.black, legendFontSize: 12 },
-    { name: 'Costs', population: 30, color: colors.secondary, legendFontColor: colors.black, legendFontSize: 12 },
-    { name: 'Profit', population: 25, color: colors.accent, legendFontColor: colors.black, legendFontSize: 12 },
+// Dane dla wykresu wartości księgozbiorów
+const booksValueData = [
+    {
+        name: 'Fantasy',
+        population: 35,
+        color: '#4CAF50',
+        legendFontColor: colors.black,
+        legendFontSize: 12
+    },
+    {
+        name: 'Science Fiction',
+        population: 25,
+        color: '#2196F3',
+        legendFontColor: colors.black,
+        legendFontSize: 12
+    },
+    {
+        name: 'History',
+        population: 20,
+        color: '#FF9800',
+        legendFontColor: colors.black,
+        legendFontSize: 12
+    },
+    {
+        name: 'Biography',
+        population: 15,
+        color: '#9C27B0',
+        legendFontColor: colors.black,
+        legendFontSize: 12
+    },
+    {
+        name: 'Other',
+        population: 5,
+        color: '#607D8B',
+        legendFontColor: colors.black,
+        legendFontSize: 12
+    },
 ];
 
 const FinancialReport = () => {
@@ -70,9 +114,9 @@ const FinancialReport = () => {
 
     const renderStep = () => {
         const stepTitles = [
-            t('charts.monthlySummary'),
-            t('charts.weeklyTrend'),
-            t('charts.revenueBreakdown')
+            t('charts.monthlySales'),
+            t('charts.cumulativeSales'),
+            t('charts.booksValue')
         ];
 
         return (
@@ -124,14 +168,16 @@ const FinancialReport = () => {
                                             style={[styles.chartContainer, styles.withShadow]}
                                         >
                                             <BarChart
-                                                data={dummyBarData}
+                                                data={monthlySalesData}
                                                 width={chartWidth}
                                                 height={220}
-                                                yAxisSuffix=" zł"
+                                                yAxisLabel=""
+                                                yAxisSuffix=""
                                                 chartConfig={chartConfig}
                                                 withInnerLines={false}
                                                 showBarTops={false}
                                                 style={styles.chart}
+                                                fromZero
                                             />
                                         </LinearGradient>
                                         <View style={styles.priceSummarySection}>
@@ -140,16 +186,16 @@ const FinancialReport = () => {
                                                 style={[styles.priceSummaryGradient, styles.withShadow]}
                                             >
                                                 <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.totalRevenue')}</Text>
-                                                    <Text style={styles.priceValue}>2,450 zł</Text>
+                                                    <Text style={styles.priceLabel}>{t('charts.booksSoldThisMonth')}</Text>
+                                                    <Text style={styles.priceValue}>90</Text>
                                                 </View>
                                                 <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.totalCosts')}</Text>
-                                                    <Text style={styles.priceValue}>1,230 zł</Text>
+                                                    <Text style={styles.priceLabel}>{t('charts.monthlyGrowth')}</Text>
+                                                    <Text style={styles.priceValue}>+38%</Text>
                                                 </View>
                                                 <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.netProfit')}</Text>
-                                                    <Text style={styles.priceValue}>1,220 zł</Text>
+                                                    <Text style={styles.priceLabel}>{t('charts.bestSellingGenre')}</Text>
+                                                    <Text style={styles.priceValue}>Fantasy</Text>
                                                 </View>
                                             </LinearGradient>
                                         </View>
@@ -163,15 +209,41 @@ const FinancialReport = () => {
                                             style={[styles.chartContainer, styles.withShadow]}
                                         >
                                             <LineChart
-                                                data={dummyLineData}
+                                                data={cumulativeSalesData}
                                                 width={chartWidth}
                                                 height={220}
-                                                yAxisSuffix=" zł"
-                                                chartConfig={chartConfig}
+                                                yAxisLabel=""
+                                                yAxisSuffix=""
+                                                chartConfig={{
+                                                    ...chartConfig,
+                                                    color: (opacity = 1) => colors.primary
+                                                }}
                                                 bezier
                                                 style={styles.chart}
+                                                withHorizontalLabels={true}
+                                                withVerticalLabels={true}
+                                                fromZero
                                             />
                                         </LinearGradient>
+                                        <View style={styles.priceSummarySection}>
+                                            <LinearGradient
+                                                colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                                style={[styles.priceSummaryGradient, styles.withShadow]}
+                                            >
+                                                <View style={styles.priceRow}>
+                                                    <Text style={styles.priceLabel}>{t('charts.totalBooksSold')}</Text>
+                                                    <Text style={styles.priceValue}>390</Text>
+                                                </View>
+                                                <View style={styles.priceRow}>
+                                                    <Text style={styles.priceLabel}>{t('charts.averageMonthly')}</Text>
+                                                    <Text style={styles.priceValue}>65</Text>
+                                                </View>
+                                                <View style={styles.priceRow}>
+                                                    <Text style={styles.priceLabel}>{t('charts.projectedYearEnd')}</Text>
+                                                    <Text style={styles.priceValue}>780</Text>
+                                                </View>
+                                            </LinearGradient>
+                                        </View>
                                     </View>
                                 );
                             case 2:
@@ -182,7 +254,7 @@ const FinancialReport = () => {
                                             style={[styles.chartContainer, styles.withShadow]}
                                         >
                                             <PieChart
-                                                data={dummyPieData}
+                                                data={booksValueData}
                                                 width={chartWidth}
                                                 height={220}
                                                 chartConfig={chartConfig}
@@ -190,8 +262,28 @@ const FinancialReport = () => {
                                                 backgroundColor="transparent"
                                                 paddingLeft="15"
                                                 style={styles.chart}
+                                                absolute
                                             />
                                         </LinearGradient>
+                                        <View style={styles.priceSummarySection}>
+                                            <LinearGradient
+                                                colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                                                style={[styles.priceSummaryGradient, styles.withShadow]}
+                                            >
+                                                <View style={styles.priceRow}>
+                                                    <Text style={styles.priceLabel}>{t('charts.totalCollectionValue')}</Text>
+                                                    <Text style={styles.priceValue}>24,500 zł</Text>
+                                                </View>
+                                                <View style={styles.priceRow}>
+                                                    <Text style={styles.priceLabel}>{t('charts.mostValuableGenre')}</Text>
+                                                    <Text style={styles.priceValue}>Fantasy (35%)</Text>
+                                                </View>
+                                                <View style={styles.priceRow}>
+                                                    <Text style={styles.priceLabel}>{t('charts.averageBookValue')}</Text>
+                                                    <Text style={styles.priceValue}>62.82 zł</Text>
+                                                </View>
+                                            </LinearGradient>
+                                        </View>
                                     </View>
                                 );
                             default:
@@ -219,6 +311,12 @@ const FinancialReport = () => {
                     end={[1, 1]}
                     style={styles.ratingOuterContainer}
                 >
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ marginLeft: 10, marginRight: 20, marginBottom: 20 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
+                    </TouchableOpacity>
                     <View style={styles.ratingContainer}>
                         <View style={styles.priceSummarySection}>
                             <LinearGradient
@@ -227,10 +325,10 @@ const FinancialReport = () => {
                             >
                                 <View style={styles.priceRow}>
                                     <View style={styles.priceLabelContainer}>
-                                        <Ionicons name="cash-outline" size={22} color={colors.primary} />
-                                        <Text style={styles.priceLabelTotal}>{t('charts.totalValue')}</Text>
+                                        <Ionicons name="book-outline" size={22} color={colors.primary} />
+                                        <Text style={styles.priceLabelTotal}>{t('charts.totalBooksSold')}</Text>
                                     </View>
-                                    <Text style={styles.priceValueTotal}>5,670 zł</Text>
+                                    <Text style={styles.priceValueTotal}>390</Text>
                                 </View>
 
                                 <View style={styles.separator} />
@@ -240,7 +338,7 @@ const FinancialReport = () => {
                                         <Ionicons name="trending-up-outline" size={14} color={colors.secondary} />
                                         <Text style={styles.priceLabel}>{t('charts.monthlyGrowth')}</Text>
                                     </View>
-                                    <Text style={[styles.priceValue, {color: colors.grayDark}]}>+12%</Text>
+                                    <Text style={[styles.priceValue, {color: colors.grayDark}]}>+38%</Text>
                                 </View>
 
                                 <View style={styles.priceRow}>
@@ -265,18 +363,17 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 10,
-        paddingTop: 6,
+        paddingTop: 0,
         backgroundColor: 'transparent',
     },
     backgroundGradient: {
         ...StyleSheet.absoluteFillObject,
     },
     ratingOuterContainer: {
-        padding: 10,
+        padding: 12,
         marginBottom: 20,
         marginHorizontal: -16,
-        paddingTop: 60,
-        marginTop: -20,
+        paddingTop: 50,
         borderRadius: 0,
     },
     ratingContainer: {

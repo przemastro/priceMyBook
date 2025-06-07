@@ -12,10 +12,10 @@ export interface BookUniqueness {
 export interface MarketData {
     demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
     supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
-    priceRange?: [number, number];
+    priceRange: [number, number]; // Wymagane
+    priceHistory: { date: string; price: number }[]; // Wymagane
     lastUpdated: Date;
     source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
-    priceHistory?: { date: string; price: number }[];
 }
 
 export interface MarketFactors {

@@ -21,6 +21,7 @@ export const colors = {
     buttonSelected2: '#cce0ff',
     whiteBlue: '#f9faff',
     blackDark: '#000',
+    accent: '#FFA726'
 };
 
 // Typografia
