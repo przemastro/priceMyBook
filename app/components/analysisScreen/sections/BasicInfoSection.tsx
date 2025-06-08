@@ -81,12 +81,12 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     onPress={handleClearPress}
                 >
                     <LinearGradient
-                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
+                        colors={[`${colors.error}20`, `${colors.error}10`]}
                         style={styles.actionIconContainer}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                     >
-                        <MaterialIcons name="delete" size={20} color={colors.primary} />
+                        <Ionicons name="trash" size={20} color={colors.error} />
                     </LinearGradient>
                     <Text style={styles.actionButtonText}>{t('buttons.clear')}</Text>
                 </TouchableOpacity>

@@ -74,6 +74,8 @@ export default {
         discountedPrice: 'Discounted Price',
         amazonPrices: 'Latest Amazon Prices',
         addCover: "Add book cover (max 200KB)",
+        price: "Price",
+        noIsbn: "No ISBN"
     },
     labels: {
         selectCollection: 'Select Collection',
@@ -250,7 +252,7 @@ export default {
         feature6: 'Collection management - organize books in collections',
         feature7: 'Multilingual - support for Polish and English',
         algorithmTitle: 'Pricing Algorithm',
-        algorithmDescription: 'PriceMyBook uses an advanced algorithm to estimate book value based on condition, uniqueness and market factors.',
+        algorithmDescription: 'Aestilibrum uses an advanced algorithm to estimate book value based on condition, uniqueness and market factors.',
         algorithmSteps: 'Algorithm Steps',
         algorithmStep1: 'Base price - original price or average market price',
         algorithmStep2: 'Defect reduction (optional) - each defect type has assigned percentage reduction',
@@ -262,7 +264,7 @@ export default {
         formula: 'final_price = base_price × (1 - total_defect_reduction) × (1 + total_uniqueness_bonus) × (1 + market_adjustment)',
         priceAlgorithm: 'Pricing Algorithm',
         language: 'Language',
-        appDescription: 'PriceMyBook is an advanced mobile application for book collectors and enthusiasts that enables quick book valuations based on condition, uniqueness, and current market factors.',
+        appDescription: 'Aestilibrum is an advanced mobile application for book collectors and enthusiasts that enables quick book valuations based on condition, uniqueness, and current market factors.',
         title: 'Settings'
     },
     bookCount: {
@@ -345,7 +347,7 @@ export default {
         clearAllFields: "\"Are you sure you want to clear all fields?"
     },
     home: {
-        welcome: "Witaj w Price My Book!",
+        welcome: "Witaj w Aestilibrum!",
         welcomeSubtitle: "Wybierz jedną z opcji aby rozpocząć",
         scanDescription: "Skanuj nowe książki i dodawaj je do kolekcji",
         historyDescription: "Przeglądaj historię zeskanowanych książek",

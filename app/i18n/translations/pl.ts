@@ -70,6 +70,8 @@ export default {
         discountedPrice: 'Cena po obniżce',
         amazonPrices: 'Najnowsze ceny na Amazon',
         addCover: "Dodaj okładkę książki (max 200KB)",
+        price: "Cena",
+        noIsbn: "Brak ISBN"
     },
     labels: {
         selectCollection: 'Wybierz księgozbiór',
@@ -249,7 +251,7 @@ export default {
         feature6: 'Zarządzanie kolekcją - organizacja książek w kolekcjach',
         feature7: 'Wielojęzyczność - obsługa języka polskiego i angielskiego',
         algorithmTitle: 'Algorytm wyceny',
-        algorithmDescription: 'PriceMyBook używa zaawansowanego algorytmu do szacowania wartości książek na podstawie stanu, unikalności i czynników rynkowych.',
+        algorithmDescription: 'Aestilibrum używa zaawansowanego algorytmu do szacowania wartości książek na podstawie stanu, unikalności i czynników rynkowych.',
         algorithmSteps: 'Kroki algorytmu',
         algorithmStep1: 'Cena bazowa - cena oryginalna lub średnia cena rynkowa',
         algorithmStep2: 'Redukcja za wady (opcjonalnie) - każdy typ wady ma przypisaną procentową redukcję',
@@ -261,7 +263,7 @@ export default {
         formula: 'cena_końcowa = cena_bazowa × (1 - suma_redukcji_wad) × (1 + suma_premii_unikalności) × (1 + korekta_rynkowa)',
         priceAlgorithm: 'Algorytm wyceny',
         language: 'Język',
-        appDescription: 'PriceMyBook to zaawansowana aplikacja mobilna dla kolekcjonerów i miłośników książek, która umożliwia szybkie wyceny książek na podstawie ich stanu, unikalności i aktualnych czynników rynkowych.',
+        appDescription: 'Aestilibrum to zaawansowana aplikacja mobilna dla kolekcjonerów i miłośników książek, która umożliwia szybkie wyceny książek na podstawie ich stanu, unikalności i aktualnych czynników rynkowych.',
         title: 'Ustawienia'
     },
     listingStatus: {
@@ -340,7 +342,7 @@ export default {
         clearAllFields: "Czy na pewno chcesz wyczyścić wszystkie pola?"
     },
     home: {
-        welcome: "Witaj w Price My Book!",
+        welcome: "Witaj w Aestilibrum!",
         welcomeSubtitle: "Wybierz jedną z opcji aby rozpocząć",
         scanDescription: "Skanuj nowe książki i dodawaj je do kolekcji",
         historyDescription: "Przeglądaj historię zeskanowanych książek",

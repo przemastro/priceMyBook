@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'priceMyBook'
+rootProject.name = 'aestilibrum'
 
 dependencyResolutionManagement {
   versionCatalogs {

@@ -27,8 +27,8 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="myapp"/>
-        <data android:scheme="com.jagodzip.priceMyBook"/>
-        <data android:scheme="exp+pricemybook"/>
+        <data android:scheme="com.jagodzip.aestilibrum"/>
+        <data android:scheme="exp+aestilibrum"/>
       </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" android:exported="false"/>

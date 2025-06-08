@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "priceMyBook",
-    "slug": "priceMyBook",
+    "name": "aestilibrum",
+    "slug": "aestilibrum",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.priceMyBook",
+      "bundleIdentifier": "com.aestilibrum",
       "infoPlist": {
         "NSCameraUsageDescription": "Aplikacja potrzebuje dostępu do kamery do skanowania książek",
         "NSPhotoLibraryUsageDescription": "Aplikacja potrzebuje dostępu do galerii do analizy zdjęć książek",
@@ -26,7 +26,7 @@
       }
     },
     "android": {
-      "package": "com.jagodzip.priceMyBook",
+      "package": "com.jagodzip.aestilibrum",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

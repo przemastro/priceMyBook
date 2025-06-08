@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
                 transform: [{ scale: scaleAnim }]
             }]}>
                 <Ionicons name="book" size={80} color="white" />
-                <Text style={styles.appName}>PriceMyBook</Text>
+                <Text style={styles.appName}>Aestilibrum</Text>
                 <Text style={styles.appSlogan}>{t('welcome.slogan')}</Text>
             </Animated.View>
         </View>

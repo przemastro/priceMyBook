@@ -109,9 +109,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.jagodzip.priceMyBook'
+    namespace 'com.jagodzip.aestilibrum'
     defaultConfig {
-        applicationId 'com.jagodzip.priceMyBook'
+        applicationId 'com.jagodzip.aestilibrum'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

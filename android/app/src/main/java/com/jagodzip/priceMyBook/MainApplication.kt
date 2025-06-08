@@ -1,4 +1,4 @@
-package com.jagodzip.priceMyBook
+package com.jagodzip.aestilibrum
 
 import android.app.Application
 import android.content.res.Configuration
