@@ -802,6 +802,33 @@ export default function AnalysisScreen() {
                             formatPrice={(price) => formatCurrency({price, exchangeRate})}
                             isScanning={isScanning}
                         />
+                        <EditBookDetailsModal
+                            visible={showEditModal}
+                            onClose={closeEditModal}
+                            bookImage={bookImage}
+                            titleInput={titleInput}
+                            setTitleInput={setTitleInput}
+                            authors={authors}
+                            setAuthors={setAuthors}
+                            publisher={publisher}
+                            setPublisher={setPublisher}
+                            isbnInput={isbnInput}
+                            setIsbnInput={setIsbnInput}
+                            originalPriceInput={originalPriceInput}
+                            setOriginalPriceInput={setOriginalPriceInput}
+                            description={description}
+                            setDescription={setDescription}
+                            onPickImage={pickImage}
+                            onSave={() => {
+                              if (validateFields()) {
+                                saveTitle();
+                                saveIsbn();
+                                saveOriginalPrice();
+                                closeEditModal();
+                              }
+                            }}
+                            onClearFields={handleClearFields}
+                        />
                       </View>
                   );
                 case 1:

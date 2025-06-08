@@ -11,8 +11,9 @@ interface CustomAlertModalProps {
     title: string;
     message: string;
     confirmText?: string;
+    cancelText?: string;
     onConfirm: () => void;
-    onCancel?: () => void; // Add this line
+    onCancel?: () => void;
     type?: AlertType;
     closeButtonStyle?: any;
     closeButtonTextStyle?: any;
@@ -24,7 +25,9 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
                                                                       title,
                                                                       message,
                                                                       confirmText = 'OK',
+                                                                      cancelText = 'Cancel',
                                                                       onConfirm,
+                                                                      onCancel,
                                                                       type = 'info',
                                                                       closeButtonStyle,
                                                                       closeButtonTextStyle,
@@ -53,14 +56,14 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
             animationType="fade"
             transparent={true}
             visible={visible}
-            onRequestClose={onConfirm}
+            onRequestClose={onCancel || onConfirm}
         >
             <View style={styles.alertModalOverlay}>
                 <View style={styles.alertModalContainer}>
                     {/* Przycisk X w prawym górnym rogu */}
                     <TouchableOpacity
                         style={[styles.closeButton, closeButtonStyle]}
-                        onPress={onConfirm}
+                        onPress={onCancel || onConfirm}
                     >
                         <View style={styles.closeButtonCircle}>
                             <Text style={[styles.closeButtonText, closeButtonTextStyle]}>×</Text>
@@ -72,23 +75,24 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
                         <Text style={styles.alertModalTitle}>{title}</Text>
                         <Text style={styles.alertModalMessage}>{message}</Text>
 
-                        {/* Przycisk OK na dole - jedyny główny przycisk */}
-                        <TouchableOpacity
-                            style={[
-                                styles.alertModalButton,
-                                buttonFullWidth && {width: '100%'}
-                            ]}
-                            onPress={onConfirm}
-                        >
-                            <LinearGradient
-                                colors={[colors.primary, colors.primary]}
-                                style={styles.alertModalButtonGradient}
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.alertModalButton,
+                                    buttonFullWidth && {width: onCancel ? '100%' : '100%'}
+                                ]}
+                                onPress={onConfirm}
                             >
-                                <Text style={styles.alertModalButtonText}>
-                                    {confirmText}
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                                <LinearGradient
+                                    colors={[colors.primary, colors.primary]}
+                                    style={styles.alertModalButtonGradient}
+                                >
+                                    <Text style={styles.alertModalButtonText}>
+                                        {confirmText}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -132,10 +136,20 @@ const styles = StyleSheet.create({
         color: colors.grayDark,
         textAlign: 'center',
     },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
     alertModalButton: {
         borderRadius: 8,
         overflow: 'hidden',
-        width: '100%'
+        width: '100%',
+    },
+    cancelButton: {
+        backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: colors.gray,
     },
     alertModalButtonGradient: {
         padding: 12,
@@ -167,6 +181,12 @@ const styles = StyleSheet.create({
     alertModalButtonText: {
         color: colors.white,
         fontWeight: '600',
+    },
+    cancelButtonText: {
+        color: colors.grayDark,
+        fontWeight: '600',
+        padding: 12,
+        textAlign: 'center',
     },
 });
 

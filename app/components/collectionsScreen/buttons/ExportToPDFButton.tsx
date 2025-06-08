@@ -119,10 +119,16 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
     };
 
     return (
-        <TouchableOpacity onPress={generatePDF}>
+        <TouchableOpacity onPress={generatePDF} style={styles.button}>
             <FontAwesome5 name="file-pdf" size={20} color={colors.primary} />
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    button: {
+        padding: 8, // Dodajemy padding dla lepszego dotarcia
+    }
+});
 
 export default ExportToPDFButton;

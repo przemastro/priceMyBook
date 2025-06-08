@@ -208,7 +208,8 @@ export default {
         clear: "Wyczyść",
         startScanning: 'Skanuj',
         more: "Więcej",
-        less: "Mniej"
+        less: "Mniej",
+        exportPDF: "Eksportuj do PDF"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',

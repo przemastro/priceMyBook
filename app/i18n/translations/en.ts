@@ -209,7 +209,8 @@ export default {
         delete: 'Delete',
         export: 'Export',
         more: "More",
-        less: "Less"
+        less: "Less",
+        exportPDF: "Export to PDF"
     },
     placeholders: {
         enterCollectionName: 'Enter collection name',
