@@ -152,6 +152,7 @@ export default {
         manageCollections: 'Księgozbiory',
         history: 'Historia skanowań',
         editBook: "Analiza stanu książki",
+        settings: "Ustawienia"
     },
     titlesShort: {
         scan: 'Skanuj ISBN',
@@ -161,7 +162,7 @@ export default {
         editBook: "Analiza",
         home: "Home",
         financialReport: "Raport finansowy",
-        settings: "Settings"
+        settings: "Ustawienia"
     },
     buttons: {
         addToCollection: 'Dodaj do księgozbioru',

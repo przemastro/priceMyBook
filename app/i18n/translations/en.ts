@@ -153,7 +153,8 @@ export default {
         analyzeCondition: 'Analysis',
         manageCollections: 'Collections',
         history: 'Scan history',
-        editBook: 'Analyze book condition'
+        editBook: 'Analyze book condition',
+        settings: "Settings"
     },
     titlesShort: {
         scan: 'Scan ISBN',
@@ -161,7 +162,8 @@ export default {
         manageCollections: 'Collections',
         history: 'History',
         editBook: "Analysis",
-        home: "Home"
+        home: "Home",
+        settings: "Settings"
     },
     buttons: {
         addToCollection: 'Add to Collection',

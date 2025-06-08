@@ -145,6 +145,8 @@ export default function AnalysisScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalTitle, setSuccessModalTitle] = useState('');
   const [successModalMessage, setSuccessModalMessage] = useState('');
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
 
   const showAlert = (title: string, message: string, type: 'error' | 'success' = 'error') => {
     if (type === 'error') {

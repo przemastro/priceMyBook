@@ -921,7 +921,7 @@ const CollectionsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        padding: 8,
+        padding: 10,
         paddingTop: 50,
         backgroundColor: 'transparent',
     },

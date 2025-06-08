@@ -218,7 +218,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         marginBottom: 20,
     },
     bookCard: {
@@ -291,6 +291,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         width: '100%',
         paddingHorizontal: 10,
+        paddingTop: 20
     },
     actionButton: {
         alignItems: 'center',

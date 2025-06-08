@@ -1,12 +1,16 @@
 // screens/Settings.tsx
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {router, useLocalSearchParams, useRouter} from 'expo-router';
+import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/config';
 import { colors } from "@/styles/styles";
 import { LinearGradient } from 'expo-linear-gradient';
+
+type SettingsScreenParams = {
+    initialTab?: string;
+};
 
 export default function SettingsScreen() {
     const { t } = useTranslation();
@@ -14,11 +18,6 @@ export default function SettingsScreen() {
     const { initialTab } = useLocalSearchParams<SettingsScreenParams>();
     const [activeTab, setActiveTab] = useState(initialTab || 'about');
     const spinValue = useRef(new Animated.Value(0)).current;
-    const [activeFactors, setActiveFactors] = useState({
-        defects: true,
-        uniqueness: true,
-        market: true
-    });
 
     const toggleLanguage = () => {
         const newLang = i18n.language === 'pl' ? 'en' : 'pl';
@@ -107,66 +106,82 @@ export default function SettingsScreen() {
                 colors={[colors.buttonSelected1, colors.buttonSelected2]}
                 style={styles.backgroundGradient}
             />
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+
+            <View style={styles.headerContainer}>
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    style={{ marginLeft: 10, marginRight: 20, marginBottom: 20 }}
+                    style={styles.backButton}
                 >
                     <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
                 </TouchableOpacity>
-                <View style={styles.tabsOuterContainer}>
-                    <LinearGradient
-                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                        style={styles.tabsGradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                    >
-                        <View style={styles.tabsContainer}>
-                            <TouchableOpacity
-                                style={[styles.tab, activeTab === 'about' && styles.activeTab]}
-                                onPress={() => setActiveTab('about')}
-                            >
-                                <Ionicons
-                                    name="information-circle"
-                                    size={20}
-                                    color={activeTab === 'about' ? colors.white : colors.white}
-                                />
-                                <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
-                                    {t('settings.about')}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.tab, activeTab === 'algorithm' && styles.activeTab]}
-                                onPress={() => setActiveTab('algorithm')}
-                            >
-                                <Ionicons
-                                    name="calculator"
-                                    size={20}
-                                    color={activeTab === 'algorithm' ? colors.white : colors.white}
-                                />
-                                <Text style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}>
-                                    {t('settings.priceAlgorithm')}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.tab, activeTab === 'language' && styles.activeTab]}
-                                onPress={() => setActiveTab('language')}
-                            >
-                                <Ionicons
-                                    name="language"
-                                    size={20}
-                                    color={activeTab === 'language' ? colors.white : colors.white}
-                                />
-                                <Text style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}>
-                                    {t('settings.language')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </LinearGradient>
-                </View>
+                <Text style={styles.headerTitle}>{t('titles.settings')}</Text>
+                <View style={styles.spacer} />
+            </View>
 
-                <View style={styles.contentContainer}>
-                    {renderContent()}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                style={styles.scrollContainer}
+            >
+                {/* Główny kontener łączący zakładki i zawartość */}
+                <View style={styles.mainCard}>
+                    {/* Kontener zakładek */}
+                    <View style={styles.tabsWrapper}>
+                        <LinearGradient
+                            colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                            style={styles.tabsGradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        >
+                            <View style={styles.tabsContainer}>
+                                <TouchableOpacity
+                                    style={[styles.tab, activeTab === 'about' && styles.activeTab]}
+                                    onPress={() => setActiveTab('about')}
+                                >
+                                    <Ionicons
+                                        name="information-circle"
+                                        size={20}
+                                        style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}
+                                    />
+                                    <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
+                                        {t('settings.about')}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.tab, activeTab === 'algorithm' && styles.activeTab]}
+                                    onPress={() => setActiveTab('algorithm')}
+                                >
+                                    <Ionicons
+                                        name="calculator"
+                                        size={20}
+                                        style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}
+                                    />
+                                    <Text style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}>
+                                        {t('settings.priceAlgorithm')}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.tab, activeTab === 'language' && styles.activeTab]}
+                                    onPress={() => setActiveTab('language')}
+                                >
+                                    <Ionicons
+                                        name="language"
+                                        size={20}
+                                        style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}
+                                    />
+                                    <Text style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}>
+                                        {t('settings.language')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </LinearGradient>
+                    </View>
+
+                    {/* Kontener zawartości */}
+                    <View style={styles.contentWrapper}>
+                        {renderContent()}
+                    </View>
                 </View>
             </ScrollView>
         </View>
@@ -177,138 +192,168 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         position: 'relative',
+        backgroundColor: colors.background,
     },
     backgroundGradient: {
         ...StyleSheet.absoluteFillObject,
         opacity: 0.9
     },
-    scrollContainer: {
-        padding: 10,
-        paddingTop: 20,
-        marginTop: 30
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 15,
+        width: '100%',
+        justifyContent: 'space-between',
+        position: 'absolute',
+        top: 30,
+        left: 0,
+        zIndex: 10,
+        paddingHorizontal: 0
     },
-    tabsOuterContainer: {
-        borderRadius: 15,
+    backButton: {
+        marginLeft: 10,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: '500',
+        color: colors.blackDark,
+        textAlign: 'center',
+        flex: 1,
+    },
+    spacer: {
+        width: 44,
+        marginRight: 10,
+    },
+    scrollContainer: {
+        flex: 1,
+        paddingTop: 80,
+    },
+    scrollContent: {
+        paddingHorizontal: 10,
+    },
+    mainCard: {
+        backgroundColor: colors.background,
+        borderTopRightRadius: 15,
+        borderTopLeftRadius: 15,
         overflow: 'hidden',
-        marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3
+        shadowRadius: 8,
+        elevation: 5,
+        marginTop: 10,
+        minHeight: 900,
+        maxHeight: 900
+    },
+    tabsWrapper: {
+        borderTopLeftRadius: 15,
+        borderTopRightRadius: 15,
+        overflow: 'hidden',
     },
     tabsGradient: {
         padding: 2,
-        opacity: 0.85
     },
     tabsContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        borderRadius: 15,
         flexDirection: 'row',
         justifyContent: 'space-around',
-        paddingVertical: 10
+        paddingVertical: 12,
     },
     tab: {
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
         borderRadius: 20,
         flexDirection: 'row',
     },
     activeTab: {
-        backgroundColor: 'rgba(255,255,255,0.3)',
+        backgroundColor: 'transparent',
     },
     tabText: {
         marginLeft: 8,
-        color: colors.white,
-        fontSize: 14,
+        color: colors.black,
+        fontSize: 15,
         fontWeight: '500'
     },
     activeTabText: {
         fontWeight: '700',
+        color: colors.primary,
     },
-    contentContainer: {
-        backgroundColor: colors.background,
-        borderRadius: 15,
+    contentWrapper: {
         padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3
     },
     tabContent: {
         paddingBottom: 10,
     },
     settingsTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 15,
+        marginBottom: 20,
         color: colors.primary,
     },
     aboutText: {
         fontSize: 16,
-        marginBottom: 15,
+        marginBottom: 20,
         color: colors.black,
         lineHeight: 24,
     },
     featuresTitle: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 5,
+        marginTop: 15,
+        marginBottom: 10,
         color: colors.primary,
     },
     featureItem: {
-        fontSize: 14,
+        fontSize: 15,
         color: colors.grayDark,
-        lineHeight: 22,
-        marginBottom: 5,
+        lineHeight: 24,
+        marginBottom: 8,
         marginLeft: 10,
     },
     algorithmDescription: {
         fontSize: 16,
-        marginBottom: 15,
+        marginBottom: 20,
         color: colors.black,
         lineHeight: 24,
     },
     algorithmSectionTitle: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 5,
+        marginTop: 15,
+        marginBottom: 10,
         color: colors.primary,
     },
     algorithmStep: {
-        fontSize: 14,
+        fontSize: 15,
         color: colors.grayDark,
-        lineHeight: 22,
-        marginBottom: 5,
+        lineHeight: 24,
+        marginBottom: 8,
         marginLeft: 10,
     },
     formulaTitle: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: 'bold',
-        marginTop: 15,
-        marginBottom: 5,
+        marginTop: 20,
+        marginBottom: 10,
         color: colors.primary,
     },
     formula: {
-        fontSize: 14,
+        fontSize: 15,
         fontStyle: 'italic',
         color: colors.grayDark,
-        lineHeight: 22,
+        lineHeight: 24,
         marginLeft: 10,
         backgroundColor: 'rgba(74,108,247,0.05)',
-        padding: 10,
-        borderRadius: 5,
+        padding: 12,
+        borderRadius: 8,
     },
     languageButton: {
         backgroundColor: colors.primary,
-        padding: 15,
-        borderRadius: 10,
+        padding: 16,
+        borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 20,
+        marginTop: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -317,7 +362,7 @@ const styles = StyleSheet.create({
     },
     languageButtonText: {
         color: colors.white,
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
     },
 });
