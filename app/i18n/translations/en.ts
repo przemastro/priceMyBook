@@ -148,7 +148,8 @@ export default {
         estimatedValue: "Estimated value",
         demandVsSupply: "Demand vs Supply",
         priceHistory: "Price History",
-        selectIcon: "Select Icon"
+        selectIcon: "Select Icon",
+        noDate: "No date"
     },
     titles: {
         scan: 'Scan ISBN',
@@ -355,5 +356,39 @@ export default {
         collectionsDescription: "Zarządzaj swoimi kolekcjami książek",
         more: "More",
         services: "Services"
+    },
+    charts: {
+        monthlySales: "Monthly Sales",
+        cumulativeSales: "Cumulative Sales",
+        booksValue: "Books Value",
+        booksSoldThisMonth: "Books Sold This Month",
+        monthlyGrowth: "Monthly Growth",
+        bestSellingGenre: "Best-Selling Genre",
+        totalBooksSold: "Total Books Sold",
+        averageMonthly: "Average Monthly",
+        projectedYearEnd: "Year-End Projection",
+        totalCollectionValue: "Total Collection Value",
+        mostValuableGenre: "Most Valuable Genre",
+        averageBookValue: "Average Book Value",
+        lastUpdated: "Last Updated",
+        noFinancialData: "No Financial Data",
+        addBooksHint: "Add books to your collection to view the report",
+        noSalesData: "No Sales Data",
+        markBooksAsSoldHint: "Mark books as sold to see statistics",
+        noCumulativeData: "No Cumulative Data",
+        noCategoriesData: "No Category Data",
+        addCategoriesHint: "Add categories to your collection to see value distribution",
+        generalCategory: "General",
+        totalValue: "Total Book Value",
+        activeValue: "Value of Unsold Books",
+        soldValue: "Value of Sold Books",
+        avgBookValue: "Average Book Price",
+        mostPopularCategory: "Most Popular Category",
+        financialReport: "Financial Report"
+    },
+    marketFactors: {
+        includePublicationYear: "Publication Year",
+        includeSupply: "Supply",
+        includeDemand: "Demand"
     }
 }

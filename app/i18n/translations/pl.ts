@@ -146,7 +146,8 @@ export default {
         estimatedValue: "Cena szacowana",
         demandVsSupply: "Popyt vs Podaż",
         priceHistory: "Historia ceny książki",
-        selectIcon: "Wybierz ikonkę"
+        selectIcon: "Wybierz ikonkę",
+        noDate: "Brak daty"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -350,5 +351,39 @@ export default {
         collectionsDescription: "Zarządzaj swoimi kolekcjami książek",
         more: "Więcej",
         services: "Usługi"
+    },
+    charts: {
+        monthlySales: "Sprzedaż miesięczna",
+        cumulativeSales: "Sprzedaż skumulowana",
+        booksValue: "Wartość księgozbioru",
+        booksSoldThisMonth: "Książki sprzedane w tym miesiącu",
+        monthlyGrowth: "Wzrost miesięczny",
+        bestSellingGenre: "Najlepiej sprzedający się gatunek",
+        totalBooksSold: "Łącznie sprzedanych książek",
+        averageMonthly: "Średnia miesięczna",
+        projectedYearEnd: "Prognoza roczna",
+        totalCollectionValue: "Łączna wartość kolekcji",
+        mostValuableGenre: "Najcenniejszy gatunek",
+        averageBookValue: "Średnia wartość książki",
+        lastUpdated: "Ostatnia aktualizacja",
+        noFinancialData: "Brak danych finansowych",
+        addBooksHint: "Dodaj książki do kolekcji, aby zobaczyć raport",
+        noSalesData: "Brak danych sprzedaży",
+        markBooksAsSoldHint: "Oznacz książki jako sprzedane, aby zobaczyć statystyki",
+        noCumulativeData: "Brak danych skumulowanych",
+        noCategoriesData: "Brak danych kategorii",
+        addCategoriesHint: "Dodaj kategorie do kolekcji, aby zobaczyć rozkład wartości",
+        generalCategory: "Ogólne",
+        totalValue: "Wartość całkowita książek",
+        activeValue: "Wartość książek niesprzedanych",
+        soldValue: "Wartość książek sprzedanych",
+        avgBookValue: "Średnia cena książek",
+        mostPopularCategory: "Najpopularniejsza kategoria",
+        financialReport: "Raport finansowy"
+    },
+    marketFactors: {
+        includePublicationYear: "Data wydania",
+        includeSupply: "Podaż",
+        includeDemand: "Popyt"
     }
 }

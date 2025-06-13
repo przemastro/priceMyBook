@@ -1,14 +1,18 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, Animated, TouchableOpacity } from 'react-native';
+import React, { useRef, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, Dimensions, ScrollView, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Easing } from 'react-native-reanimated';
-import {router} from "expo-router";
+import { router } from "expo-router";
+import { useAppContext } from '@/context/AppContext';
 
-const chartWidth = Dimensions.get('window').width - 70;
+const chartWidth = Dimensions.get('window').width - 40;
+const chartWidthSmaller = Dimensions.get('window').width - 90;
+const chartHeight = 220;
+const chartHeightSmaller = 200;
 
 const chartConfig = {
     backgroundGradientFrom: colors.background,
@@ -27,66 +31,173 @@ const chartConfig = {
     }
 };
 
-// Dane dla wykresu sprzedaży książek per miesiąc
-const monthlySalesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{ data: [45, 60, 52, 78, 65, 90] }],
-};
-
-// Dane dla wykresu skumulowanej sprzedaży
-const cumulativeSalesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{
-        data: [45, 105, 157, 235, 300, 390], // Skumulowana suma
-        color: (opacity = 1) => colors.primary,
-        strokeWidth: 3
-    }],
-};
-
-// Dane dla wykresu wartości księgozbiorów
-const booksValueData = [
-    {
-        name: 'Fantasy',
-        population: 35,
-        color: '#4CAF50',
-        legendFontColor: colors.black,
-        legendFontSize: 12
-    },
-    {
-        name: 'Science Fiction',
-        population: 25,
-        color: '#2196F3',
-        legendFontColor: colors.black,
-        legendFontSize: 12
-    },
-    {
-        name: 'History',
-        population: 20,
-        color: '#FF9800',
-        legendFontColor: colors.black,
-        legendFontSize: 12
-    },
-    {
-        name: 'Biography',
-        population: 15,
-        color: '#9C27B0',
-        legendFontColor: colors.black,
-        legendFontSize: 12
-    },
-    {
-        name: 'Other',
-        population: 5,
-        color: '#607D8B',
-        legendFontColor: colors.black,
-        legendFontSize: 12
-    },
-];
+// Typ dla dozwolonych nazw ikon Ionicons
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const FinancialReport = () => {
     const { t } = useTranslation();
+    const {
+        books,
+        collections,
+        collectionCategories,
+        calculateTotalValue,
+        calculateActiveValue,
+        calculateSoldValue
+    } = useAppContext();
+
     const [currentStep, setCurrentStep] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
     const totalSteps = 3;
     const slideAnim = useRef(new Animated.Value(0)).current;
+
+    const { monthlySalesData, cumulativeSalesData, booksValueData, stats, hasData } = useMemo(() => {
+        // Initialize empty state if no data
+        if (!books || !collections || collections.length === 0) {
+            setIsLoading(false);
+            return {
+                monthlySalesData: { labels: [], datasets: [{ data: [] }] },
+                cumulativeSalesData: { labels: [], datasets: [{ data: [] }] },
+                booksValueData: [],
+                stats: {
+                    totalBooksSold: 0,
+                    monthlyGrowth: 0,
+                    mostPopularCategory: t('charts.noData'),
+                    averageMonthly: 0,
+                    projectedYearEnd: 0,
+                    totalCollectionValue: 0,
+                    averageBookValue: 0,
+                    activeValue: 0,
+                    soldValue: 0,
+                    lastUpdated: new Date().toLocaleDateString()
+                },
+                hasData: false
+            };
+        }
+
+        setIsLoading(false);
+
+        // Calculate financial values
+        const totalValue = calculateTotalValue();
+        const activeValue = calculateActiveValue();
+        const soldValue = calculateSoldValue();
+
+        // Process categories values
+        const categoriesValue: Record<string, number> = {};
+        let hasSalesData = false;
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const monthlySales: Record<string, number> = {};
+
+        collections.forEach(collection => {
+            const currentBooks = books[collection.name] || [];
+            const categories = collectionCategories[collection.name] || [t('charts.generalCategory')];
+
+            currentBooks.forEach(book => {
+                const price = parseFloat(book.price) || 0;
+                const valuePerCategory = price / categories.length;
+
+                categories.forEach(category => {
+                    categoriesValue[category] = (categoriesValue[category] || 0) + valuePerCategory;
+                });
+
+                // Process sales data
+                if (book.listingStatus?.status === 'sold') {
+                    hasSalesData = true;
+                    let saleDate: Date;
+
+                    try {
+                        saleDate = book.listingStatus.soldDate ? new Date(book.listingStatus.soldDate) : new Date(book.createdAt);
+                    } catch {
+                        saleDate = new Date(book.createdAt);
+                    }
+
+                    if (saleDate.getFullYear() === currentYear) {
+                        const month = saleDate.toLocaleString('default', { month: 'short' });
+                        monthlySales[month] = (monthlySales[month] || 0) + 1;
+                    }
+                }
+            });
+        });
+
+        // Prepare last 6 months data
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const last6Months = [];
+
+        for (let i = 5; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            last6Months.push(date.toLocaleString('default', { month: 'short' }));
+        }
+
+        const monthlyData = last6Months.map(month => monthlySales[month] || 0);
+
+        // Calculate cumulative sales
+        let cumulative = 0;
+        const cumulativeData = monthlyData.map(value => {
+            cumulative += value;
+            return cumulative;
+        });
+
+        // Prepare pie chart data
+        const pieData = Object.entries(categoriesValue)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, value], index) => ({
+                name,
+                value: Math.round(value),
+                color: [
+                    '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B',
+                    '#F44336', '#00BCD4', '#8BC34A', '#3F51B5', '#FF5722'
+                ][index % 10],
+                legendFontColor: colors.black,
+                legendFontSize: 12
+            }));
+
+        // Calculate active books count for average
+        const activeBooksCount = collections.reduce((sum, collection) => {
+            return sum + (books[collection.name] || []).filter(
+                book => book.listingStatus?.status !== 'sold'
+            ).length;
+        }, 0);
+
+        const averageBookValue = activeBooksCount > 0
+            ? Math.round(activeValue / activeBooksCount)
+            : 0;
+
+        const totalBooksSold = cumulativeData[cumulativeData.length - 1] || 0;
+        const monthlyGrowth = monthlyData.length > 1
+            ? Math.round(((monthlyData[monthlyData.length - 1] - monthlyData[monthlyData.length - 2]) /
+                (monthlyData[monthlyData.length - 2] || 1) * 100))
+            : 0;
+
+        return {
+            monthlySalesData: {
+                labels: last6Months,
+                datasets: [{ data: monthlyData }]
+            },
+            cumulativeSalesData: {
+                labels: last6Months,
+                datasets: [{
+                    data: cumulativeData,
+                    color: (opacity = 1) => colors.primary,
+                    strokeWidth: 3
+                }]
+            },
+            booksValueData: pieData,
+            stats: {
+                totalBooksSold,
+                monthlyGrowth,
+                mostPopularCategory: pieData[0]?.name || t('charts.noData'),
+                averageMonthly: Math.round(totalBooksSold / Math.max(1, last6Months.length)),
+                projectedYearEnd: Math.round(totalBooksSold * (12 / Math.max(1, last6Months.length))),
+                totalCollectionValue: totalValue,
+                averageBookValue,
+                activeValue,
+                soldValue,
+                lastUpdated: new Date().toLocaleDateString()
+            },
+            hasData: hasSalesData || pieData.length > 0
+        };
+    }, [books, collections, collectionCategories, t]);
 
     const animateSlide = (direction: 'forward' | 'backward') => {
         slideAnim.setValue(direction === 'forward' ? 50 : -50);
@@ -112,12 +223,41 @@ const FinancialReport = () => {
         }
     };
 
+    const renderNoDataMessage = (
+        iconName: IoniconsName,
+        message: string,
+        hint?: string
+    ) => (
+        <View style={styles.noDataContainer}>
+            <Ionicons name={iconName} size={48} color={colors.gray} />
+            <Text style={styles.noDataText}>{message}</Text>
+            {hint && <Text style={styles.noDataHint}>{hint}</Text>}
+        </View>
+    );
+
     const renderStep = () => {
         const stepTitles = [
             t('charts.monthlySales'),
             t('charts.cumulativeSales'),
             t('charts.booksValue')
         ];
+
+        if (isLoading) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.loadingText}>{t('charts.loadingData')}</Text>
+                </View>
+            );
+        }
+
+        if (!hasData) {
+            return renderNoDataMessage(
+                'alert-circle-outline',
+                t('charts.noFinancialData'),
+                t('charts.addBooksHint')
+            );
+        }
 
         return (
             <View style={styles.stepContainer}>
@@ -127,12 +267,10 @@ const FinancialReport = () => {
                     </Text>
 
                     <View style={styles.navigationContainer}>
-                        {currentStep > 0 ? (
+                        {currentStep > 0 && (
                             <TouchableOpacity onPress={goToPrevStep} activeOpacity={0.7}>
                                 <Ionicons name="chevron-back" size={24} color={colors.primary}/>
                             </TouchableOpacity>
-                        ) : (
-                            <View style={{width: 24}} />
                         )}
 
                         <View style={styles.progressDots}>
@@ -147,12 +285,10 @@ const FinancialReport = () => {
                             ))}
                         </View>
 
-                        {currentStep < totalSteps - 1 ? (
+                        {currentStep < totalSteps - 1 && (
                             <TouchableOpacity onPress={goToNextStep} activeOpacity={0.7}>
                                 <Ionicons name="chevron-forward" size={24} color={colors.primary}/>
                             </TouchableOpacity>
-                        ) : (
-                            <View style={{width: 24}} />
                         )}
                     </View>
                 </View>
@@ -161,6 +297,13 @@ const FinancialReport = () => {
                     {(() => {
                         switch (currentStep) {
                             case 0:
+                                if (stats.totalBooksSold === 0) {
+                                    return renderNoDataMessage(
+                                        'bar-chart-outline',
+                                        t('charts.noSalesData'),
+                                        t('charts.markBooksAsSoldHint')
+                                    );
+                                }
                                 return (
                                     <View style={styles.stepContent}>
                                         <LinearGradient
@@ -169,8 +312,8 @@ const FinancialReport = () => {
                                         >
                                             <BarChart
                                                 data={monthlySalesData}
-                                                width={chartWidth}
-                                                height={220}
+                                                width={chartWidthSmaller}
+                                                height={chartHeight}
                                                 yAxisLabel=""
                                                 yAxisSuffix=""
                                                 chartConfig={chartConfig}
@@ -180,28 +323,39 @@ const FinancialReport = () => {
                                                 fromZero
                                             />
                                         </LinearGradient>
-                                        <View style={styles.priceSummarySection}>
-                                            <LinearGradient
-                                                colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                                style={[styles.priceSummaryGradient, styles.withShadow]}
-                                            >
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.booksSoldThisMonth')}</Text>
-                                                    <Text style={styles.priceValue}>90</Text>
-                                                </View>
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.monthlyGrowth')}</Text>
-                                                    <Text style={styles.priceValue}>+38%</Text>
-                                                </View>
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.bestSellingGenre')}</Text>
-                                                    <Text style={styles.priceValue}>Fantasy</Text>
-                                                </View>
-                                            </LinearGradient>
+                                        <View style={styles.statsContainer}>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.booksSoldThisMonth')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {monthlySalesData.datasets[0].data[monthlySalesData.datasets[0].data.length - 1] || 0}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.monthlyGrowth')}</Text>
+                                                <Text style={[
+                                                    styles.statValue,
+                                                    stats.monthlyGrowth > 0 ? styles.positiveValue :
+                                                        stats.monthlyGrowth < 0 ? styles.negativeValue : null
+                                                ]}>
+                                                    {stats.monthlyGrowth > 0 ? '+' : ''}{stats.monthlyGrowth}%
+                                                </Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.mostPopularCategory')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.mostPopularCategory}
+                                                </Text>
+                                            </View>
                                         </View>
                                     </View>
                                 );
                             case 1:
+                                if (stats.totalBooksSold === 0) {
+                                    return renderNoDataMessage(
+                                        'trending-up-outline',
+                                        t('charts.noCumulativeData')
+                                    );
+                                }
                                 return (
                                     <View style={styles.stepContent}>
                                         <LinearGradient
@@ -210,8 +364,8 @@ const FinancialReport = () => {
                                         >
                                             <LineChart
                                                 data={cumulativeSalesData}
-                                                width={chartWidth}
-                                                height={220}
+                                                width={chartWidthSmaller}
+                                                height={chartHeight}
                                                 yAxisLabel=""
                                                 yAxisSuffix=""
                                                 chartConfig={{
@@ -225,28 +379,30 @@ const FinancialReport = () => {
                                                 fromZero
                                             />
                                         </LinearGradient>
-                                        <View style={styles.priceSummarySection}>
-                                            <LinearGradient
-                                                colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                                style={[styles.priceSummaryGradient, styles.withShadow]}
-                                            >
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.totalBooksSold')}</Text>
-                                                    <Text style={styles.priceValue}>390</Text>
-                                                </View>
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.averageMonthly')}</Text>
-                                                    <Text style={styles.priceValue}>65</Text>
-                                                </View>
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.projectedYearEnd')}</Text>
-                                                    <Text style={styles.priceValue}>780</Text>
-                                                </View>
-                                            </LinearGradient>
+                                        <View style={styles.statsContainer}>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.totalBooksSold')}</Text>
+                                                <Text style={styles.statValue}>{stats.totalBooksSold}</Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.averageMonthly')}</Text>
+                                                <Text style={styles.statValue}>{stats.averageMonthly}</Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.projectedYearEnd')}</Text>
+                                                <Text style={styles.statValue}>{stats.projectedYearEnd}</Text>
+                                            </View>
                                         </View>
                                     </View>
                                 );
                             case 2:
+                                if (booksValueData.length === 0) {
+                                    return renderNoDataMessage(
+                                        'pie-chart-outline',
+                                        t('charts.noCategoriesData'),
+                                        t('charts.addCategoriesHint')
+                                    );
+                                }
                                 return (
                                     <View style={styles.stepContent}>
                                         <LinearGradient
@@ -256,33 +412,40 @@ const FinancialReport = () => {
                                             <PieChart
                                                 data={booksValueData}
                                                 width={chartWidth}
-                                                height={220}
+                                                height={chartHeight}
                                                 chartConfig={chartConfig}
-                                                accessor="population"
+                                                accessor="value"
                                                 backgroundColor="transparent"
                                                 paddingLeft="15"
                                                 style={styles.chart}
                                                 absolute
                                             />
                                         </LinearGradient>
-                                        <View style={styles.priceSummarySection}>
-                                            <LinearGradient
-                                                colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                                style={[styles.priceSummaryGradient, styles.withShadow]}
-                                            >
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.totalCollectionValue')}</Text>
-                                                    <Text style={styles.priceValue}>24,500 zł</Text>
-                                                </View>
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.mostValuableGenre')}</Text>
-                                                    <Text style={styles.priceValue}>Fantasy (35%)</Text>
-                                                </View>
-                                                <View style={styles.priceRow}>
-                                                    <Text style={styles.priceLabel}>{t('charts.averageBookValue')}</Text>
-                                                    <Text style={styles.priceValue}>62.82 zł</Text>
-                                                </View>
-                                            </LinearGradient>
+                                        <View style={styles.statsContainer}>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.totalValue')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.totalCollectionValue.toFixed(2)} zł
+                                                </Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.activeValue')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.activeValue.toFixed(2)} zł
+                                                </Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.soldValue')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.soldValue.toFixed(2)} zł
+                                                </Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.avgBookValue')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.averageBookValue.toFixed(2)} zł
+                                                </Text>
+                                            </View>
                                         </View>
                                     </View>
                                 );
@@ -301,57 +464,47 @@ const FinancialReport = () => {
             style={{flex: 1}}
         >
             <ScrollView
-                contentContainerStyle={[styles.container, { paddingBottom: 20 }]}
-                style={styles.backgroundGradient}
+                contentContainerStyle={styles.container}
                 showsVerticalScrollIndicator={false}
             >
-                <LinearGradient
-                    colors={['transparent', 'transparent']}
-                    start={[0, 0]}
-                    end={[1, 1]}
-                    style={styles.ratingOuterContainer}
-                >
+                <View style={styles.header}>
                     <TouchableOpacity
                         onPress={() => router.back()}
-                        style={{ marginLeft: 10, marginRight: 20, marginBottom: 20 }}
+                        style={styles.backButton}
                     >
                         <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
                     </TouchableOpacity>
-                    <View style={styles.ratingContainer}>
-                        <View style={styles.priceSummarySection}>
-                            <LinearGradient
-                                colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                                style={[styles.priceSummaryGradient, styles.withShadow]}
-                            >
-                                <View style={styles.priceRow}>
-                                    <View style={styles.priceLabelContainer}>
-                                        <Ionicons name="book-outline" size={22} color={colors.primary} />
-                                        <Text style={styles.priceLabelTotal}>{t('charts.totalBooksSold')}</Text>
-                                    </View>
-                                    <Text style={styles.priceValueTotal}>390</Text>
-                                </View>
+                    <Text style={styles.headerTitle}>{t('charts.financialReport')}</Text>
+                </View>
 
-                                <View style={styles.separator} />
-
-                                <View style={styles.priceRow}>
-                                    <View style={styles.priceLabelContainer}>
-                                        <Ionicons name="trending-up-outline" size={14} color={colors.secondary} />
-                                        <Text style={styles.priceLabel}>{t('charts.monthlyGrowth')}</Text>
-                                    </View>
-                                    <Text style={[styles.priceValue, {color: colors.grayDark}]}>+38%</Text>
-                                </View>
-
-                                <View style={styles.priceRow}>
-                                    <View style={styles.priceLabelContainer}>
-                                        <Ionicons name="calendar-outline" size={14} color={colors.primary} />
-                                        <Text style={styles.priceLabel}>{t('charts.lastUpdated')}</Text>
-                                    </View>
-                                    <Text style={[styles.priceValue, {color: colors.primary}]}>15.06.2023</Text>
-                                </View>
-                            </LinearGradient>
+                {!isLoading && hasData && (
+                    <LinearGradient
+                        colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                        style={styles.summaryCard}
+                    >
+                        <View style={styles.summaryRow}>
+                            <View style={styles.summaryIcon}>
+                                <Ionicons name="library-outline" size={24} color={colors.primary} />
+                            </View>
+                            <View style={styles.summaryTextContainer}>
+                                <Text style={styles.summaryLabel}>{t('charts.totalValue')}</Text>
+                                <Text style={styles.summaryValue}>
+                                    {stats.totalCollectionValue.toFixed(2)} zł
+                                </Text>
+                            </View>
                         </View>
-                    </View>
-                </LinearGradient>
+                        <View style={styles.divider} />
+                        <View style={styles.summaryRow}>
+                            <View style={styles.summaryIcon}>
+                                <Ionicons name="calendar-outline" size={20} color={colors.secondary} />
+                            </View>
+                            <View style={styles.summaryTextContainer}>
+                                <Text style={styles.summaryLabel}>{t('charts.lastUpdated')}</Text>
+                                <Text style={styles.summaryValue}>{stats.lastUpdated}</Text>
+                            </View>
+                        </View>
+                    </LinearGradient>
+                )}
 
                 {renderStep()}
             </ScrollView>
@@ -362,100 +515,69 @@ const FinancialReport = () => {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        padding: 10,
-        paddingTop: 0,
-        backgroundColor: 'transparent',
+        padding: 16,
+        paddingTop: 60,
     },
-    backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    ratingOuterContainer: {
-        padding: 12,
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 20,
-        marginHorizontal: -16,
-        paddingTop: 50,
-        borderRadius: 0,
     },
-    ratingContainer: {
-        gap: 10,
+    backButton: {
+        marginRight: 16,
     },
-    priceRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    priceLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    priceLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    priceLabelTotal: {
-        fontSize: 18,
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '600',
         color: colors.blackDark,
-        marginLeft: 5
     },
-    priceLabelSold: {
-        fontSize: 14,
-        color: colors.primary,
-    },
-    priceValue: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.black,
-    },
-    priceValueTotal: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-    },
-    separator: {
-        height: 1,
-        backgroundColor: colors.gray,
-        marginVertical: 12,
-    },
-    withShadow: {
+    summaryCard: {
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
     },
-    priceSummarySection: {
-        borderRadius: 12,
-        overflow: 'hidden',
-        marginHorizontal: 4,
-        shadowColor: colors.lightPrimary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-        marginTop: 10
+    summaryRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
     },
-    priceSummaryGradient: {
-        padding: 16,
-        backgroundColor: colors.background,
-        borderRadius: 12,
+    summaryIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
-    chartContainer: {
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        backgroundColor: colors.background,
+    summaryTextContainer: {
+        flex: 1,
     },
-    chart: {
-        borderRadius: 8,
+    summaryLabel: {
+        fontSize: 14,
+        color: colors.grayDark,
+    },
+    summaryValue: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.primary,
+        marginTop: 2,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        marginVertical: 8,
     },
     stepContainer: {
         flex: 1,
         width: '100%',
         backgroundColor: colors.background,
-        borderTopRightRadius: 15,
-        borderTopLeftRadius: 15,
+        borderRadius: 12,
         shadowColor: colors.lightPrimary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -466,8 +588,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
+        padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: colors.grayLight,
     },
@@ -476,7 +597,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '500',
         color: colors.blackDark,
-        marginRight: 10,
     },
     navigationContainer: {
         flexDirection: 'row',
@@ -500,8 +620,77 @@ const styles = StyleSheet.create({
     },
     stepContent: {
         flex: 1,
-        paddingHorizontal: 10,
-        paddingVertical: 16,
+        padding: 16,
+    },
+    chartContainer: {
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+    },
+    chart: {
+        borderRadius: 8,
+    },
+    withShadow: {
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    statsContainer: {
+        backgroundColor: colors.background,
+        borderRadius: 12,
+        padding: 16,
+    },
+    statItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    statLabel: {
+        fontSize: 14,
+        color: colors.grayDark,
+    },
+    statValue: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.black,
+    },
+    positiveValue: {
+        color: colors.success,
+    },
+    negativeValue: {
+        color: colors.error,
+    },
+    noDataContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    noDataText: {
+        fontSize: 16,
+        color: colors.grayDark,
+        marginTop: 16,
+        textAlign: 'center',
+    },
+    noDataHint: {
+        fontSize: 14,
+        color: colors.gray,
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: colors.grayDark,
     },
 });
 

@@ -8,6 +8,7 @@ import { View, TouchableOpacity, StyleSheet, Animated, Platform, Linking } from 
 import i18n from './i18n/config';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "@/styles/styles";
+import { AppProvider } from '@/context/AppContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -37,7 +38,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+      <AppProvider>
+        <RootLayoutNav />
+      </AppProvider>
+  );
 }
 
 function RootLayoutNav() {
@@ -75,8 +80,8 @@ function RootLayoutNav() {
 
   const handleRateApp = () => {
     const url = Platform.select({
-      ios: 'https://apps.apple.com/app/idYOUR_APPLE_ID', // ← podmień na swój Apple ID
-      android: 'https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME', // ← podmień na swój package name
+      ios: 'https://apps.apple.com/app/idYOUR_APPLE_ID',
+      android: 'https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME',
     });
 
     if (typeof url === "string") {
