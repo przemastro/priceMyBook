@@ -517,6 +517,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 16,
         paddingTop: 60,
+        minHeight: Dimensions.get('window').height,
     },
     header: {
         flexDirection: 'row',
@@ -583,6 +584,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
+        marginBottom: -30,
+        paddingBottom: 30,
     },
     stepHeader: {
         flexDirection: 'row',

@@ -265,7 +265,14 @@ export default {
         priceAlgorithm: 'Algorytm wyceny',
         language: 'Język',
         appDescription: 'Aestilibrum to zaawansowana aplikacja mobilna dla kolekcjonerów i miłośników książek, która umożliwia szybkie wyceny książek na podstawie ich stanu, unikalności i aktualnych czynników rynkowych.',
-        title: 'Ustawienia'
+        title: 'Ustawienia',
+        languageDescription: "Zmień język interfejsu aplikacji. Wszystkie elementy tekstowe zostaną automatycznie przetłumaczone.",
+        currencyConversion: "Aplikacja automatycznie przelicza ceny między USD i PLN na podstawie aktualnych kursów walut przy zmianie ustawień języka.",
+        rateOnAppStore: "Oceń w App Store",
+        rateOnPlayStore: "Oceń w Google Play",
+        buyMeCoffee: "Postaw mi kawę",
+        algorithm: "Algorytm",
+        rateUs: "Oceń nas"
     },
     listingStatus: {
         notListed: 'Wystaw',

@@ -1,5 +1,5 @@
 // screens/Settings.tsx
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState, useRef } from 'react';
@@ -37,6 +37,22 @@ export default function SettingsScreen() {
         outputRange: ['0deg', '360deg']
     });
 
+    const handleRateApp = (platform: 'ios' | 'android') => {
+        const urls = {
+            ios: 'https://apps.apple.com/app/idYOUR_APPLE_ID',
+            android: 'https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME',
+        };
+        Linking.openURL(urls[platform]).catch(err =>
+            console.error("Couldn't open store page", err)
+        );
+    };
+
+    const openBuyMeACoffee = () => {
+        Linking.openURL('https://buymeacoffee.com/YOUR_PROFILE').catch(err =>
+            console.error("Couldn't open Buy Me a Coffee page", err)
+        );
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'about':
@@ -59,7 +75,7 @@ export default function SettingsScreen() {
             case 'algorithm':
                 return (
                     <View style={styles.tabContent}>
-                        <Text style={styles.settingsTitle}>{t('settings.algorithmTitle')}</Text>
+                        <Text style={styles.settingsTitle}>{t('settings.algorithm')}</Text>
                         <Text style={styles.algorithmDescription}>
                             {t('settings.algorithmDescription')}
                         </Text>
@@ -82,6 +98,11 @@ export default function SettingsScreen() {
                 return (
                     <View style={styles.tabContent}>
                         <Text style={styles.settingsTitle}>{t('settings.language')}</Text>
+                        <Text style={styles.aboutText}>
+                            {t('settings.languageDescription')}
+                            {"\n\n"}
+                            {t('settings.currencyConversion')}
+                        </Text>
                         <TouchableOpacity
                             style={styles.languageButton}
                             onPress={toggleLanguage}
@@ -93,6 +114,53 @@ export default function SettingsScreen() {
                                 </Text>
                             </Animated.View>
                         </TouchableOpacity>
+                    </View>
+                );
+            case 'rate':
+                return (
+                    <View style={styles.tabContent}>
+                        <Text style={styles.settingsTitle}>{t('settings.rateUs')}</Text>
+                        <Text style={styles.aboutText}>
+                            {t('settings.rateDescription')}
+                        </Text>
+
+                        <View style={styles.rateOptionsContainer}>
+                            {/* App Store Rating */}
+                            <TouchableOpacity
+                                style={[styles.rateButton, styles.rateOption]}
+                                onPress={() => handleRateApp('ios')}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="logo-apple" size={24} color={colors.white} />
+                                <Text style={styles.rateButtonText}>
+                                    {t('settings.rateOnAppStore')}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Google Play Rating */}
+                            <TouchableOpacity
+                                style={[styles.rateButton, styles.rateOption]}
+                                onPress={() => handleRateApp('android')}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="logo-google-playstore" size={24} color={colors.white} />
+                                <Text style={styles.rateButtonText}>
+                                    {t('settings.rateOnPlayStore')}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Buy Me a Coffee */}
+                            <TouchableOpacity
+                                style={[styles.donateButton, styles.rateOption]}
+                                onPress={openBuyMeACoffee}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="cafe-outline" size={24} color={colors.white} />
+                                <Text style={styles.donateButtonText}>
+                                    {t('settings.buyMeCoffee')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 );
             default:
@@ -122,9 +190,7 @@ export default function SettingsScreen() {
                 contentContainerStyle={styles.scrollContent}
                 style={styles.scrollContainer}
             >
-                {/* Główny kontener łączący zakładki i zawartość */}
                 <View style={styles.mainCard}>
-                    {/* Kontener zakładek */}
                     <View style={styles.tabsWrapper}>
                         <LinearGradient
                             colors={[colors.buttonSelected1, colors.buttonSelected2]}
@@ -137,12 +203,14 @@ export default function SettingsScreen() {
                                     style={[styles.tab, activeTab === 'about' && styles.activeTab]}
                                     onPress={() => setActiveTab('about')}
                                 >
-                                    <Ionicons
-                                        name="information-circle"
-                                        size={20}
-                                        style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}
-                                    />
-                                    <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
+                                    <View style={styles.tabIconContainer}>
+                                        <Ionicons
+                                            name="information-circle"
+                                            size={24}
+                                            style={[styles.tabIcon, activeTab === 'about' && styles.activeTabIcon]}
+                                        />
+                                    </View>
+                                    <Text style={[styles.tabLabel, activeTab === 'about' && styles.activeTabLabel]}>
                                         {t('settings.about')}
                                     </Text>
                                 </TouchableOpacity>
@@ -151,13 +219,15 @@ export default function SettingsScreen() {
                                     style={[styles.tab, activeTab === 'algorithm' && styles.activeTab]}
                                     onPress={() => setActiveTab('algorithm')}
                                 >
-                                    <Ionicons
-                                        name="calculator"
-                                        size={20}
-                                        style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}
-                                    />
-                                    <Text style={[styles.tabText, activeTab === 'algorithm' && styles.activeTabText]}>
-                                        {t('settings.priceAlgorithm')}
+                                    <View style={styles.tabIconContainer}>
+                                        <Ionicons
+                                            name="calculator"
+                                            size={24}
+                                            style={[styles.tabIcon, activeTab === 'algorithm' && styles.activeTabIcon]}
+                                        />
+                                    </View>
+                                    <Text style={[styles.tabLabel, activeTab === 'algorithm' && styles.activeTabLabel]}>
+                                        {t('settings.algorithm')}
                                     </Text>
                                 </TouchableOpacity>
 
@@ -165,20 +235,37 @@ export default function SettingsScreen() {
                                     style={[styles.tab, activeTab === 'language' && styles.activeTab]}
                                     onPress={() => setActiveTab('language')}
                                 >
-                                    <Ionicons
-                                        name="language"
-                                        size={20}
-                                        style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}
-                                    />
-                                    <Text style={[styles.tabText, activeTab === 'language' && styles.activeTabText]}>
+                                    <View style={styles.tabIconContainer}>
+                                        <Ionicons
+                                            name="language"
+                                            size={24}
+                                            style={[styles.tabIcon, activeTab === 'language' && styles.activeTabIcon]}
+                                        />
+                                    </View>
+                                    <Text style={[styles.tabLabel, activeTab === 'language' && styles.activeTabLabel]}>
                                         {t('settings.language')}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.tab, activeTab === 'rate' && styles.activeTab]}
+                                    onPress={() => setActiveTab('rate')}
+                                >
+                                    <View style={styles.tabIconContainer}>
+                                        <Ionicons
+                                            name="heart"
+                                            size={24}
+                                            style={[styles.tabIcon, activeTab === 'rate' && styles.activeTabIcon]}
+                                        />
+                                    </View>
+                                    <Text style={[styles.tabLabel, activeTab === 'rate' && styles.activeTabLabel]}>
+                                        {t('settings.rateUs')}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
                         </LinearGradient>
                     </View>
 
-                    {/* Kontener zawartości */}
                     <View style={styles.contentWrapper}>
                         {renderContent()}
                     </View>
@@ -256,26 +343,35 @@ const styles = StyleSheet.create({
     tabsContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
         paddingVertical: 12,
+        paddingHorizontal: 8,
     },
     tab: {
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        flexDirection: 'row',
+        paddingVertical: 8,
+        borderRadius: 8,
+        width: '23%',
     },
     activeTab: {
-        backgroundColor: 'transparent',
+        backgroundColor: 'rgba(255, 255, 255, 0.4)',
     },
-    tabText: {
-        marginLeft: 8,
+    tabIconContainer: {
+        marginBottom: 4,
+    },
+    tabIcon: {
         color: colors.black,
-        fontSize: 15,
-        fontWeight: '500'
     },
-    activeTabText: {
+    activeTabIcon: {
+        color: colors.primary,
+    },
+    tabLabel: {
+        color: colors.black,
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    activeTabLabel: {
         fontWeight: '700',
         color: colors.primary,
     },
@@ -361,6 +457,48 @@ const styles = StyleSheet.create({
         elevation: 3
     },
     languageButtonText: {
+        color: colors.white,
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    rateOptionsContainer: {
+        marginTop: 20,
+        gap: 15,
+    },
+    rateOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+    },
+    rateButton: {
+        backgroundColor: colors.primary,
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    rateButtonText: {
+        color: colors.white,
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    donateButton: {
+        backgroundColor: colors.secondary,
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    donateButtonText: {
         color: colors.white,
         fontSize: 17,
         fontWeight: '600',

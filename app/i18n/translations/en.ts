@@ -266,7 +266,14 @@ export default {
         priceAlgorithm: 'Pricing Algorithm',
         language: 'Language',
         appDescription: 'Aestilibrum is an advanced mobile application for book collectors and enthusiasts that enables quick book valuations based on condition, uniqueness, and current market factors.',
-        title: 'Settings'
+        title: 'Settings',
+        languageDescription: "Change the language of the application interface. All text elements will be automatically translated.",
+        currencyConversion: "The application automatically converts prices between USD and PLN based on current exchange rates when changing language settings.",
+        rateOnAppStore: "Rate on App Store",
+        rateOnPlayStore: "Rate on Google Play",
+        buyMeCoffee: "Buy Me a Coffee",
+        algorithm: "Algorithm",
+        rateUs: "Rate us"
     },
     bookCount: {
         book: "book",

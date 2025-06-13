@@ -78,17 +78,9 @@ function RootLayoutNav() {
     router.push('/customScreens/Settings');
   };
 
-  const handleRateApp = () => {
-    const url = Platform.select({
-      ios: 'https://apps.apple.com/app/idYOUR_APPLE_ID',
-      android: 'https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME',
-    });
-
-    if (typeof url === "string") {
-      Linking.openURL(url).catch(err =>
-          console.error("Couldn't open store page", err)
-      );
-    }
+  const handleNotifications = () => {
+    // Placeholder for future notifications functionality
+    console.log("Notifications pressed");
   };
 
   return (
@@ -126,11 +118,11 @@ function RootLayoutNav() {
 
         <View style={styles.headerButtonsContainer}>
           <TouchableOpacity
-              style={styles.ratingButton}
-              onPress={handleRateApp}
+              style={styles.notificationsButton}
+              onPress={handleNotifications}
               activeOpacity={0.7}
           >
-            <Ionicons name="heart-outline" size={24} color={colors.blackDark} />
+            <Ionicons name="notifications-outline" size={24} color={colors.blackDark} />
           </TouchableOpacity>
         </View>
       </>
@@ -151,7 +143,7 @@ const styles = StyleSheet.create({
     marginLeft: 0,
     padding: 8,
   },
-  ratingButton: {
+  notificationsButton: {
     marginLeft: 15,
     padding: 8,
   },
