@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
@@ -8,6 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Easing } from 'react-native-reanimated';
 import { router } from "expo-router";
 import { useAppContext } from '@/context/AppContext';
+import moment from 'moment';
+import 'moment/locale/pl';
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const chartWidth = Dimensions.get('window').width - 40;
 const chartWidthSmaller = Dimensions.get('window').width - 90;
@@ -17,7 +21,7 @@ const chartHeightSmaller = 200;
 const chartConfig = {
     backgroundGradientFrom: colors.background,
     backgroundGradientTo: colors.background,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    color: (opacity = 1) => colors.primary,
     labelColor: () => colors.black,
     strokeWidth: 2,
     barPercentage: 0.7,
@@ -31,11 +35,8 @@ const chartConfig = {
     }
 };
 
-// Typ dla dozwolonych nazw ikon Ionicons
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
 const FinancialReport = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const {
         books,
         collections,
@@ -47,19 +48,212 @@ const FinancialReport = () => {
 
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
     const totalSteps = 3;
     const slideAnim = useRef(new Animated.Value(0)).current;
 
-    const { monthlySalesData, cumulativeSalesData, booksValueData, stats, hasData } = useMemo(() => {
-        // Initialize empty state if no data
-        if (!books || !collections || collections.length === 0) {
+    useEffect(() => {
+        moment.locale(i18n.language);
+        const timer = setTimeout(() => {
+            if (isLoading) {
+                setIsLoading(false);
+                setHasError(true);
+            }
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, [i18n.language]);
+
+    const processFinancialData = () => {
+        try {
+            if (!books || !collections || collections.length === 0) {
+                return {
+                    monthlySalesData: { labels: [], datasets: [{ data: [] }] },
+                    monthlyRevenueData: { labels: [], datasets: [{ data: [] }] },
+                    yearlyBreakdown: { labels: [], datasets: [] },
+                    booksValueData: [],
+                    stats: {
+                        totalBooksSold: 0,
+                        monthlyRevenue: 0,
+                        yearlyRevenue: 0,
+                        monthlyGrowth: 0,
+                        mostPopularCategory: t('charts.noData'),
+                        averageMonthly: 0,
+                        projectedYearEnd: 0,
+                        totalCollectionValue: 0,
+                        averageBookValue: 0,
+                        activeValue: 0,
+                        soldValue: 0,
+                        lastUpdated: moment().format('LL'),
+                        bestSellingMonth: '-',
+                        averageSalePrice: 0
+                    },
+                    hasData: false
+                };
+            }
+
+            const totalValue = calculateTotalValue();
+            const activeValue = calculateActiveValue();
+            const soldValue = calculateSoldValue();
+
+            const months = Array.from({ length: 12 }, (_, i) => {
+                const date = moment().subtract(11 - i, 'months');
+                return {
+                    key: date.format('MMM YYYY'),
+                    month: date.format('MMM'),
+                    year: date.year(),
+                    count: 0,
+                    revenue: 0
+                };
+            });
+
+            const yearlyData: Record<string, { count: number, revenue: number }> = {};
+            let totalBooksSold = 0;
+            let totalRevenue = 0;
+
+            collections.forEach(collection => {
+                const currentBooks = books[collection.name] || [];
+
+                currentBooks.forEach(book => {
+                    if (book.listingStatus?.status === 'sold') {
+                        const saleDate = book.listingStatus.soldDate
+                            ? moment(book.listingStatus.soldDate)
+                            : moment(book.createdAt);
+                        const price = parseFloat(book.price) || 0;
+
+                        const monthKey = saleDate.format('MMM YYYY');
+                        const monthIndex = months.findIndex(m => m.key === monthKey);
+                        if (monthIndex >= 0) {
+                            months[monthIndex].count += 1;
+                            months[monthIndex].revenue += price;
+                        }
+
+                        const year = saleDate.year().toString();
+                        if (!yearlyData[year]) {
+                            yearlyData[year] = { count: 0, revenue: 0 };
+                        }
+                        yearlyData[year].count += 1;
+                        yearlyData[year].revenue += price;
+
+                        totalBooksSold += 1;
+                        totalRevenue += price;
+                    }
+                });
+            });
+
+            const bestSellingMonth = months.reduce((best, month) =>
+                    month.revenue > best.revenue ? month : best,
+                { month: '', count: 0, revenue: 0 }
+            );
+
+            const monthlyLabels = months.map(m => m.month);
+            const monthlySales = months.map(m => m.count);
+            const monthlyRevenues = months.map(m => m.revenue);
+
+            const categoriesValue: Record<string, number> = {};
+            collections.forEach(collection => {
+                const currentBooks = books[collection.name] || [];
+                const categories = collectionCategories[collection.name] || [t('charts.generalCategory')];
+
+                currentBooks.forEach(book => {
+                    const price = parseFloat(book.price) || 0;
+                    const valuePerCategory = price / categories.length;
+                    categories.forEach(category => {
+                        categoriesValue[category] = (categoriesValue[category] || 0) + valuePerCategory;
+                    });
+                });
+            });
+
+            const pieData = Object.entries(categoriesValue)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, value], index) => ({
+                    name,
+                    value: Math.round(value),
+                    color: [
+                        '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B',
+                        '#F44336', '#00BCD4', '#8BC34A', '#3F51B5', '#FF5722'
+                    ][index % 10],
+                    legendFontColor: colors.black,
+                    legendFontSize: 12
+                }));
+
+            const activeBooksCount = collections.reduce((sum, collection) =>
+                    sum + (books[collection.name] || []).filter(b => b.listingStatus?.status !== 'sold').length,
+                0
+            );
+
+            const averageBookValue = activeBooksCount > 0 ? Math.round(activeValue / activeBooksCount) : 0;
+            const averageSalePrice = totalBooksSold > 0 ? totalRevenue / totalBooksSold : 0;
+
+            const monthsWithSales = months.filter(m => m.count > 0).length;
+            const monthlyGrowth = months.length > 1
+                ? Math.round(((monthlySales[monthlySales.length - 1] - monthlySales[monthlySales.length - 2]) /
+                    (monthlySales[monthlySales.length - 2] || 1) * 100))
+                : 0;
+
             setIsLoading(false);
+            setHasError(false);
+
+            return {
+                monthlySalesData: {
+                    labels: monthlyLabels,
+                    datasets: [{ data: monthlySales }]
+                },
+                monthlyRevenueData: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        data: monthlyRevenues,
+                        color: (opacity = 0) => colors.primary,
+                        strokeWidth: 3
+                    }]
+                },
+                yearlyBreakdown: {
+                    labels: Object.keys(yearlyData).sort(),
+                    datasets: [
+                        {
+                            data: Object.keys(yearlyData).sort().map(year => yearlyData[year].count),
+                            color: (opacity = 1) => colors.primary,
+                            strokeWidth: 2
+                        },
+                        {
+                            data: Object.keys(yearlyData).sort().map(year => yearlyData[year].revenue),
+                            color: (opacity = 1) => colors.secondary,
+                            strokeWidth: 2
+                        }
+                    ]
+                },
+                booksValueData: pieData,
+                stats: {
+                    totalBooksSold,
+                    monthlyRevenue: monthlyRevenues[monthlyRevenues.length - 1] || 0,
+                    yearlyRevenue: totalRevenue,
+                    monthlyGrowth,
+                    mostPopularCategory: pieData[0]?.name || t('charts.noData'),
+                    averageMonthly: Math.round(totalBooksSold / Math.max(1, monthsWithSales)),
+                    projectedYearEnd: Math.round(totalBooksSold * (12 / Math.max(1, monthsWithSales))),
+                    totalCollectionValue: totalValue,
+                    averageBookValue,
+                    activeValue,
+                    soldValue,
+                    lastUpdated: moment().format('LL'),
+                    bestSellingMonth: bestSellingMonth.month || '-',
+                    averageSalePrice
+                },
+                hasData: totalBooksSold > 0 || pieData.length > 0
+            };
+        } catch (error) {
+            console.error('Error processing financial data:', error);
+            setIsLoading(false);
+            setHasError(true);
             return {
                 monthlySalesData: { labels: [], datasets: [{ data: [] }] },
-                cumulativeSalesData: { labels: [], datasets: [{ data: [] }] },
+                monthlyRevenueData: { labels: [], datasets: [{ data: [] }] },
+                yearlyBreakdown: { labels: [], datasets: [] },
                 booksValueData: [],
                 stats: {
                     totalBooksSold: 0,
+                    monthlyRevenue: 0,
+                    yearlyRevenue: 0,
                     monthlyGrowth: 0,
                     mostPopularCategory: t('charts.noData'),
                     averageMonthly: 0,
@@ -68,136 +262,23 @@ const FinancialReport = () => {
                     averageBookValue: 0,
                     activeValue: 0,
                     soldValue: 0,
-                    lastUpdated: new Date().toLocaleDateString()
+                    lastUpdated: moment().format('LL'),
+                    bestSellingMonth: '-',
+                    averageSalePrice: 0
                 },
                 hasData: false
             };
         }
+    };
 
-        setIsLoading(false);
-
-        // Calculate financial values
-        const totalValue = calculateTotalValue();
-        const activeValue = calculateActiveValue();
-        const soldValue = calculateSoldValue();
-
-        // Process categories values
-        const categoriesValue: Record<string, number> = {};
-        let hasSalesData = false;
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const monthlySales: Record<string, number> = {};
-
-        collections.forEach(collection => {
-            const currentBooks = books[collection.name] || [];
-            const categories = collectionCategories[collection.name] || [t('charts.generalCategory')];
-
-            currentBooks.forEach(book => {
-                const price = parseFloat(book.price) || 0;
-                const valuePerCategory = price / categories.length;
-
-                categories.forEach(category => {
-                    categoriesValue[category] = (categoriesValue[category] || 0) + valuePerCategory;
-                });
-
-                // Process sales data
-                if (book.listingStatus?.status === 'sold') {
-                    hasSalesData = true;
-                    let saleDate: Date;
-
-                    try {
-                        saleDate = book.listingStatus.soldDate ? new Date(book.listingStatus.soldDate) : new Date(book.createdAt);
-                    } catch {
-                        saleDate = new Date(book.createdAt);
-                    }
-
-                    if (saleDate.getFullYear() === currentYear) {
-                        const month = saleDate.toLocaleString('default', { month: 'short' });
-                        monthlySales[month] = (monthlySales[month] || 0) + 1;
-                    }
-                }
-            });
-        });
-
-        // Prepare last 6 months data
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const last6Months = [];
-
-        for (let i = 5; i >= 0; i--) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            last6Months.push(date.toLocaleString('default', { month: 'short' }));
-        }
-
-        const monthlyData = last6Months.map(month => monthlySales[month] || 0);
-
-        // Calculate cumulative sales
-        let cumulative = 0;
-        const cumulativeData = monthlyData.map(value => {
-            cumulative += value;
-            return cumulative;
-        });
-
-        // Prepare pie chart data
-        const pieData = Object.entries(categoriesValue)
-            .sort((a, b) => b[1] - a[1])
-            .map(([name, value], index) => ({
-                name,
-                value: Math.round(value),
-                color: [
-                    '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B',
-                    '#F44336', '#00BCD4', '#8BC34A', '#3F51B5', '#FF5722'
-                ][index % 10],
-                legendFontColor: colors.black,
-                legendFontSize: 12
-            }));
-
-        // Calculate active books count for average
-        const activeBooksCount = collections.reduce((sum, collection) => {
-            return sum + (books[collection.name] || []).filter(
-                book => book.listingStatus?.status !== 'sold'
-            ).length;
-        }, 0);
-
-        const averageBookValue = activeBooksCount > 0
-            ? Math.round(activeValue / activeBooksCount)
-            : 0;
-
-        const totalBooksSold = cumulativeData[cumulativeData.length - 1] || 0;
-        const monthlyGrowth = monthlyData.length > 1
-            ? Math.round(((monthlyData[monthlyData.length - 1] - monthlyData[monthlyData.length - 2]) /
-                (monthlyData[monthlyData.length - 2] || 1) * 100))
-            : 0;
-
-        return {
-            monthlySalesData: {
-                labels: last6Months,
-                datasets: [{ data: monthlyData }]
-            },
-            cumulativeSalesData: {
-                labels: last6Months,
-                datasets: [{
-                    data: cumulativeData,
-                    color: (opacity = 1) => colors.primary,
-                    strokeWidth: 3
-                }]
-            },
-            booksValueData: pieData,
-            stats: {
-                totalBooksSold,
-                monthlyGrowth,
-                mostPopularCategory: pieData[0]?.name || t('charts.noData'),
-                averageMonthly: Math.round(totalBooksSold / Math.max(1, last6Months.length)),
-                projectedYearEnd: Math.round(totalBooksSold * (12 / Math.max(1, last6Months.length))),
-                totalCollectionValue: totalValue,
-                averageBookValue,
-                activeValue,
-                soldValue,
-                lastUpdated: new Date().toLocaleDateString()
-            },
-            hasData: hasSalesData || pieData.length > 0
-        };
-    }, [books, collections, collectionCategories, t]);
+    const {
+        monthlySalesData,
+        monthlyRevenueData,
+        yearlyBreakdown,
+        booksValueData,
+        stats,
+        hasData
+    } = useMemo(processFinancialData, [books, collections, collectionCategories, t]);
 
     const animateSlide = (direction: 'forward' | 'backward') => {
         slideAnim.setValue(direction === 'forward' ? 50 : -50);
@@ -238,7 +319,7 @@ const FinancialReport = () => {
     const renderStep = () => {
         const stepTitles = [
             t('charts.monthlySales'),
-            t('charts.cumulativeSales'),
+            t('charts.revenueTrends'),
             t('charts.booksValue')
         ];
 
@@ -251,9 +332,17 @@ const FinancialReport = () => {
             );
         }
 
-        if (!hasData) {
+        if (hasError) {
             return renderNoDataMessage(
                 'alert-circle-outline',
+                t('charts.dataLoadError'),
+                t('charts.tryAgainLater')
+            );
+        }
+
+        if (!hasData) {
+            return renderNoDataMessage(
+                'library-outline',
                 t('charts.noFinancialData'),
                 t('charts.addBooksHint')
             );
@@ -297,13 +386,6 @@ const FinancialReport = () => {
                     {(() => {
                         switch (currentStep) {
                             case 0:
-                                if (stats.totalBooksSold === 0) {
-                                    return renderNoDataMessage(
-                                        'bar-chart-outline',
-                                        t('charts.noSalesData'),
-                                        t('charts.markBooksAsSoldHint')
-                                    );
-                                }
                                 return (
                                     <View style={styles.stepContent}>
                                         <LinearGradient
@@ -325,10 +407,12 @@ const FinancialReport = () => {
                                         </LinearGradient>
                                         <View style={styles.statsContainer}>
                                             <View style={styles.statItem}>
-                                                <Text style={styles.statLabel}>{t('charts.booksSoldThisMonth')}</Text>
-                                                <Text style={styles.statValue}>
-                                                    {monthlySalesData.datasets[0].data[monthlySalesData.datasets[0].data.length - 1] || 0}
-                                                </Text>
+                                                <Text style={styles.statLabel}>{t('charts.totalBooksSold')}</Text>
+                                                <Text style={styles.statValue}>{stats.totalBooksSold}</Text>
+                                            </View>
+                                            <View style={styles.statItem}>
+                                                <Text style={styles.statLabel}>{t('charts.bestSellingMonth')}</Text>
+                                                <Text style={styles.statValue}>{stats.bestSellingMonth}</Text>
                                             </View>
                                             <View style={styles.statItem}>
                                                 <Text style={styles.statLabel}>{t('charts.monthlyGrowth')}</Text>
@@ -340,22 +424,10 @@ const FinancialReport = () => {
                                                     {stats.monthlyGrowth > 0 ? '+' : ''}{stats.monthlyGrowth}%
                                                 </Text>
                                             </View>
-                                            <View style={styles.statItem}>
-                                                <Text style={styles.statLabel}>{t('charts.mostPopularCategory')}</Text>
-                                                <Text style={styles.statValue}>
-                                                    {stats.mostPopularCategory}
-                                                </Text>
-                                            </View>
                                         </View>
                                     </View>
                                 );
                             case 1:
-                                if (stats.totalBooksSold === 0) {
-                                    return renderNoDataMessage(
-                                        'trending-up-outline',
-                                        t('charts.noCumulativeData')
-                                    );
-                                }
                                 return (
                                     <View style={styles.stepContent}>
                                         <LinearGradient
@@ -363,14 +435,19 @@ const FinancialReport = () => {
                                             style={[styles.chartContainer, styles.withShadow]}
                                         >
                                             <LineChart
-                                                data={cumulativeSalesData}
+                                                data={monthlyRevenueData}
                                                 width={chartWidthSmaller}
                                                 height={chartHeight}
                                                 yAxisLabel=""
-                                                yAxisSuffix=""
+                                                yAxisSuffix=" zł"
                                                 chartConfig={{
                                                     ...chartConfig,
-                                                    color: (opacity = 1) => colors.primary
+                                                    color: (opacity = 1) => colors.primary,  // Tutaj zmieniasz kolor linii
+                                                    propsForDots: {
+                                                        r: "4",
+                                                        strokeWidth: "2",
+                                                        stroke: colors.primary  // Tutaj możesz też zmienić kolor kropek
+                                                    }
                                                 }}
                                                 bezier
                                                 style={styles.chart}
@@ -381,28 +458,27 @@ const FinancialReport = () => {
                                         </LinearGradient>
                                         <View style={styles.statsContainer}>
                                             <View style={styles.statItem}>
-                                                <Text style={styles.statLabel}>{t('charts.totalBooksSold')}</Text>
-                                                <Text style={styles.statValue}>{stats.totalBooksSold}</Text>
+                                                <Text style={styles.statLabel}>{t('charts.yearlyRevenue')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.yearlyRevenue.toFixed(2)} zł
+                                                </Text>
                                             </View>
                                             <View style={styles.statItem}>
-                                                <Text style={styles.statLabel}>{t('charts.averageMonthly')}</Text>
-                                                <Text style={styles.statValue}>{stats.averageMonthly}</Text>
+                                                <Text style={styles.statLabel}>{t('charts.monthlyRevenue')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.monthlyRevenue.toFixed(2)} zł
+                                                </Text>
                                             </View>
                                             <View style={styles.statItem}>
-                                                <Text style={styles.statLabel}>{t('charts.projectedYearEnd')}</Text>
-                                                <Text style={styles.statValue}>{stats.projectedYearEnd}</Text>
+                                                <Text style={styles.statLabel}>{t('charts.averageSalePrice')}</Text>
+                                                <Text style={styles.statValue}>
+                                                    {stats.averageSalePrice.toFixed(2)} zł
+                                                </Text>
                                             </View>
                                         </View>
                                     </View>
                                 );
                             case 2:
-                                if (booksValueData.length === 0) {
-                                    return renderNoDataMessage(
-                                        'pie-chart-outline',
-                                        t('charts.noCategoriesData'),
-                                        t('charts.addCategoriesHint')
-                                    );
-                                }
                                 return (
                                     <View style={styles.stepContent}>
                                         <LinearGradient
@@ -438,12 +514,6 @@ const FinancialReport = () => {
                                                 <Text style={styles.statLabel}>{t('charts.soldValue')}</Text>
                                                 <Text style={styles.statValue}>
                                                     {stats.soldValue.toFixed(2)} zł
-                                                </Text>
-                                            </View>
-                                            <View style={styles.statItem}>
-                                                <Text style={styles.statLabel}>{t('charts.avgBookValue')}</Text>
-                                                <Text style={styles.statValue}>
-                                                    {stats.averageBookValue.toFixed(2)} zł
                                                 </Text>
                                             </View>
                                         </View>
@@ -551,6 +621,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 16,
         marginBottom: 20,
+        marginTop: 30,
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -649,7 +720,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     withShadow: {
-        shadowColor: colors.blackDark,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,

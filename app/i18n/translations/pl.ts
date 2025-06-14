@@ -44,6 +44,8 @@ export default {
         collectionLimitReached: 'Osiągnięto maksymalną liczbę księgozbiorów ({{limit}}). Aby skanować nowe książki, usuń istniejący księgozbiór lub dodaj książkę do istniejącego księgozbioru.',
         bookLimitReached: 'Osiągnięto maksymalną liczbę książek ({{limit}}) w tym księgozbiorze. Aby skanować nowe książki, usuń niektóre książki lub dodaj do innego księgozbioru.',
         collectionDeleted: "Kolekcja '{{collectionName}}' została usunięta",
+        emptyCsv: "Wybrany plik CSV jest pusty",
+        noValidBooks: "Nie znaleziono prawidłowych książek w pliku CSV"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -148,7 +150,10 @@ export default {
         priceHistory: "Historia ceny książki",
         selectIcon: "Wybierz ikonkę",
         noDate: "Brak daty",
-        noCollectionsFound: "Brak księgozbioru"
+        noCollectionsFound: "Brak księgozbioru",
+        categories: "Kategorie",
+        non: "brak",
+        price: "Cena"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -384,11 +389,18 @@ export default {
         addCategoriesHint: "Dodaj kategorie do kolekcji, aby zobaczyć rozkład wartości",
         generalCategory: "Ogólne",
         totalValue: "Wartość całkowita książek",
-        activeValue: "Wartość książek niesprzedanych",
+        activeValue: "Wartość książek dostępnych",
         soldValue: "Wartość książek sprzedanych",
         avgBookValue: "Średnia cena książek",
         mostPopularCategory: "Najpopularniejsza kategoria",
-        financialReport: "Raport finansowy"
+        financialReport: "Raport finansowy",
+        revenueTrends: "Trendy przychodów",
+        monthlyRevenue: "Przychód miesięczny",
+        yearlyRevenue: "Przychód roczny",
+        averageSalePrice: "Średnia cena sprzedaży",
+        bestSellingMonth: "Najlepszy miesiąc sprzedaży",
+        revenueGrowth: "Wzrost przychodów",
+        revenueForecast: "Prognoza przychodów"
     },
     marketFactors: {
         includePublicationYear: "Data wydania",

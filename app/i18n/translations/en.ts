@@ -48,6 +48,8 @@ export default {
         collectionLimitReached: 'You have reached the maximum number of collections ({{limit}}). To scan new books, please delete an existing collection or add the book to an existing collection.',
         bookLimitReached: 'You have reached the maximum number of books ({{limit}}) in this collection. To scan new books, please delete some books or add to another collection.',
         collectionDeleted: "Collection '{{collectionName}}' has been deleted",
+        emptyCsv: "Selected CSV file is empty",
+        noValidBooks: "No valid books found in CSV file"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -151,7 +153,10 @@ export default {
         selectIcon: "Select Icon",
         noDate: "No date",
         noCollectionsFound: "No Collections Found",
-        rateDescription: "Leave a rating on Google Play or the App Store. We wouldn't say no to a coffee either."
+        rateDescription: "Leave a rating on Google Play or the App Store. We wouldn't say no to a coffee either.",
+        categories: "Categories",
+        none: "none",
+        price: "Price"
     },
     titles: {
         scan: 'Scan ISBN',
@@ -389,11 +394,18 @@ export default {
         addCategoriesHint: "Add categories to your collection to see value distribution",
         generalCategory: "General",
         totalValue: "Total Book Value",
-        activeValue: "Value of Unsold Books",
+        activeValue: "Value of Available Books",
         soldValue: "Value of Sold Books",
         avgBookValue: "Average Book Price",
         mostPopularCategory: "Most Popular Category",
-        financialReport: "Financial Report"
+        financialReport: "Financial Report",
+        revenueTrends: "Revenue Trends",
+        monthlyRevenue: "Monthly Revenue",
+        yearlyRevenue: "Yearly Revenue",
+        averageSalePrice: "Average Sale Price",
+        bestSellingMonth: "Best-Selling Month",
+        revenueGrowth: "Revenue Growth",
+        revenueForecast: "Revenue Forecast"
     },
     marketFactors: {
         includePublicationYear: "Publication Year",

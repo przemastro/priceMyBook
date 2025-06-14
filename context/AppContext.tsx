@@ -6,7 +6,7 @@ import { t } from "i18next";
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
 
 export const LIMITS = {
-    MAX_COLLECTIONS: 1,
+    MAX_COLLECTIONS: 5,
     MAX_TOTAL_BOOKS: 5,
     MAX_BOOKS_PER_COLLECTION: 5,
 };
@@ -84,7 +84,12 @@ interface AppContextType {
     isbn: string | null;
     setISBN: (isbn: string | null) => void;
     collections: Collection[];
-    addCollection: (name: string, icon?: string, categories?: string[]) => void;
+    addCollection: (
+        name: string,
+        icon?: string,
+        categories?: string[],
+        options?: { createdAt?: string }
+    ) => void;
     removeCollection: (name: string) => void;
     books: { [key: string]: BookData[] };
     collectionCategories: { [key: string]: string[] };
@@ -306,7 +311,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return `$${usdPrice.toFixed(2)}`;
     }, [exchangeRate]);
 
-    const addCollection = useCallback((name: string, icon: string = 'book', initialCategories: string[] = []) => {
+    const addCollection = useCallback((
+        name: string,
+        icon: string = 'book',
+        initialCategories: string[] = [],
+        options?: { createdAt?: string }
+    ) => {
         if (!name.trim()) return;
 
         const { collectionLimitReached } = checkGlobalLimits();
@@ -320,7 +330,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             return;
         }
 
-        setCollections(prev => [...prev, { name, icon }]);
+        const newCollection = {
+            name,
+            icon,
+            createdAt: options?.createdAt || new Date().toISOString()
+        };
+
+        setCollections(prev => [...prev, newCollection]);
         setBooks(prev => ({ ...prev, [name]: prev[name] || [] }));
         setCollectionCategories(prev => ({
             ...prev,

@@ -10,7 +10,9 @@ interface ImportPreviewModalProps {
     importPreview: {
         collectionName: string;
         books: BookData[];
+        categories: string[];
         showPreview: boolean;
+        collectionCreatedAt?: string;
     } | null;
     onCancel: () => void;
     onConfirm: () => void;
@@ -75,6 +77,10 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                                 <Text style={styles.infoValue}> {importPreview.collectionName}</Text>
                             </Text>
                             <Text style={styles.infoText}>
+                                {t('labels.categories')}:
+                                <Text style={styles.infoValue}> {importPreview.categories.join(', ') || t('labels.none')}</Text>
+                            </Text>
+                            <Text style={styles.infoText}>
                                 {t('labels.booksToImport')}:
                                 <Text style={styles.infoValue}> {importPreview.books.length}</Text>
                             </Text>
@@ -85,39 +91,30 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                             style={styles.previewScroll}
                             contentContainerStyle={styles.previewScrollContent}
                         >
-                            {importPreview.books.slice(0, 5).map((book, index) => (
-                                <View key={index} style={styles.bookPreview}>
-                                    <Text style={styles.bookTitle} numberOfLines={1}>
-                                        {book.title || t('labels.noTitle')}
-                                    </Text>
-                                    <Text style={styles.bookDetails}>
-                                        ISBN: {book.isbn} • {t('labels.condition')}: {book.rating}/10
-                                    </Text>
-                                    <Text style={styles.bookMeta}>
-                                        {t('labels.defects')}: {formatDefectsSummary(book.defects)}
-                                    </Text>
-                                    {book.uniqueness && (
-                                        <Text style={styles.bookMeta}>
-                                            {t('labels.uniqueness')}: {formatUniquenessSummary(book.uniqueness)}
-                                        </Text>
-                                    )}
-                                    {book.marketFactors && (
-                                        <Text style={styles.bookMeta}>
-                                            {t('labels.marketFactors')}: {formatMarketFactorsSummary(book.marketFactors)}
-                                        </Text>
-                                    )}
-                                    {book.ageInfo && (
-                                        <Text style={styles.bookMeta}>
-                                            {t('labels.age')}: {book.ageInfo.years} {t('labels.years')}
-                                        </Text>
-                                    )}
-                                    {book.listingStatus && (
-                                        <Text style={styles.bookMeta}>
-                                            {t('labels.listingStatus')}: {formatListingStatus(book.listingStatus)}
-                                        </Text>
-                                    )}
-                                </View>
-                            ))}
+                            {importPreview.books.slice(0, 5).map((book, index) => {
+                                try {
+                                    return (
+                                        <View key={index} style={styles.bookPreview}>
+                                            <Text style={styles.bookTitle} numberOfLines={1}>
+                                                {book.title || t('labels.noTitle')}
+                                            </Text>
+                                            <Text style={styles.bookDetails}>
+                                                ISBN: {book.isbn} • {t('labels.condition')}: {book.rating}/10
+                                            </Text>
+                                            <Text style={styles.bookDetails}>
+                                                {t('labels.price')}: {book.displayPrice}
+                                            </Text>
+                                            <Text style={styles.bookMeta}>
+                                                {t('labels.defects')}: {formatDefectsSummary(book.defects)}
+                                            </Text>
+                                            {/* Reszta szczegółów książki */}
+                                        </View>
+                                    );
+                                } catch (e) {
+                                    console.error('Error rendering book preview', e);
+                                    return null;
+                                }
+                            })}
                             {importPreview.books.length > 5 && (
                                 <Text style={styles.moreItemsText}>
                                     + {importPreview.books.length - 5} {t('labels.moreBooks')}...

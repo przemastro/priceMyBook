@@ -57,8 +57,8 @@ export interface ImportPreviewData {
     books: BookData[];
     categories: string[];
     showPreview: boolean;
+    collectionCreatedAt?: string;
 }
-
 export interface CollectionCarouselProps {
     collections: {name: string; icon: string}[];
     books: Record<string, BookData[]>;

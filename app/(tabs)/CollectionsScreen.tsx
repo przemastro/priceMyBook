@@ -90,6 +90,7 @@ interface ImportPreviewData {
     books: BookData[];
     categories: string[];
     showPreview: boolean;
+    collectionCreatedAt?: string; // Add this line
 }
 
 interface Collection {
@@ -297,33 +298,101 @@ const CollectionsScreen = () => {
             const file = result.assets[0];
             const csvContent = await FileSystem.readAsStringAsync(file.uri);
 
-            const parseResult = await new Promise<any[]>((resolve) => {
+            const parseResult = await new Promise<any[]>((resolve, reject) => {
                 Papa.parse(csvContent, {
                     header: true,
                     skipEmptyLines: true,
-                    complete: (results) => resolve(results.data)
+                    complete: (results) => {
+                        if (results.errors.length > 0) {
+                            console.error('CSV parsing errors:', results.errors);
+                            reject(new Error('Error parsing CSV'));
+                        } else {
+                            resolve(results.data);
+                        }
+                    },
+                    error: (error: any) => reject(error)
                 });
             });
 
+            if (!parseResult || parseResult.length === 0) {
+                showAlert(t('alerts.error'), t('alerts.emptyCsv'), 'error');
+                setIsImporting(false);
+                return;
+            }
+
             const importedBooks: BookData[] = parseResult
-                .filter(book => book.Title && book.ISBN && book['Price (PLN)'])
-                .map(book => ({
-                    title: book.Title.trim(),
-                    authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
-                    isbn: book.ISBN.trim(),
-                    price: book['Price (PLN)'].trim(),
-                    displayPrice: `${book['Price (PLN)']} PLN`,
-                    foundInApi: book['Found in API'] === 'Yes',
-                    originalPrice: book['Original Price'] || book['Price (PLN)'].trim(),
-                    defects: book.Defects ? JSON.parse(book.Defects) : {},
-                    rating: parseInt(book['Condition Rating'] || '10'),
-                    uniqueness: book.Uniqueness ? JSON.parse(book.Uniqueness) : defaultUniqueness,
-                    marketFactors: book['Market Factors'] ? JSON.parse(book['Market Factors']) : defaultMarketFactors,
-                    ageInfo: book['Age Info'] ? JSON.parse(book['Age Info']) : defaultAgeInfo,
-                    listingStatus: book['Listing Status'] ? JSON.parse(book['Listing Status']) : defaultListingStatus,
-                    imageUri: book['Image URI'] || undefined,
-                    createdAt: new Date().toISOString()
-                }));
+                .filter(book => book.Title && book.ISBN)
+                .map(book => {
+                    // Parsowanie danych z CSV
+                    const price = book['Price (PLN)'] || book['Original Price'] || '0';
+                    const rating = parseInt(book['Condition Rating'] || '10');
+
+                    // Parsowanie złożonych obiektów
+                    let defects = {};
+                    try {
+                        defects = book.Defects ? JSON.parse(book.Defects) : {};
+                    } catch (e) {
+                        console.warn('Failed to parse defects', e);
+                    }
+
+                    let uniqueness = defaultUniqueness;
+                    try {
+                        uniqueness = book.Uniqueness ? JSON.parse(book.Uniqueness) : defaultUniqueness;
+                    } catch (e) {
+                        console.warn('Failed to parse uniqueness', e);
+                    }
+
+                    let marketFactors = defaultMarketFactors;
+                    try {
+                        marketFactors = book['Market Factors'] ? JSON.parse(book['Market Factors']) : defaultMarketFactors;
+                    } catch (e) {
+                        console.warn('Failed to parse market factors', e);
+                    }
+
+                    let ageInfo = defaultAgeInfo;
+                    try {
+                        ageInfo = book['Age Info'] ? JSON.parse(book['Age Info']) : defaultAgeInfo;
+                    } catch (e) {
+                        console.warn('Failed to parse age info', e);
+                    }
+
+                    let listingStatus = defaultListingStatus;
+                    try {
+                        listingStatus = book['Listing Status'] ? JSON.parse(book['Listing Status']) : defaultListingStatus;
+                    } catch (e) {
+                        console.warn('Failed to parse listing status', e);
+                    }
+
+                    return {
+                        title: book.Title.trim(),
+                        authors: (book.Authors || t('bookInfo.unknown')).toString().trim(),
+                        isbn: book.ISBN.trim(),
+                        price: price,
+                        displayPrice: `${price} PLN`,
+                        foundInApi: book['Found in API'] === 'Yes',
+                        originalPrice: book['Original Price'] || price,
+                        defects: defects,
+                        rating: rating,
+                        source: book.Source || 'manual',
+                        priceSource: book['Price Source'] || undefined,
+                        uniqueness: uniqueness,
+                        marketFactors: marketFactors,
+                        ageInfo: ageInfo,
+                        listingStatus: {
+                            ...listingStatus,
+                            listedDate: book['Listed Date'] || listingStatus.listedDate,
+                            soldDate: book['Sold Date'] || listingStatus.soldDate
+                        },
+                        imageUri: book['Image URI'] || undefined,
+                        createdAt: book['Book Added At'] || new Date().toISOString()
+                    };
+                });
+
+            if (importedBooks.length === 0) {
+                showAlert(t('alerts.error'), t('alerts.noValidBooks'), 'error');
+                setIsImporting(false);
+                return;
+            }
 
             const categories = parseResult[0]?.Categories
                 ? parseResult[0].Categories.split(';').map((c: string) => c.trim()).filter((c: string) => c)
@@ -333,11 +402,12 @@ const CollectionsScreen = () => {
                 collectionName: file.name.replace('.csv', '').slice(0, 30),
                 books: importedBooks,
                 categories,
-                showPreview: true
+                showPreview: true,
+                collectionCreatedAt: parseResult[0]?.['Collection Created At'] || new Date().toISOString()
             });
         } catch (error) {
-            showAlert(t('alerts.error'), t('alerts.importError'), 'error');
             console.error('Import failed:', error);
+            showAlert(t('alerts.error'), t('alerts.importError'), 'error');
         } finally {
             setIsImporting(false);
         }
@@ -346,14 +416,14 @@ const CollectionsScreen = () => {
     const confirmImport = async () => {
         if (!importPreview) return;
         try {
-            addCollection(importPreview.collectionName);
-            await addBooksToCollection(importPreview.collectionName, importPreview.books);
+            addCollection(
+                importPreview.collectionName,
+                'book',
+                importPreview.categories,
+                { createdAt: importPreview.collectionCreatedAt }
+            );
 
-            if (importPreview.categories && importPreview.categories.length > 0) {
-                importPreview.categories.forEach(category => {
-                    addCategoryToCollection(importPreview.collectionName, category);
-                });
-            }
+            await addBooksToCollection(importPreview.collectionName, importPreview.books);
 
             showAlert(t('alerts.success'), t('status.importSuccess', {
                 count: importPreview.books.length,
@@ -374,6 +444,7 @@ const CollectionsScreen = () => {
     const handleExportCollectionToCSV = async (collectionName: string) => {
         try {
             const collectionBooks = books[collectionName] || [];
+            const collectionData = collections.find(c => c.name === collectionName);
             const categories = collectionCategories[collectionName] || [];
 
             if (collectionBooks.length === 0) {
@@ -386,11 +457,13 @@ const CollectionsScreen = () => {
                 'Price (PLN)', 'Condition Rating', 'Found in API',
                 'Defects', 'Uniqueness', 'Market Factors',
                 'Age Info', 'Listing Status', 'Image URI',
-                'Categories'
+                'Categories', 'Collection Created At',
+                'Book Added At', 'Listed Date', 'Sold Date'
             ].join(',');
 
             const rows = collectionBooks.map(book => {
                 const bookCategories = categories.join('; ');
+                const listingStatus = book.listingStatus || defaultListingStatus;
 
                 return [
                     `"${book.title.replace(/"/g, '""')}"`,
@@ -404,13 +477,18 @@ const CollectionsScreen = () => {
                     `"${JSON.stringify(book.uniqueness || {}).replace(/"/g, '""')}"`,
                     `"${JSON.stringify(book.marketFactors || {}).replace(/"/g, '""')}"`,
                     `"${JSON.stringify(book.ageInfo || {}).replace(/"/g, '""')}"`,
-                    `"${JSON.stringify(book.listingStatus || {}).replace(/"/g, '""')}"`,
-                    `"${bookCategories}"`
+                    `"${JSON.stringify(listingStatus).replace(/"/g, '""')}"`,
+                    book.imageUri || '',
+                    `"${bookCategories}"`,
+                    collectionData?.createdAt || '',
+                    book.createdAt || '',
+                    listingStatus.listedDate || '',
+                    listingStatus.soldDate || ''
                 ].join(',');
             });
 
             const csvContent = `${headers}\n${rows.join('\n')}`;
-            const fileUri = FileSystem.cacheDirectory + `${collectionName}_export.csv`;
+            const fileUri = FileSystem.cacheDirectory + `${collectionName}_export_${new Date().toISOString().slice(0,10)}.csv`;
             await FileSystem.writeAsStringAsync(fileUri, csvContent);
 
             if (!(await Sharing.isAvailableAsync())) {
@@ -484,14 +562,17 @@ const CollectionsScreen = () => {
         const { collection, index } = currentListingBook;
         const updatedBooks = [...books[collection]];
         const currentListingStatus = updatedBooks[index].listingStatus || defaultListingStatus;
+
         updatedBooks[index] = {
             ...updatedBooks[index],
             listingStatus: {
                 ...currentListingStatus,
                 status: newStatus,
-                ...(newStatus === 'sold' ? { soldDate: new Date().toISOString() } : {})
+                listedDate: newStatus === 'listed' ? new Date().toISOString() : currentListingStatus.listedDate,
+                soldDate: newStatus === 'sold' ? new Date().toISOString() : currentListingStatus.soldDate
             }
         };
+
         updateBooksInCollection(collection, updatedBooks);
         setShowStatusChangeModal(false);
         setCurrentListingBook(null);
