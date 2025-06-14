@@ -147,7 +147,8 @@ export default {
         demandVsSupply: "Popyt vs Podaż",
         priceHistory: "Historia ceny książki",
         selectIcon: "Wybierz ikonkę",
-        noDate: "Brak daty"
+        noDate: "Brak daty",
+        noCollectionsFound: "Brak księgozbioru"
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -272,7 +273,8 @@ export default {
         rateOnPlayStore: "Oceń w Google Play",
         buyMeCoffee: "Postaw mi kawę",
         algorithm: "Algorytm",
-        rateUs: "Oceń nas"
+        rateUs: "Oceń nas",
+        rateDescription: "Wystaw ocenę na Google Play albo w App Store. Nie pogardzimy też kawą."
     },
     listingStatus: {
         notListed: 'Wystaw',

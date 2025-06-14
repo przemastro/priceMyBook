@@ -149,7 +149,9 @@ export default {
         demandVsSupply: "Demand vs Supply",
         priceHistory: "Price History",
         selectIcon: "Select Icon",
-        noDate: "No date"
+        noDate: "No date",
+        noCollectionsFound: "No Collections Found",
+        rateDescription: "Leave a rating on Google Play or the App Store. We wouldn't say no to a coffee either."
     },
     titles: {
         scan: 'Scan ISBN',

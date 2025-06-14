@@ -467,7 +467,7 @@ const FinancialReport = () => {
                 contentContainerStyle={styles.container}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.header}>
+                <View style={styles.headerContainer}>
                     <TouchableOpacity
                         onPress={() => router.back()}
                         style={styles.backButton}
@@ -475,6 +475,7 @@ const FinancialReport = () => {
                         <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{t('charts.financialReport')}</Text>
+                    <View style={styles.spacer} />
                 </View>
 
                 {!isLoading && hasData && (
@@ -519,18 +520,32 @@ const styles = StyleSheet.create({
         paddingTop: 60,
         minHeight: Dimensions.get('window').height,
     },
-    header: {
+    headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        paddingTop: 15,
+        width: '100%',
+        justifyContent: 'space-between',
+        position: 'absolute',
+        top: 30,
+        left: 0,
+        zIndex: 10,
+        paddingHorizontal: 0
     },
     backButton: {
-        marginRight: 16,
+        marginLeft: 10,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: '500',
         color: colors.blackDark,
+        textAlign: 'center',
+        flex: 1,
+        marginLeft: 30
+    },
+    spacer: {
+        width: 44,
+        marginRight: 10,
     },
     summaryCard: {
         borderRadius: 12,

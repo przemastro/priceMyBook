@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator, Alert,
   Animated,
@@ -35,6 +35,7 @@ import MarketFactorsSection from "@/app/components/analysisScreen/sections/Marke
 import {LinearGradient} from "expo-linear-gradient";
 import {CustomAlertModal} from "@/app/components/alerts/CustomAlertModal";
 import {LIMITS} from "@/app/utils/constants";
+import {useFocusEffect} from "@react-navigation/native";
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -288,6 +289,46 @@ export default function AnalysisScreen() {
       bounciness: expanded ? 0 : 6,
     }).start();
   };
+
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Płynne resetowanie do kroku 0
+  const resetToFirstStep = useCallback(() => {
+    setIsTransitioning(true);
+    fadeAnim.setValue(0);
+
+    setTimeout(() => {
+      setCurrentStep(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setIsTransitioning(false));
+    }, 100);
+  }, [fadeAnim]);
+
+  useFocusEffect(
+      React.useCallback(() => {
+        // Najpierw ustawiamy przezroczystość na 0
+        fadeAnim.setValue(0);
+
+        // Resetujemy do pierwszego kroku
+        setCurrentStep(0);
+
+        // Następnie płynnie pokazujemy zawartość
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+
+        return () => {
+          // Opcjonalnie: Resetujemy animację przy opuszczeniu ekranu
+          fadeAnim.setValue(0);
+        };
+      }, [fadeAnim])
+  );
 
   useEffect(() => {
     if (editMode) {
@@ -779,7 +820,13 @@ export default function AnalysisScreen() {
             </View>
           </View>
 
-          <Animated.View style={{transform: [{translateX: slideAnim}], flex: 1}}>
+          <Animated.View
+              style={{
+                opacity: fadeAnim,
+                transform: [{translateX: slideAnim}],
+                flex: 1
+              }}
+          >
             {(() => {
               switch (currentStep) {
                 case 0:
