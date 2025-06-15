@@ -1,13 +1,13 @@
-import React, {useRef, useState} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import React, {useState} from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 
-const IMAGE_SIZE = 120;
-const CARD_PADDING = 15;
+const IMAGE_SIZE = 80; // Zmniejszony rozmiar dla okrągłego obrazka
+const CARD_PADDING = 16;
 
 interface BasicBookInfoProps {
     bookImage: string | null;
@@ -46,6 +46,8 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                }) => {
     const { t } = useTranslation();
     const [showClearAlert, setShowClearAlert] = useState(false);
+    const [imageLoading, setImageLoading] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     const handleClearPress = () => {
         setShowClearAlert(true);
@@ -56,67 +58,18 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
         onClearPress();
     };
 
-    const renderActionButtons = () => {
-        return (
-            <View style={styles.actionsRow}>
-                {/* Edit Button */}
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={onEditPress}
-                >
-                    <LinearGradient
-                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <Ionicons name="create" size={20} color={colors.primary} />
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>{t('buttons.edit')}</Text>
-                </TouchableOpacity>
+    const handleImageLoadStart = () => {
+        setImageLoading(true);
+        setImageError(false);
+    };
 
-                {/* Clear Button */}
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={handleClearPress}
-                >
-                    <LinearGradient
-                        colors={[`${colors.error}20`, `${colors.error}10`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <Ionicons name="trash" size={20} color={colors.error} />
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>{t('buttons.clear')}</Text>
-                </TouchableOpacity>
+    const handleImageLoadEnd = () => {
+        setImageLoading(false);
+    };
 
-                {/* Scan Button */}
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={onScanPress}
-                    disabled={isScanning}
-                >
-                    <LinearGradient
-                        colors={isScanning
-                            ? [`${colors.gray}20`, `${colors.gray}10`]
-                            : [`${colors.primary}`, `${colors.primary}`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <Ionicons
-                            name="scan"
-                            size={20}
-                            color={isScanning ? colors.gray : colors.white}
-                        />
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>
-                        {t(isScanning ? 'buttons.scanning' : 'buttons.startScanning')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        );
+    const handleImageError = () => {
+        setImageLoading(false);
+        setImageError(true);
     };
 
     return (
@@ -131,50 +84,76 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                 buttonFullWidth={true}
             />
 
-            <View style={styles.bookCard}>
+            {/* Book card - clickable for edit */}
+            <TouchableOpacity
+                style={styles.bookCard}
+                onPress={onEditPress}
+                activeOpacity={0.9}
+            >
                 <LinearGradient
                     colors={[colors.buttonSelected1, colors.buttonSelected2]}
                     style={styles.bookCardGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
+                    {/* Clear button in top right corner */}
+                    <TouchableOpacity
+                        style={styles.clearButton}
+                        onPress={handleClearPress}
+                    >
+                        <Ionicons name="close" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+
                     <View style={styles.cardContent}>
-                        {/* Left Column - Book Image */}
+                        {/* Book Image - Circular */}
                         <TouchableOpacity
                             style={styles.bookImageContainer}
                             onPress={onPickImage}
                             activeOpacity={0.8}
                         >
                             {bookImage ? (
-                                <Image
-                                    source={{
-                                        uri: bookImage.startsWith('file://') ?
-                                            bookImage :
-                                            `file://${bookImage}`
-                                    }}
-                                    style={styles.bookImage}
-                                    resizeMode="contain"
-                                    onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-                                />
+                                <>
+                                    <Image
+                                        source={{
+                                            uri: bookImage.startsWith('file://') ?
+                                                bookImage :
+                                                `file://${bookImage}`
+                                        }}
+                                        style={styles.bookImage}
+                                        resizeMode="cover"
+                                        onLoadStart={handleImageLoadStart}
+                                        onLoad={handleImageLoadEnd}
+                                        onError={handleImageError}
+                                    />
+                                    {imageLoading && (
+                                        <View style={styles.loadingOverlay}>
+                                            <ActivityIndicator size="small" color={colors.primary} />
+                                        </View>
+                                    )}
+                                    {imageError && (
+                                        <View style={styles.errorOverlay}>
+                                            <Ionicons name="image-outline" size={24} color={colors.grayDark} />
+                                        </View>
+                                    )}
+                                </>
                             ) : (
-                                <LinearGradient
-                                    colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
-                                    style={styles.bookImagePlaceholder}
-                                >
-                                    <Ionicons name="book" size={50} color={colors.primary} />
-                                </LinearGradient>
+                                <View style={styles.bookImagePlaceholder}>
+                                    <Ionicons name="book" size={32} color={colors.primary} />
+                                </View>
                             )}
                         </TouchableOpacity>
 
-                        {/* Right Column - Book Details */}
+                        {/* Book Details */}
                         <View style={styles.bookDetails}>
-                            <Text style={styles.bookTitle} numberOfLines={2}>
+                            <Text style={styles.bookTitle} numberOfLines={1}>
                                 {titleInput || title || t('bookInfo.noTitle')}
                             </Text>
 
                             <View style={styles.detailItem}>
                                 <Text style={styles.detailLabel}>{t('bookInfo.isbn')}:</Text>
-                                <Text style={styles.detailValue}>{isbnInput || isbn || t('bookInfo.noIsbn')}</Text>
+                                <Text style={styles.detailValue} numberOfLines={1}>
+                                    {isbnInput || isbn || t('bookInfo.noIsbn')}
+                                </Text>
                             </View>
 
                             <View style={styles.detailItem}>
@@ -187,30 +166,63 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             {authors && (
                                 <View style={styles.detailItem}>
                                     <Text style={styles.detailLabel}>{t('bookInfo.authors')}:</Text>
-                                    <Text style={styles.detailValue} numberOfLines={2}>{authors}</Text>
-                                </View>
-                            )}
-
-                            {publisher && (
-                                <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>{t('bookInfo.publisher')}:</Text>
-                                    <Text style={styles.detailValue}>{publisher}</Text>
-                                </View>
-                            )}
-
-                            {description && (
-                                <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>{t('bookInfo.description')}:</Text>
-                                    <Text style={styles.detailValue} numberOfLines={3}>{description}</Text>
+                                    <Text style={styles.detailValue} numberOfLines={1}>
+                                        {authors}
+                                    </Text>
                                 </View>
                             )}
                         </View>
                     </View>
-                </LinearGradient>
-            </View>
 
-            {/* Action Buttons Row */}
-            {renderActionButtons()}
+                    {/* Additional details that don't fit in the main row */}
+                    {(publisher || description) && (
+                        <View style={styles.additionalDetails}>
+                            {publisher && (
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>{t('bookInfo.publisher')}:</Text>
+                                    <Text style={styles.detailValue} numberOfLines={1}>
+                                        {publisher}
+                                    </Text>
+                                </View>
+                            )}
+                            {description && (
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.detailLabel}>{t('bookInfo.description')}:</Text>
+                                    <Text style={styles.detailValue} numberOfLines={2}>
+                                        {description}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Single Scan Button */}
+            <TouchableOpacity
+                style={[styles.scanButton, isScanning && styles.scanButtonDisabled]}
+                onPress={onScanPress}
+                disabled={isScanning}
+            >
+                <LinearGradient
+                    colors={isScanning
+                        ? [colors.gray, colors.gray]
+                        : [colors.primary, colors.primary]}
+                    style={styles.scanButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Ionicons
+                        name="scan"
+                        size={24}
+                        color={colors.white}
+                        style={styles.scanIcon}
+                    />
+                    <Text style={styles.scanButtonText}>
+                        {t(isScanning ? 'buttons.scanning' : 'buttons.scanDefects')}
+                    </Text>
+                </LinearGradient>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -218,7 +230,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         marginBottom: 20,
     },
     bookCard: {
@@ -230,22 +242,38 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
         overflow: 'hidden',
-        marginBottom: 15,
+        marginBottom: 16,
     },
     bookCardGradient: {
         padding: CARD_PADDING,
     },
+    clearButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 10,
+        backgroundColor: colors.buttonSelected1,
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     cardContent: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+        marginBottom: 8,
+        marginTop: 20
     },
     bookImageContainer: {
         width: IMAGE_SIZE,
         height: IMAGE_SIZE,
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginRight: CARD_PADDING,
+        borderRadius: IMAGE_SIZE / 2,
         backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+        overflow: 'hidden',
     },
     bookImage: {
         width: '100%',
@@ -257,15 +285,30 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    loadingOverlay: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+    },
+    errorOverlay: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.whiteBlue,
+    },
     bookDetails: {
         flex: 1,
-        flexShrink: 1,
     },
     bookTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: colors.primary,
-        marginBottom: 10,
+        marginBottom: 8,
     },
     detailItem: {
         flexDirection: 'row',
@@ -275,7 +318,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         color: colors.primary,
-        marginRight: 5,
+        marginRight: 8,
         minWidth: 80,
     },
     detailValue: {
@@ -286,30 +329,36 @@ const styles = StyleSheet.create({
     priceValue: {
         fontWeight: '600',
     },
-    actionsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    additionalDetails: {
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.2)',
+    },
+    scanButton: {
         width: '100%',
-        paddingHorizontal: 10,
-        paddingTop: 20
-    },
-    actionButton: {
-        alignItems: 'center',
-        width: '30%',
-    },
-    actionIconContainer: {
-        width: 50,
+        borderRadius: 8,
+        overflow: 'hidden',
         height: 50,
-        borderRadius: 25,
+        marginTop: 20
+    },
+    scanButtonDisabled: {
+        opacity: 0.7,
+    },
+    scanButtonGradient: {
+        flex: 1,
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 5,
+        paddingHorizontal: 20,
     },
-    actionButtonText: {
-        fontSize: 12,
-        textAlign: 'center',
-        color: colors.grayDark,
-        fontWeight: '500',
+    scanIcon: {
+        marginRight: 10,
+    },
+    scanButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

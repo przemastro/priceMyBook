@@ -220,7 +220,8 @@ export default {
         startScanning: 'Skanuj',
         more: "Więcej",
         less: "Mniej",
-        exportPDF: "Eksportuj do PDF"
+        exportPDF: "Eksportuj do PDF",
+        scanDefects: "Skanuj w poszukiwaniu wad"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
