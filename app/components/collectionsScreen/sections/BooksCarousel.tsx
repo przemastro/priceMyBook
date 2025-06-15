@@ -3,7 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
-import Animated, { interpolate, useAnimatedStyle, SharedValue } from 'react-native-reanimated';
+import Animated, {
+    interpolate,
+    useAnimatedStyle,
+    SharedValue
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
@@ -113,12 +117,18 @@ const BookItem: React.FC<BookItemProps> = ({
                         <View style={styles.bookImageContainer}>
                             {book.imageUri ? (
                                 <Image
-                                    source={{ uri: book.imageUri }}
+                                    source={{ uri: book.imageUri.startsWith('file://') ?
+                                            book.imageUri :
+                                            `file://${book.imageUri}` }}
                                     style={styles.bookImage}
                                     resizeMode="contain"
+                                    onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
                                 />
                             ) : (
-                                <LinearGradient colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']} style={styles.bookImagePlaceholder}>
+                                <LinearGradient
+                                    colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
+                                    style={styles.bookImagePlaceholder}
+                                >
                                     <MaterialIcons name="book" size={50} color={colors.primary} />
                                 </LinearGradient>
                             )}
