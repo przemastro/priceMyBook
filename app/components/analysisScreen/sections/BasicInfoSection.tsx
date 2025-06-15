@@ -147,23 +147,21 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                         >
                             {bookImage ? (
                                 <Image
-                                    source={bookImage.startsWith('file://') ?
-                                        { uri: bookImage } :
-                                        { uri: `file://${bookImage}` }}
-                                        style={styles.bookImage}
-                                        resizeMode="contain"
-                                        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+                                    source={{
+                                        uri: bookImage.startsWith('file://') ?
+                                            bookImage :
+                                            `file://${bookImage}`
+                                    }}
+                                    style={styles.bookImage}
+                                    resizeMode="contain"
+                                    onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
                                 />
                             ) : (
                                 <LinearGradient
                                     colors={['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.05)']}
                                     style={styles.bookImagePlaceholder}
                                 >
-                                    <Ionicons
-                                        name="book"
-                                        size={50}
-                                        color={colors.primary}
-                                    />
+                                    <Ionicons name="book" size={50} color={colors.primary} />
                                 </LinearGradient>
                             )}
                         </TouchableOpacity>

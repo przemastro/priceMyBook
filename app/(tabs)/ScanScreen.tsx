@@ -524,6 +524,7 @@ export default function ScanScreen() {
     let priceValue = manualPrice;
     let priceSource = 'manual';
     let currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
+
     if (selectedPrice !== null) {
       priceValue = selectedPrice.toString();
       priceSource = 'amazon';
@@ -543,8 +544,10 @@ export default function ScanScreen() {
       });
       return;
     }
+
     let numericPrice = parseFloat(priceValue);
     let displayPrice = '';
+
     if (i18n.language === 'pl') {
       if (currency === 'USD') {
         numericPrice = numericPrice * exchangeRate;
@@ -556,22 +559,10 @@ export default function ScanScreen() {
       }
       displayPrice = `$${numericPrice.toFixed(2)}`;
     }
-    addToScanHistory({
-      isbn: isbn!,
-      title: bookInfo?.title || t('bookInfo.manualEntry'),
-      authors: bookInfo?.authors || t('bookInfo.unknown'),
-      price: numericPrice.toFixed(2),
-      displayPrice: displayPrice,
-      originalPrice: numericPrice.toFixed(2),
-      defects: {},
-      rating: 10,
-      foundInApi: !!bookInfo?.title,
-      source: bookInfo?.source || 'manual',
-      uniqueness: defaultUniqueness,
-      marketFactors: defaultMarketFactors,
-      ageInfo: defaultAgeInfo,
-      imageUri: bookInfo?.image || undefined
-    });
+
+    // Dodaj tę linię, aby upewnić się, że imageUri jest prawidłowo przekazywany
+    const imageUri = bookInfo?.image || '';
+
     router.push({
       pathname: '/AnalysisScreen',
       params: {
@@ -587,8 +578,11 @@ export default function ScanScreen() {
           publicationYear: bookInfo?.amazonData?.data?.marketFactors?.publicationYear ||
               new Date().getFullYear() - Math.floor(Math.random() * 10)
         }),
-        bookInfo: JSON.stringify(bookInfo),
-        imageUri: bookInfo?.image || ''
+        bookInfo: JSON.stringify({
+          ...bookInfo,
+          imageUri: imageUri
+        }),
+        imageUri: imageUri
       }
     });
   };

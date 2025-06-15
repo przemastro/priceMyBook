@@ -151,10 +151,16 @@ export default function AnalysisScreen() {
 
   // Initialize book image from params
   useEffect(() => {
-    if (bookInfo?.imageUri) {
+    // Najpierw sprawdź bezpośredni parametr imageUri
+    const directImageUri = Array.isArray(params.imageUri) ? params.imageUri[0] : params.imageUri;
+
+    // Jeśli nie ma bezpośredniego parametru, sprawdź w bookInfo
+    if (!directImageUri && bookInfo?.imageUri) {
       setBookImage(bookInfo.imageUri);
+    } else if (directImageUri) {
+      setBookImage(directImageUri);
     }
-  }, [bookInfo]);
+  }, [bookInfo, params.imageUri]);
 
   const showAlert = (title: string, message: string, type: 'error' | 'success' = 'error') => {
     if (type === 'error') {
