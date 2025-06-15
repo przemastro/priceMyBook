@@ -68,7 +68,7 @@ const ScanDefectModal = ({ visible, defect, onAccept, onReject }: ScanDefectModa
                             <View style={styles.defectDetails}>
                                 <Text style={styles.defectDetailText}>
                                     {t('labels.confidence')}:
-                                    <Text style={styles.defectDetailValue}> {defect.confidence}%</Text>
+                                    <Text style={styles.defectDetailValue}> {defect.confidence?.toFixed(0)}%</Text>
                                 </Text>
                                 <Text style={styles.defectDetailText}>
                                     {t('labels.priceReduction')}:

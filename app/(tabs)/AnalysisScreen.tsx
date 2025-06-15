@@ -36,6 +36,9 @@ import {LinearGradient} from "expo-linear-gradient";
 import {CustomAlertModal} from "@/app/components/alerts/CustomAlertModal";
 import {LIMITS} from "@/app/utils/constants";
 import {useFocusEffect} from "@react-navigation/native";
+import MLKitImageLabeling from '@react-native-ml-kit/image-labeling';
+import imageLabeling from "@react-native-ml-kit/image-labeling";
+
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -537,12 +540,95 @@ export default function AnalysisScreen() {
 
   const takePictureAndAnalyze = async () => {
     if (!cameraRef.current) return;
+
     try {
-      simulateDefectDetection();
+      setIsAnalyzing(true);
+      setScanProgress(0);
+
+      // 1. Zrób zdjęcie
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!photo || !photo.uri) {
+        throw new Error('Failed to capture photo');
+      }
+
+      // 2. Analizuj obraz za pomocą ML Kit
+      const labels = await MLKitImageLabeling.label(photo.uri);
+
+      if (!labels || labels.length === 0) {
+        throw new Error('No labels detected');
+      }
+
+      // 3. Mapuj etykiety na wady książek
+      const detectedDefects = detectBookDefects(labels);
+
+      // 4. Aktualizuj postęp analizy
+      setScanProgress(100);
+
+      if (detectedDefects.length > 0) {
+        const primaryDefect = getMostRelevantDefect(detectedDefects);
+        setScannedDefect({
+          ...primaryDefect,
+          confidence: primaryDefect.confidence || 80,
+        });
+        setShowDefectModal(true);
+        setHasScanned(true);
+      } else {
+        showAlert(t('alerts.info'), t('alerts.noDefectsFound'));
+      }
+
     } catch (error) {
-      console.error('Failed to take picture:', error);
-      showAlert(t('alerts.error'), t('alerts.cameraError'));
+      console.error('Failed to analyze image:', error);
+      showAlert(t('alerts.error'), t('alerts.analysisFailed'));
+    } finally {
+      setIsAnalyzing(false);
     }
+  };
+
+  const detectBookDefects = (labels: Array<{text: string, confidence: number}>): Array<BookDefect & {confidence: number}> => {
+    const defectKeywords = {
+      tornPages: ['tear', 'rip', 'torn', 'damaged page'],
+      brokenSpine: ['broken spine', 'damaged spine', 'cracked spine'],
+      missingPages: ['missing page', 'page missing'],
+      heavyWear: ['wear', 'heavy use', 'used', 'worn'],
+      stainedPages: ['stain', 'spot', 'discoloration'],
+      looseBinding: ['loose binding', 'binding damage'],
+      writingMarks: ['writing', 'ink', 'pen marks', 'annotation'],
+      foldedCorners: ['folded corner', 'dog ear', 'bent corner'],
+      fadedCover: ['faded', 'sun damage', 'color fade']
+    };
+
+    const detected: Array<BookDefect & {confidence: number}> = [];
+
+    DEFECT_TYPES.forEach(defect => {
+      const keywords = defectKeywords[defect.id as keyof typeof defectKeywords];
+      const matchingLabel = labels.find(label =>
+          keywords.some(keyword =>
+              label.text.toLowerCase().includes(keyword.toLowerCase())
+          )
+      );
+
+      if (matchingLabel) {
+        detected.push({
+          ...defect,
+          selected: true,
+          confidence: matchingLabel.confidence * 100, // Konwertuj do procentów
+          priceReduction: getDefaultReduction(defect.id),
+          count: 1
+        });
+      }
+    });
+
+    return detected;
+  };
+
+  const getMostRelevantDefect = (defects: Array<BookDefect & {confidence: number}>): BookDefect & {confidence: number} => {
+    return defects.reduce((prev, current) =>
+        (prev.confidence > current.confidence) ? prev : current
+    );
   };
 
   const acceptDefect = () => {
