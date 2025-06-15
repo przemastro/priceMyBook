@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, View, ActivityIndicator, Text, Dimensions, Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, ActivityIndicator, Text, Dimensions, Platform, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import Animated, { useSharedValue, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { ProgressBar, useTheme } from 'react-native-paper';
@@ -9,14 +9,87 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/styles';
 import { fetchBookInfoFromGoogleAPI, fetchBookInfoFromAmazon, fetchBookPriceFromAmazonAPI } from '../components/scanScreen/bookApi';
-import {BookInfo, BookUniqueness, MarketFactors, BookAgeInfo, MarketData} from '../components/scanScreen/types';
+import { BookInfo, BookUniqueness, MarketFactors, BookAgeInfo, MarketData } from '../components/scanScreen/types';
 import { CameraOverlay } from '../components/scanScreen/CameraOverlay';
 import { ManualEntryModal } from '../components/scanScreen/ManualEntryModal';
 import { ScanResultModal } from '../components/scanScreen/ScanResultModal';
 import { LIMITS } from '../utils/constants';
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
+import * as FileSystem from 'expo-file-system';
+import * as Crypto from 'expo-crypto';
 
 const { width, height } = Dimensions.get('window');
+
+// Image Cache Directory
+const IMAGE_CACHE_DIR = `${FileSystem.cacheDirectory}book_images/`;
+
+// Ensure cache directory exists
+const ensureDirExists = async () => {
+  const dirInfo = await FileSystem.getInfoAsync(IMAGE_CACHE_DIR);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(IMAGE_CACHE_DIR, { intermediates: true });
+  }
+};
+
+// Generate cache key from URL
+const generateCacheKey = async (url: string) => {
+  return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, url);
+};
+
+// Cache image
+const cacheImage = async (url: string, imageData: string) => {
+  await ensureDirExists();
+  const cacheKey = await generateCacheKey(url);
+  const filePath = `${IMAGE_CACHE_DIR}${cacheKey}`;
+  await FileSystem.writeAsStringAsync(filePath, imageData, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  return filePath;
+};
+
+// Get cached image
+const getCachedImage = async (url: string) => {
+  try {
+    const cacheKey = await generateCacheKey(url);
+    const filePath = `${IMAGE_CACHE_DIR}${cacheKey}`;
+    const fileInfo = await FileSystem.getInfoAsync(filePath);
+    if (fileInfo.exists) {
+      return filePath;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting cached image:', error);
+    return null;
+  }
+};
+
+// Download and cache image
+const downloadAndCacheImage = async (url: string) => {
+  try {
+    const cachedImage = await getCachedImage(url);
+    if (cachedImage) {
+      return cachedImage;
+    }
+
+    const downloadResult = await FileSystem.downloadAsync(
+        url,
+        `${IMAGE_CACHE_DIR}temp_${Date.now()}`
+    );
+
+    if (downloadResult.status === 200) {
+      const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const cachedPath = await cacheImage(url, base64);
+      await FileSystem.deleteAsync(downloadResult.uri); // Clean up temp file
+      return cachedPath;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error downloading image:', error);
+    return null;
+  }
+};
 
 const defaultUniqueness: BookUniqueness = {
   isMassMarket: false,
@@ -62,6 +135,33 @@ export default function ScanScreen() {
   });
 
   const pulseAnim = useSharedValue(1);
+
+  // Clear cache on component mount
+  useEffect(() => {
+    const clearOldCache = async () => {
+      try {
+        await ensureDirExists();
+        const files = await FileSystem.readDirectoryAsync(IMAGE_CACHE_DIR);
+        const now = Date.now();
+        const oneWeek = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+
+        for (const file of files) {
+          const filePath = `${IMAGE_CACHE_DIR}${file}`;
+          const fileInfo = await FileSystem.getInfoAsync(filePath);
+          if (fileInfo.exists && fileInfo.modificationTime) {
+            const fileAge = now - fileInfo.modificationTime;
+            if (fileAge > oneWeek) {
+              await FileSystem.deleteAsync(filePath);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error clearing old cache:', error);
+      }
+    };
+
+    clearOldCache();
+  }, []);
 
   useEffect(() => {
     const animation = () => {
@@ -190,6 +290,18 @@ export default function ScanScreen() {
       }
 
       if (book) {
+        // Cache the image if it exists
+        if (book.image) {
+          try {
+            const cachedImagePath = await downloadAndCacheImage(book.image);
+            if (cachedImagePath) {
+              book.image = cachedImagePath;
+            }
+          } catch (error) {
+            console.error('Error caching image:', error);
+          }
+        }
+
         setBookInfo(book);
 
         if (book.source === 'google' && !book.price && book.amazonData) {
@@ -205,20 +317,18 @@ export default function ScanScreen() {
           }
         }
 
-        // Prepare market data with proper typing
-// Prepare market data with proper typing
         const marketData: MarketData | undefined = book.amazonData?.data?.marketFactors && book.amazonData.data.priceRange
             ? {
               demand: book.amazonData.data.marketFactors.demand,
               supply: book.amazonData.data.marketFactors.supply,
-              priceRange: book.amazonData.data.priceRange, // This is now required
+              priceRange: book.amazonData.data.priceRange,
               priceHistory: [
-                {date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9},
-                {date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1},
-                {date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2},
-                {date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95},
-                {date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05},
-                {date: new Date().toISOString(), price: parseFloat(book.price?.toString() || '0')}
+                { date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9 },
+                { date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1 },
+                { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
+                { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
+                { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
+                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() || '0') }
               ],
               lastUpdated: new Date(),
               source: 'amazon' as const
@@ -241,7 +351,8 @@ export default function ScanScreen() {
           ageInfo: defaultAgeInfo,
           marketData,
           publisher: book.publisher,
-          description: book.description
+          description: book.description,
+          imageUri: book.image || undefined
         });
       } else {
         throw new Error('Book not found in any API');
@@ -320,6 +431,18 @@ export default function ScanScreen() {
       }
 
       if (book) {
+        // Cache the image if it exists
+        if (book.image) {
+          try {
+            const cachedImagePath = await downloadAndCacheImage(book.image);
+            if (cachedImagePath) {
+              book.image = cachedImagePath;
+            }
+          } catch (error) {
+            console.error('Error caching image:', error);
+          }
+        }
+
         setBookInfo(book);
 
         if (book.source === 'google' && !book.price && book.amazonData) {
@@ -335,19 +458,18 @@ export default function ScanScreen() {
           }
         }
 
-        // Prepare market data with proper typing
         const marketData: MarketData | undefined = book.amazonData?.data?.marketFactors && book.amazonData.data.priceRange
             ? {
               demand: book.amazonData.data.marketFactors.demand,
               supply: book.amazonData.data.marketFactors.supply,
               priceRange: book.amazonData.data.priceRange,
               priceHistory: [
-                {date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9},
-                {date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1},
-                {date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2},
-                {date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95},
-                {date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05},
-                {date: new Date().toISOString(), price: parseFloat(book.price?.toString() || '0')}
+                { date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9 },
+                { date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1 },
+                { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
+                { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
+                { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
+                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() || '0') }
               ],
               lastUpdated: new Date(),
               source: 'amazon' as const
@@ -370,7 +492,8 @@ export default function ScanScreen() {
           ageInfo: defaultAgeInfo,
           marketData,
           publisher: book.publisher,
-          description: book.description
+          description: book.description,
+          imageUri: book.image || undefined
         });
       } else {
         throw new Error('Book not found in any API');
@@ -446,7 +569,8 @@ export default function ScanScreen() {
       source: bookInfo?.source || 'manual',
       uniqueness: defaultUniqueness,
       marketFactors: defaultMarketFactors,
-      ageInfo: defaultAgeInfo
+      ageInfo: defaultAgeInfo,
+      imageUri: bookInfo?.image || undefined
     });
     router.push({
       pathname: '/AnalysisScreen',
@@ -463,7 +587,8 @@ export default function ScanScreen() {
           publicationYear: bookInfo?.amazonData?.data?.marketFactors?.publicationYear ||
               new Date().getFullYear() - Math.floor(Math.random() * 10)
         }),
-        bookInfo: JSON.stringify(bookInfo)
+        bookInfo: JSON.stringify(bookInfo),
+        imageUri: bookInfo?.image || ''
       }
     });
   };
