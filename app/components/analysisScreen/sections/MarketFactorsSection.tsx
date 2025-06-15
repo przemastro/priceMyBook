@@ -53,7 +53,7 @@ const MarketFactorsSection = ({
                 columnWrapperStyle={styles.columnWrapper}
                 scrollEnabled={false}
             />
-            {marketData && <MarketChart marketData={marketData} />}
+            <MarketChart marketData={marketData} />
         </View>
     );
 };

@@ -153,7 +153,9 @@ export default {
         noCollectionsFound: "Brak księgozbioru",
         categories: "Kategorie",
         non: "brak",
-        price: "Cena"
+        price: "Cena",
+        noMarketData: "Brak danych rynkowych dla tej książki",
+        noPriceHistory: "Brak dostępnej historii cen"
     },
     titles: {
         scan: 'Skanuj ISBN',
