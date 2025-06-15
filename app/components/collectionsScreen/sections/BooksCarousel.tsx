@@ -167,7 +167,7 @@ const BookItem: React.FC<BookItemProps> = ({
                         style={styles.clearButton}
                         onPress={handleDeletePress}
                     >
-                        <Ionicons name="close" size={18} color={colors.primary} />
+                        <Ionicons name="close" size={20} color={colors.primary} />
                     </TouchableOpacity>
 
                     {/* Top scroll button */}
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
         top: 8,
         right: 8,
         zIndex: 10,
-        backgroundColor: colors.white,
+        backgroundColor: colors.buttonSelected1,
         borderRadius: 15,
         width: 30,
         height: 30,
