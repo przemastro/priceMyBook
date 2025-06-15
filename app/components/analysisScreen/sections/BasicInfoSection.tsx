@@ -147,10 +147,12 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                         >
                             {bookImage ? (
                                 <Image
-                                    source={{ uri: bookImage }}
-                                    style={styles.bookImage}
-                                    resizeMode="contain"
-                                    onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+                                    source={bookImage.startsWith('file://') ?
+                                        { uri: bookImage } :
+                                        { uri: `file://${bookImage}` }}
+                                        style={styles.bookImage}
+                                        resizeMode="contain"
+                                        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
                                 />
                             ) : (
                                 <LinearGradient

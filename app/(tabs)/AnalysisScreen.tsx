@@ -10,7 +10,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Image
 } from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
@@ -148,6 +149,12 @@ export default function AnalysisScreen() {
   const [successModalMessage, setSuccessModalMessage] = useState('');
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
+  // Initialize book image from params
+  useEffect(() => {
+    if (bookInfo?.imageUri) {
+      setBookImage(bookInfo.imageUri);
+    }
+  }, [bookInfo]);
 
   const showAlert = (title: string, message: string, type: 'error' | 'success' = 'error') => {
     if (type === 'error') {
@@ -293,7 +300,6 @@ export default function AnalysisScreen() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Płynne resetowanie do kroku 0
   const resetToFirstStep = useCallback(() => {
     setIsTransitioning(true);
     fadeAnim.setValue(0);
@@ -310,13 +316,8 @@ export default function AnalysisScreen() {
 
   useFocusEffect(
       React.useCallback(() => {
-        // Najpierw ustawiamy przezroczystość na 0
         fadeAnim.setValue(0);
-
-        // Resetujemy do pierwszego kroku
         setCurrentStep(0);
-
-        // Następnie płynnie pokazujemy zawartość
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 300,
@@ -324,7 +325,6 @@ export default function AnalysisScreen() {
         }).start();
 
         return () => {
-          // Opcjonalnie: Resetujemy animację przy opuszczeniu ekranu
           fadeAnim.setValue(0);
         };
       }, [fadeAnim])
@@ -344,7 +344,7 @@ export default function AnalysisScreen() {
           priceReduction: bookDefect?.reduction || getDefaultReduction(defect.id),
           count: bookDefect?.count || 0,
           icon: defect.icon,
-          color: defect.color // Add this line
+          color: defect.color
         };
       });
 
@@ -524,7 +524,7 @@ export default function AnalysisScreen() {
             setScannedDefect({
               ...defect,
               confidence: Math.floor(Math.random() * 50) + 50,
-              color: defect.color // Make sure this is included
+              color: defect.color
             });
             setShowDefectModal(true);
             setHasScanned(true);
@@ -587,11 +587,11 @@ export default function AnalysisScreen() {
   };
 
   const savePublisher = () => {
-    // Logika walidacji jeśli potrzebna
+    // Validation logic if needed
   };
 
   const saveDescription = () => {
-    // Logika walidacji jeśli potrzebna
+    // Validation logic if needed
   };
 
   const saveOriginalPrice = () => {
@@ -627,8 +627,6 @@ export default function AnalysisScreen() {
 
   const handleAddToCollection = (collection: string) => {
     const priceValue = finalPrice.toFixed(2);
-    const currentIsbn = editingIsbn ? isbnInput : isbn;
-    const currentTitle = editingTitle ? titleInput : title;
     const defaultListingStatus: ListingStatus = {
       status: 'notListed',
       platforms: []
@@ -642,7 +640,7 @@ export default function AnalysisScreen() {
       price: priceValue,
       displayPrice: formatCurrency({price: priceValue, exchangeRate}),
       foundInApi: params.fromHistory !== 'true',
-      originalPrice,
+      originalPrice: originalPrice,
       defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
         ...acc,
         [defect.id]: {
@@ -657,7 +655,8 @@ export default function AnalysisScreen() {
       marketFactors,
       listingStatus: editMode && collectionName && bookIndex !== null
           ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
-          : defaultListingStatus
+          : defaultListingStatus,
+      imageUri: bookImage || undefined // Konwersja null na undefined
     };
 
     addBookToCollection(collection, bookData);
@@ -682,7 +681,6 @@ export default function AnalysisScreen() {
     setOriginalPriceInput('');
     setDescription('');
   };
-
 
   const handleSaveBook = () => {
     const currentBooksCount = books[selectedCollection]?.length || 0;
@@ -723,7 +721,8 @@ export default function AnalysisScreen() {
       marketFactors,
       listingStatus: editMode && collectionName && bookIndex !== null
           ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
-          : defaultListingStatus
+          : defaultListingStatus,
+      imageUri: bookImage || undefined
     };
 
     if (editMode && collectionName && bookIndex !== null) {
@@ -953,49 +952,49 @@ export default function AnalysisScreen() {
               </TouchableOpacity>
 
               <Animated.View style={[styles.scanFrame, {transform: [{scale: pulseAnim}]}]}>
-                  <View style={styles.scanFrameTopLeft}/>
+                <View style={styles.scanFrameTopLeft}/>
                 <View style={styles.scanFrameTopRight}/>
-              <View style={styles.scanFrameBottomLeft}/>
-              <View style={styles.scanFrameBottomRight}/>
-            </Animated.View>
+                <View style={styles.scanFrameBottomLeft}/>
+                <View style={styles.scanFrameBottomRight}/>
+              </Animated.View>
 
-            <View style={styles.bottomControls}>
-              <Pressable
-                  style={styles.scanButton}
-                  onPress={takePictureAndAnalyze}
-              >
-                <Ionicons name="scan" size={24} color="white"/>
-                <Text style={styles.scanButtonText}>
-                  {t('labels.scanningDefects')}
-                </Text>
-              </Pressable>
+              <View style={styles.bottomControls}>
+                <Pressable
+                    style={styles.scanButton}
+                    onPress={takePictureAndAnalyze}
+                >
+                  <Ionicons name="scan" size={24} color="white"/>
+                  <Text style={styles.scanButtonText}>
+                    {t('labels.scanningDefects')}
+                  </Text>
+                </Pressable>
 
-              {isAnalyzing && (
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View style={{
-                        width: `${scanProgress}%`,
-                        backgroundColor: colors.primary,
-                        height: '100%'
-                      }}/>
+                {isAnalyzing && (
+                    <View style={styles.progressContainer}>
+                      <View style={styles.progressBar}>
+                        <View style={{
+                          width: `${scanProgress}%`,
+                          backgroundColor: colors.primary,
+                          height: '100%'
+                        }}/>
+                      </View>
+                      <Text style={styles.scanningText}>
+                        {scanProgress}%
+                      </Text>
                     </View>
-                    <Text style={styles.scanningText}>
-                      {scanProgress}%
-                    </Text>
-                  </View>
-              )}
+                )}
+              </View>
             </View>
-        </View>
-  </CameraView>
+          </CameraView>
 
-    <ScanDefectModal
-        visible={showDefectModal}
-        defect={scannedDefect}
-        onAccept={acceptDefect}
-        onReject={rejectDefect}
-    />
-  </View>
-  );
+          <ScanDefectModal
+              visible={showDefectModal}
+              defect={scannedDefect}
+              onAccept={acceptDefect}
+              onReject={rejectDefect}
+          />
+        </View>
+    );
   }
 
   return (
@@ -1015,25 +1014,25 @@ export default function AnalysisScreen() {
             >
               <Ionicons name="arrow-back" size={24} color={colors.blackDark} />
             </TouchableOpacity>
-          <RatingSection
-              bookRating={bookRating}
-              averageUsedPrice={averageUsedPrice}
-              finalPrice={priceCalculation.finalPrice}
-              expanded={expanded}
-              toggleExpanded={toggleExpanded}
-              onShowMarketAnalysis={() => setShowMarketModal(true)}
-              formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
-          >
-            <PriceCalculationDetails
-                calculation={priceCalculation}
-                defects={defects}
-                uniqueness={uniqueness}
-                marketFactors={marketFactors}
-                onShowMarketAnalysis={() => setShowMarketModal(true)}
+            <RatingSection
+                bookRating={bookRating}
                 averageUsedPrice={averageUsedPrice}
+                finalPrice={priceCalculation.finalPrice}
+                expanded={expanded}
+                toggleExpanded={toggleExpanded}
+                onShowMarketAnalysis={() => setShowMarketModal(true)}
                 formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
-            />
-          </RatingSection>
+            >
+              <PriceCalculationDetails
+                  calculation={priceCalculation}
+                  defects={defects}
+                  uniqueness={uniqueness}
+                  marketFactors={marketFactors}
+                  onShowMarketAnalysis={() => setShowMarketModal(true)}
+                  averageUsedPrice={averageUsedPrice}
+                  formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
+              />
+            </RatingSection>
 
             <View style={styles.stepContainer}>
 
@@ -1048,113 +1047,113 @@ export default function AnalysisScreen() {
                 </Animated.View>
               </View>
             </View>
-        </ScrollView>
+          </ScrollView>
 
-        {currentStep === totalSteps - 1 && (
-            <>
-              <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={handleConfirm}
-                  activeOpacity={0.7}
-              >
-                <LinearGradient
-                    colors={[colors.primary, colors.primary]}
-                    style={styles.saveButtonGradient}
+          {currentStep === totalSteps - 1 && (
+              <>
+                <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={handleConfirm}
+                    activeOpacity={0.7}
                 >
-                  <Text style={styles.saveButtonText}>
-                    {editMode ? t('buttons.save') : t('buttons.add')}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                      colors={[colors.primary, colors.primary]}
+                      style={styles.saveButtonGradient}
+                  >
+                    <Text style={styles.saveButtonText}>
+                      {editMode ? t('buttons.save') : t('buttons.add')}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
 
-              <Modal
-                  animationType="fade"
-                  transparent={true}
-                  visible={showConfirmModal}
-                  onRequestClose={() => setShowConfirmModal(false)}
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                      <View style={styles.iconPreviewContainer}>
-                        <View style={styles.iconPreviewCircle}>
-                          <MaterialIcons
-                              name="book"
-                              size={62}
-                              color={colors.primary}
-                          />
+                <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={showConfirmModal}
+                    onRequestClose={() => setShowConfirmModal(false)}
+                >
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                      <View style={styles.modalContent}>
+                        <View style={styles.iconPreviewContainer}>
+                          <View style={styles.iconPreviewCircle}>
+                            <MaterialIcons
+                                name="book"
+                                size={62}
+                                color={colors.primary}
+                            />
+                          </View>
                         </View>
-                      </View>
 
-                      <Text style={styles.modalTitle}>
-                        {t('modals.addToCollectionTitle')}
-                      </Text>
-                      <Text style={styles.modalText}>
-                        {t('modals.addToCollectionConfirm', {
-                          collection: selectedCollection
-                        })}
-                      </Text>
+                        <Text style={styles.modalTitle}>
+                          {t('modals.addToCollectionTitle')}
+                        </Text>
+                        <Text style={styles.modalText}>
+                          {t('modals.addToCollectionConfirm', {
+                            collection: selectedCollection
+                          })}
+                        </Text>
 
-                      <TouchableOpacity
-                          style={styles.closeButton}
-                          onPress={() => setShowConfirmModal(false)}
-                          activeOpacity={0.7}
-                      >
-                        <View style={styles.closeButtonCircle}>
-                          <Text style={styles.closeButtonText}>×</Text>
-                        </View>
-                      </TouchableOpacity>
-
-                      <View style={styles.buttonRow}>
                         <TouchableOpacity
-                            style={[styles.actionButton, styles.confirmButton]}
-                            onPress={handleAddConfirmed}
+                            style={styles.closeButton}
+                            onPress={() => setShowConfirmModal(false)}
                             activeOpacity={0.7}
                         >
-                          <LinearGradient
-                              colors={[colors.primary, colors.primary]}
-                              style={styles.buttonGradient}
-                          >
-                            <Text style={styles.confirmButtonText}>
-                              {t('buttons.confirm')}
-                            </Text>
-                          </LinearGradient>
+                          <View style={styles.closeButtonCircle}>
+                            <Text style={styles.closeButtonText}>×</Text>
+                          </View>
                         </TouchableOpacity>
+
+                        <View style={styles.buttonRow}>
+                          <TouchableOpacity
+                              style={[styles.actionButton, styles.confirmButton]}
+                              onPress={handleAddConfirmed}
+                              activeOpacity={0.7}
+                          >
+                            <LinearGradient
+                                colors={[colors.primary, colors.primary]}
+                                style={styles.buttonGradient}
+                            >
+                              <Text style={styles.confirmButtonText}>
+                                {t('buttons.confirm')}
+                              </Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </Modal>
-            </>
-        )}
+                </Modal>
+              </>
+          )}
 
-        <CustomAlertModal
-            visible={showErrorModal}
-            title={errorModalTitle}
-            message={errorModalMessage}
-            type="error"
-            onConfirm={() => setShowErrorModal(false)}
-        />
+          <CustomAlertModal
+              visible={showErrorModal}
+              title={errorModalTitle}
+              message={errorModalMessage}
+              type="error"
+              onConfirm={() => setShowErrorModal(false)}
+          />
 
-        <CustomAlertModal
-            visible={showSuccessModal}
-            title={successModalTitle}
-            message={successModalMessage}
-            type="success"
-            onConfirm={() => {
-              setShowSuccessModal(false);
-              if (successModalTitle === t('alerts.success') && successModalMessage.includes(t('alerts.bookAdded'))) {
-                router.back();
-              }
-            }}
-        />
+          <CustomAlertModal
+              visible={showSuccessModal}
+              title={successModalTitle}
+              message={successModalMessage}
+              type="success"
+              onConfirm={() => {
+                setShowSuccessModal(false);
+                if (successModalTitle === t('alerts.success') && successModalMessage.includes(t('alerts.bookAdded'))) {
+                  router.back();
+                }
+              }}
+          />
 
-        <AddCollectionModal
-            visible={showAddCollectionModal}
-            onClose={() => setShowAddCollectionModal(false)}
-            onConfirm={handleAddCollection}
-        />
-      </View>
+          <AddCollectionModal
+              visible={showAddCollectionModal}
+              onClose={() => setShowAddCollectionModal(false)}
+              onConfirm={handleAddCollection}
+          />
+        </View>
       </LinearGradient>
   );
 }
@@ -1378,7 +1377,7 @@ const styles = StyleSheet.create({
   navArrowContainer: {
     justifyContent: 'center',
     paddingHorizontal: 5,
-    minWidth: 40, // Zamiast stałej szerokości
+    minWidth: 40,
   },
   stepContent: {
     flex: 1,

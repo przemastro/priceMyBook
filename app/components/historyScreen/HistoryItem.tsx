@@ -116,7 +116,7 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                             authors: item.authors,
                             publisher: item.publisher,
                             description: item.description,
-                            imageUri: item.imageUri,
+                            imageUri: item.imageUri, // Dodajemy imageUri do bookInfo
                             amazonData: item.marketData ? {
                                 data: {
                                     marketFactors: item.marketFactors,
