@@ -1,18 +1,14 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ActivityIndicator, Modal } from 'react-native';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
-import Animated, {
-    interpolate,
-    useAnimatedStyle,
-    SharedValue
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 import Carousel from "react-native-reanimated-carousel";
-import ExportToPDFButton from "@/app/components/collectionsScreen/buttons/ExportToPDFButton";
+import ExportToPDFButton from "../buttons/ExportToPDFButton";
+import { SharedValue } from 'react-native-reanimated';
 
 const BOOK_CARD_WIDTH = Dimensions.get('window').width * 0.9;
 const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.35;
@@ -23,7 +19,7 @@ const CARD_PADDING = 12;
 interface BookItemProps {
     book: BookData;
     index: number;
-    animationValue: SharedValue<number>;
+    animationValue?: SharedValue<number>;
     onEdit: () => void;
     onDelete: () => void;
     onList: () => void;
@@ -45,9 +41,128 @@ interface BooksCarouselProps {
     formatListingStatus: (status?: ListingStatus) => string;
 }
 
+const BookDetailsModal: React.FC<{
+    visible: boolean;
+    onClose: () => void;
+    book: BookData;
+    onEdit: () => void;
+    formatDefectsSummary: (defects: Record<string, BookDefect> | undefined) => string;
+    formatUniquenessSummary: (uniqueness: BookUniqueness | undefined) => string;
+    formatMarketFactorsSummary: (marketFactors: MarketFactors | undefined) => string;
+    formatListingStatus: (status?: ListingStatus) => string;
+}> = ({ visible, onClose, book, onEdit, formatDefectsSummary, formatUniquenessSummary, formatMarketFactorsSummary, formatListingStatus }) => {
+    const { t } = useTranslation();
+
+    const renderDetailItem = (label: string, value: string, isMultiline = false) => {
+        return (
+            <View style={modalStyles.detailRow}>
+                <Text style={modalStyles.detailLabel}>{label}:</Text>
+                <Text
+                    style={[modalStyles.detailValue, isMultiline && modalStyles.multilineValue]}
+                    numberOfLines={isMultiline ? 3 : 1}
+                    ellipsizeMode="tail"
+                >
+                    {value}
+                </Text>
+            </View>
+        );
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={modalStyles.modalOverlay}>
+                <LinearGradient
+                    colors={[colors.buttonSelected1, colors.buttonSelected2]}
+                    style={modalStyles.modalContainer}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <TouchableOpacity
+                        style={modalStyles.closeButton}
+                        onPress={onClose}
+                        activeOpacity={0.7}
+                    >
+                        <View style={modalStyles.closeButtonCircle}>
+                            <Text style={modalStyles.closeButtonText}>×</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <ScrollView contentContainerStyle={modalStyles.scrollContent}>
+                        <View style={modalStyles.bookCoverSection}>
+                            {book.imageUri ? (
+                                <Image
+                                    source={{
+                                        uri: book.imageUri.startsWith('file://') ?
+                                            book.imageUri :
+                                            `file://${book.imageUri}`
+                                    }}
+                                    style={modalStyles.bookCoverImage}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={modalStyles.bookCoverPlaceholder}>
+                                    <MaterialIcons name="book" size={48} color={colors.primary} />
+                                </View>
+                            )}
+                        </View>
+
+                        <View style={modalStyles.detailsSection}>
+                            <Text style={modalStyles.bookTitle}>{book.title || t('bookInfo.noTitle')}</Text>
+
+                            {renderDetailItem(t('bookInfo.isbn'), book.isbn || t('bookInfo.noIsbn'))}
+                            {renderDetailItem(t('bookInfo.price'), book.displayPrice)}
+                            {renderDetailItem(t('labels.condition'), `${book.rating}/10`)}
+
+                            {book.authors && renderDetailItem(t('bookInfo.authors'), book.authors)}
+                            {book.publisher && renderDetailItem(t('bookInfo.publisher'), book.publisher)}
+                            {book.description && renderDetailItem(t('bookInfo.description'), book.description, true)}
+
+                            {renderDetailItem(t('labels.defects'), formatDefectsSummary(book.defects))}
+                            {renderDetailItem(t('labels.uniqueness'), formatUniquenessSummary(book.uniqueness))}
+
+                            {book.marketFactors && renderDetailItem(t('labels.marketFactors'), formatMarketFactorsSummary(book.marketFactors))}
+                            {book.ageInfo && renderDetailItem(t('labels.age'), `${book.ageInfo.years} ${t('labels.years')}`)}
+
+                            {renderDetailItem(t('labels.listingStatus'), formatListingStatus(book.listingStatus))}
+                        </View>
+                    </ScrollView>
+
+                    <View style={modalStyles.footer}>
+                        <View style={modalStyles.footerButtons}>
+                            <ExportToPDFButton
+                                book={book}
+                                formatDefectsSummary={formatDefectsSummary}
+                                formatUniquenessSummary={formatUniquenessSummary}
+                                formatMarketFactorsSummary={formatMarketFactorsSummary}
+                                formatListingStatus={formatListingStatus}
+                                style={modalStyles.pdfButton}
+                            />
+                            <TouchableOpacity
+                                style={modalStyles.editButton}
+                                onPress={() => {
+                                    onClose();
+                                    onEdit();
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={modalStyles.editButtonText}>{t('buttons.edit')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </LinearGradient>
+            </View>
+        </Modal>
+    );
+};
+
 const BookItem: React.FC<BookItemProps> = ({
                                                book,
-                                               animationValue,
+                                               index,
                                                onEdit,
                                                onDelete,
                                                onList,
@@ -57,16 +172,11 @@ const BookItem: React.FC<BookItemProps> = ({
                                                formatListingStatus
                                            }) => {
     const { t } = useTranslation();
-    const [exporting, setExporting] = useState(false);
     const [imageLoading, setImageLoading] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
-
-    const animatedStyle = useAnimatedStyle(() => {
-        const scale = interpolate(animationValue.value, [-1, 0, 1], [0.95, 1, 0.95]);
-        return { transform: [{ scale }] };
-    });
 
     const scrollContentUp = () => {
         scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -112,7 +222,6 @@ const BookItem: React.FC<BookItemProps> = ({
             <TouchableOpacity
                 style={styles.actionButton}
                 onPress={onList}
-                disabled={exporting}
             >
                 <LinearGradient
                     colors={[`${color}`, `${color}`]}
@@ -155,14 +264,24 @@ const BookItem: React.FC<BookItemProps> = ({
                 buttonFullWidth={true}
             />
 
-            <Animated.View style={[styles.bookCard, animatedStyle]}>
+            <BookDetailsModal
+                visible={showDetailsModal}
+                onClose={() => setShowDetailsModal(false)}
+                book={book}
+                onEdit={onEdit}
+                formatDefectsSummary={formatDefectsSummary}
+                formatUniquenessSummary={formatUniquenessSummary}
+                formatMarketFactorsSummary={formatMarketFactorsSummary}
+                formatListingStatus={formatListingStatus}
+            />
+
+            <View style={styles.bookCard}>
                 <LinearGradient
                     colors={[colors.buttonSelected1, colors.buttonSelected2]}
                     style={styles.bookCardGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    {/* Clear button in top right corner */}
                     <TouchableOpacity
                         style={styles.clearButton}
                         onPress={handleDeletePress}
@@ -170,21 +289,11 @@ const BookItem: React.FC<BookItemProps> = ({
                         <Ionicons name="close" size={20} color={colors.primary} />
                     </TouchableOpacity>
 
-                    {/* Top scroll button */}
-                    <TouchableOpacity
-                        style={styles.topScrollButton}
-                        onPress={scrollContentUp}
-                    >
-                        <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-
-                    {/* Clickable book card */}
                     <TouchableOpacity
                         style={styles.cardContent}
-                        onPress={onEdit}
+                        onPress={() => setShowDetailsModal(true)}
                         activeOpacity={0.9}
                     >
-                        {/* Book Image */}
                         <View style={styles.bookImageContainer}>
                             {book.imageUri ? (
                                 <>
@@ -218,7 +327,6 @@ const BookItem: React.FC<BookItemProps> = ({
                             )}
                         </View>
 
-                        {/* Book Details */}
                         <ScrollView
                             ref={scrollViewRef}
                             style={styles.bookDetailsScroll}
@@ -247,40 +355,10 @@ const BookItem: React.FC<BookItemProps> = ({
                             </View>
                         </ScrollView>
                     </TouchableOpacity>
-
-                    {/* Bottom scroll button */}
-                    <TouchableOpacity
-                        style={styles.bottomScrollButton}
-                        onPress={scrollContentDown}
-                    >
-                        <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.primary} />
-                    </TouchableOpacity>
                 </LinearGradient>
-            </Animated.View>
+            </View>
 
-            {/* Action Buttons */}
             <View style={styles.actionsRow}>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={(e) => e.stopPropagation()}
-                >
-                    <LinearGradient
-                        colors={[`${colors.primary}20`, `${colors.primary}10`]}
-                        style={styles.actionIconContainer}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <ExportToPDFButton
-                            book={book}
-                            formatDefectsSummary={formatDefectsSummary}
-                            formatUniquenessSummary={formatUniquenessSummary}
-                            formatMarketFactorsSummary={formatMarketFactorsSummary}
-                            formatListingStatus={formatListingStatus}
-                        />
-                    </LinearGradient>
-                    <Text style={styles.actionButtonText}>{t('buttons.exportPDF')}</Text>
-                </TouchableOpacity>
-
                 {renderListingButton()}
             </View>
         </View>
@@ -326,11 +404,10 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 width={BOOK_CARD_WIDTH}
                 height={BOOK_CARD_HEIGHT + ACTION_BUTTONS_HEIGHT}
                 data={books}
-                renderItem={({ item, index, animationValue }) => (
+                renderItem={({ item, index }) => (
                     <BookItem
                         book={item}
                         index={index}
-                        animationValue={animationValue}
                         onEdit={() => onEditBook(index)}
                         onDelete={() => onDeleteBook(index)}
                         onList={() => onListBook(index)}
@@ -393,6 +470,126 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         </View>
     );
 };
+
+const modalStyles = StyleSheet.create({
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContainer: {
+        width: '90%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        maxHeight: '85%',
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        paddingBottom: 80,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 10,
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.buttonSelected1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
+    bookCoverSection: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    bookCoverImage: {
+        width: 150,
+        height: 200,
+        borderRadius: 8,
+    },
+    bookCoverPlaceholder: {
+        width: 150,
+        height: 200,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.whiteBlue,
+    },
+    detailsSection: {
+        width: '100%',
+    },
+    bookTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.primary,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    detailRow: {
+        flexDirection: 'row',
+        marginBottom: 8,
+        alignItems: 'flex-start',
+    },
+    detailLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: colors.primary,
+        marginRight: 8,
+        minWidth: 100,
+    },
+    detailValue: {
+        fontSize: 14,
+        color: colors.primary,
+        flex: 1,
+    },
+    multilineValue: {
+        flex: 1,
+        flexWrap: 'wrap',
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 16,
+        backgroundColor: 'transparent',
+        borderTopWidth: 1,
+        borderTopColor: colors.grayLight,
+    },
+    footerButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        gap: 8, // Dodaj odstęp między przyciskami
+    },
+    pdfButton: {
+        flex: 1, // Oba przyciski będą miały taką samą szerokość
+    },
+    editButton: {
+        flex: 1, // Oba przyciski będą miały taką samą szerokość
+        backgroundColor: colors.primary,
+        borderRadius: 8,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    editButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+});
 
 const styles = StyleSheet.create({
     booksCarouselContainer: {
@@ -528,7 +725,7 @@ const styles = StyleSheet.create({
     },
     actionsRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         width: BOOK_CARD_WIDTH - 20,
         paddingHorizontal: 10,
         marginTop: 12,
