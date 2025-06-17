@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { View, Text, ActivityIndicator, Dimensions, Animated, Easing } from 'react-native';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { useTranslation } from 'react-i18next';
+import Carousel from 'react-native-reanimated-carousel';
 import { colors } from '@/styles/styles';
 import { MarketData } from '../types';
 import { styles, chartConfig } from './styles';
@@ -13,7 +14,7 @@ interface MarketChartProps {
 const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
     const { t } = useTranslation();
     const screenWidth = Dimensions.get('window').width;
-    const chartWidth = screenWidth - 64;
+    const chartWidth = screenWidth - 84;
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
@@ -34,11 +35,11 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
         ]).start();
     }, []);
 
-    if (!marketData || !marketData.source || marketData.source === 'simulated') {
+    if (!marketData) {
         return (
             <Animated.View style={[styles.skeletonContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }]}]}>
                 <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
-                <Text style={styles.noDataText}>{t('labels.noMarketData')}</Text>
+                <ActivityIndicator size="small" color={colors.primary} />
             </Animated.View>
         );
     }
@@ -80,14 +81,7 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
     );
 
     const renderLineChart = () => {
-        if (!marketData.priceHistory || marketData.priceHistory.length <= 1) {
-            return (
-                <View style={styles.chartContainer}>
-                    <Text style={styles.chartSubtitle}>{t('labels.priceHistory')}</Text>
-                    <Text style={styles.noDataText}>{t('labels.noPriceHistory')}</Text>
-                </View>
-            );
-        }
+        if (!marketData.priceHistory || marketData.priceHistory.length <= 1) return null;
 
         return (
             <View style={styles.chartContainer} key="line-chart">
@@ -115,13 +109,36 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
         );
     };
 
+    const charts = [
+        renderLineChart(),
+        ...(marketData.priceHistory && marketData.priceHistory.length > 1 ? [renderBarChart()] : [])
+    ].filter(Boolean);
+
     return (
         <Animated.View style={[styles.premiumContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }]}]}>
             <Text style={styles.chartTitle}>{t('labels.marketAnalysis')}</Text>
-            <View style={styles.singleChartContainer}>
-                {renderLineChart()}
-                {renderBarChart()}
-            </View>
+
+            {charts.length > 1 ? (
+                <View style={styles.carouselWrapper}>
+                    <Carousel
+                        loop={false}
+                        width={chartWidth + 32}
+                        height={280}
+                        autoPlay={false}
+                        data={charts}
+                        renderItem={({ item }) => (
+                            <View style={styles.carouselItem}>
+                                {item}
+                            </View>
+                        )}
+                        scrollAnimationDuration={400}
+                    />
+                </View>
+            ) : (
+                <View style={styles.singleChartContainer}>
+                    {charts[0]}
+                </View>
+            )}
         </Animated.View>
     );
 });
