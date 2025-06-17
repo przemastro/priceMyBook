@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Dimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Dimensions } from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
@@ -51,23 +51,6 @@ const CollectionsSection = ({
             collection.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [collections, searchQuery]);
-
-    const calculateCollectionTotal = (collectionName: string): number => {
-        return (books[collectionName] || []).reduce((sum: number, book: any) =>
-            sum + parseFloat(book.price || '0'), 0);
-    };
-
-    const formatCurrency = (price: string): string => {
-        const number = parseFloat(price);
-        if (isNaN(number)) return price;
-
-        return new Intl.NumberFormat(i18n.language === 'pl' ? 'pl-PL' : 'en-US', {
-            style: 'currency',
-            currency: i18n.language === 'pl' ? 'PLN' : 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(number);
-    };
 
     const renderItem = ({ item }: { item: Collection }) => {
         const bookCount = books[item.name]?.length || 0;
@@ -126,7 +109,7 @@ const CollectionsSection = ({
     };
 
     return (
-        <View style={styles.combinedSection}>
+        <View style={styles.container}>
             <View style={styles.searchHeader}>
                 <View style={styles.searchContainer}>
                     <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
@@ -152,42 +135,30 @@ const CollectionsSection = ({
                 </TouchableOpacity>
             </View>
 
-            {filteredCollections.length > 0 ? (
-                <ScrollView
-                    style={[styles.listContainer, { height: height * 0.35 }]}
-                    nestedScrollEnabled={true}
-                >
+            <View style={[styles.listContainer, { maxHeight: height * 0.3 }]}>
+                {filteredCollections.length > 0 ? (
                     <FlatList
-                        scrollEnabled={false}
                         data={filteredCollections}
                         renderItem={renderItem}
                         keyExtractor={(item) => item.name}
                         contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={true}
                     />
-                </ScrollView>
-            ) : (
-                <View style={styles.noCollectionsContainer}>
-                    <Text style={styles.noCollectionsText}>{t('labels.noCollectionsFound')}</Text>
-                </View>
-            )}
+                ) : (
+                    <View style={styles.noCollectionsContainer}>
+                        <Text style={styles.noCollectionsText}>{t('labels.noCollectionsFound')}</Text>
+                    </View>
+                )}
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    combinedSection: {
-        backgroundColor: colors.background,
-        borderRadius: 0,
-        paddingTop: 20,
-        marginBottom: 0,
+    container: {
         flex: 1,
-    },
-    stepTitle: {
-        color: colors.primary,
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 20,
-        textAlign: 'center',
+        backgroundColor: colors.background,
+        paddingTop: 20,
     },
     searchHeader: {
         flexDirection: 'row',
@@ -227,10 +198,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    listContainer: {
+        flexGrow: 0, // Zapobiega rozszerzaniu się kontenera
+        minHeight: 200, // Minimalna wysokość
+    },
+    listContent: {
+        paddingHorizontal: 16,
+        paddingBottom: 20,
+    },
     collectionItem: {
         borderRadius: 12,
         marginBottom: 12,
-        marginHorizontal: 16,
         overflow: 'hidden',
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 2 },
@@ -278,17 +256,15 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.grayDark,
     },
-    collectionValue: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.primary,
-        marginTop: 4,
+    collectionMetaContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
-    listContainer: {
-        width: '100%',
-    },
-    listContent: {
-        paddingBottom: 20,
+    collectionDate: {
+        fontSize: 12,
+        color: colors.grayDark,
+        marginLeft: 8,
     },
     noCollectionsContainer: {
         flex: 1,
@@ -300,16 +276,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.grayDark,
         textAlign: 'center',
-    },
-    collectionMetaContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    collectionDate: {
-        fontSize: 12,
-        color: colors.grayDark,
-        marginLeft: 8,
     },
 });
 

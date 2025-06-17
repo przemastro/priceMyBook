@@ -69,7 +69,6 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
         setConfirmAction(() => () => {
             onDeleteCollection(collectionName);
             setMenuVisible(null);
-            // Tutaj dodajemy alert o sukcesie
             setAlertTitle(t('alerts.success'));
             setAlertMessage(t('alerts.collectionDeleted', { collectionName }));
             setAlertVisible(true);
@@ -174,12 +173,15 @@ const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
     return (
         <View style={styles.container}>
-            <FlatList
-                data={filteredCollections}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.name}
-                contentContainerStyle={styles.listContent}
-            />
+            <View style={[styles.listContainer, { maxHeight: height * 0.35 }]}>
+                <FlatList
+                    data={filteredCollections}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item.name}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={true}
+                />
+            </View>
 
             <CustomAlertModal
                 visible={alertVisible}
@@ -287,8 +289,13 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.grayLight,
     },
+    listContainer: {
+        flexGrow: 0, // Zapobiega rozszerzaniu się kontenera
+        minHeight: 200, // Minimalna wysokość
+    },
     itemContainer: {
         marginBottom: 12,
+        paddingHorizontal: 8,
     },
     collectionCard: {
         borderRadius: 12,
@@ -298,8 +305,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        marginRight: 5,
-        marginLeft: 5
     },
     selectedCollectionCard: {
         shadowColor: colors.primary,
