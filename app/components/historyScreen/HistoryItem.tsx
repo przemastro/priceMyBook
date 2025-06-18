@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
+import { styles } from './styles'
 
 interface BookUniqueness {
     isMassMarket: boolean;
@@ -171,9 +172,9 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                         )}
                     </View>
 
-                    <View style={styles.textContainer}>
+                    <View style={localStyles.textContainer}>
                         <Text
-                            style={[styles.title, isPressed && styles.pressedText]}
+                            style={[localStyles.title, isPressed && styles.pressedText]}
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
@@ -188,7 +189,7 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                                 {item.authors}
                             </Text>
                         )}
-                        <Text style={[styles.isbn, isPressed && styles.pressedText]}>
+                        <Text style={[localStyles.isbn, isPressed && styles.pressedText]}>
                             ISBN: {item.isbn}
                         </Text>
                     </View>
@@ -203,63 +204,10 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
     );
 };
 
-const styles = StyleSheet.create({
-    touchable: {
-        borderRadius: 12,
-        marginBottom: 12,
-        marginHorizontal: 16,
-        overflow: 'hidden',
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    gradient: {
-        padding: 16,
-    },
-    content: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    imageContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: colors.whiteBlue,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    pressedImage: {
-        backgroundColor: colors.primary,
-    },
-    bookImage: {
-        width: '100%',
-        height: '100%',
-    },
-    loadingOverlay: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.7)',
-    },
-    errorOverlay: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.whiteBlue,
-    },
-    textContainer: {
-        flex: 1,
-        marginRight: 8,
+const localStyles = StyleSheet.create({
+    isbn: {
+        fontSize: 14,
+        color: colors.grayDark,
     },
     title: {
         fontSize: 16,
@@ -267,18 +215,9 @@ const styles = StyleSheet.create({
         color: colors.black,
         marginBottom: 4,
     },
-    pressedText: {
-        color: colors.white,
-    },
-    isbn: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    authors: {
-        fontSize: 14,
-        color: colors.grayDark,
-        fontStyle: 'italic',
-        marginBottom: 4,
+    textContainer: {
+        flex: 1,
+        marginRight: 8,
     },
 });
 

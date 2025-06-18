@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import Carousel from "react-native-reanimated-carousel";
 import BookItem from '../items/BookItem';
+import { styles } from './styles'
 
 interface BooksCarouselProps {
     books: BookData[];
@@ -54,7 +55,7 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
     };
 
     return (
-        <View style={styles.booksCarouselContainer}>
+        <View style={localStyles.booksCarouselContainer}>
             <Carousel
                 ref={carouselRef}
                 loop={false}
@@ -128,40 +129,13 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         </View>
     );
 };
-
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     booksCarouselContainer: {
         marginTop: 10,
         paddingBottom: 80,
         backgroundColor: colors.grayLight,
         height: BOOK_CARD_HEIGHT + 180,
         position: 'relative',
-    },
-    booksCarousel: {
-        width: '100%',
-    },
-    navigationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: 60,
-        width: '100%',
-        position: 'absolute',
-        bottom: 60,
-        left: 0,
-        right: 0,
-        backgroundColor: 'transparent',
-    },
-    navButton: {
-        padding: 10,
-        marginHorizontal: 5,
-        backgroundColor: colors.white,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: colors.gray,
-    },
-    navSpacer: {
-        width: 20,
     },
 });
 

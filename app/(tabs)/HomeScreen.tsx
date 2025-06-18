@@ -60,14 +60,14 @@ const HomeScreen = () => {
             title: t('titlesShort.financialReport'),
             screen: 'FinancialReport',
             iconColor: '#168aad',
-            customPath: '/customScreens/FinancialReport'
+            customPath: '/components/financialReportScreen/FinancialReport'
         },
         {
             name: 'settings-sharp',
             title: t('titlesShort.settings'),
             screen: 'Settings',
             iconColor: '#184e77',
-            customPath: '/customScreens/Settings'
+            customPath: '/components/settingsScreen/Settings'
         }
     ];
 
@@ -105,7 +105,7 @@ const HomeScreen = () => {
                                 </Text>
                             </View>
                             <TouchableOpacity
-                                onPress={() => navigateToScreen('Settings', false, '/customScreens/Settings')}
+                                onPress={() => navigateToScreen('Settings', false, '/components/settingsScreen/Settings')}
                                 style={styles.moreButton}
                             >
                                 <Text style={styles.moreButtonText}>{t('home.more')}</Text>

@@ -1,8 +1,6 @@
 // src/utils/rateLimiter.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Config } from '../config';
-import {useTranslation} from "react-i18next";
-import {t, TFunction} from "i18next";
 
 const RATE_LIMIT_KEY = 'API_RATE_LIMITS';
 

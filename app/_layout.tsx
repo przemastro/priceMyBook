@@ -75,7 +75,7 @@ function RootLayoutNav() {
   });
 
   const navigateToSettings = () => {
-    router.push('/customScreens/Settings');
+    router.push('/components/settingsScreen/Settings');
   };
 
   const handleNotifications = () => {
@@ -103,13 +103,13 @@ function RootLayoutNav() {
               }}
           />
           <Stack.Screen
-              name="customScreens/FinancialReport"
+              name="components/financialReportScreen/FinancialReport"
               options={{
                 headerShown: false
               }}
           />
           <Stack.Screen
-              name="customScreens/Settings"
+              name="components/settingsScreen/Settings"
               options={{
                 headerShown: false
               }}

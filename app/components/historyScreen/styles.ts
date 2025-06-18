@@ -33,12 +33,6 @@ export const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-    itemGradient: {
-        padding: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
     textContainer: {
         flex: 1,
     },
@@ -69,9 +63,106 @@ export const styles = StyleSheet.create({
         color: colors.grayDark,
         fontStyle: 'italic',
     },
-    rateError: {
-        fontSize: 12,
-        color: colors.error,
-        marginTop: 4,
+    touchable: {
+        borderRadius: 12,
+        marginBottom: 12,
+        marginHorizontal: 16,
+        overflow: 'hidden',
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    gradient: {
+        padding: 16,
+    },
+    content: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    imageContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    pressedImage: {
+        backgroundColor: colors.primary,
+    },
+    bookImage: {
+        width: '100%',
+        height: '100%',
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+    },
+    errorOverlay: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.whiteBlue,
+    },
+    pressedText: {
+        color: colors.white,
+    },
+    authors: {
+        fontSize: 14,
+        color: colors.grayDark,
+        fontStyle: 'italic',
+        marginBottom: 4,
+    },
+    button: {
+        backgroundColor: colors.primary,
+        borderRadius: 12,
+        padding: 16,
+        marginHorizontal: 16,
+        marginVertical: 85,
+        alignItems: 'center' as const, // Dodane 'as const' dla typu
+        justifyContent: 'center' as const, // Dodane 'as const' dla typu
+        shadowColor: colors.blackDark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    buttonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600' as const, // Dodane 'as const' dla typu
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.white,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: colors.buttonSelected1,
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 16,
+        color: colors.black,
+        height: 40,
     },
 });

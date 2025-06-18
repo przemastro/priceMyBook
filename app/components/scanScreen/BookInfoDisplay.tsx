@@ -3,6 +3,7 @@ import {View, Text, Image, StyleSheet} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BookInfo } from './types';
 import { colors } from '@/styles/styles';
+import { styles } from './styles'
 
 interface BookInfoDisplayProps {
     bookInfo: BookInfo | null;
@@ -46,29 +47,3 @@ export const BookInfoDisplay = ({ bookInfo, isbn }: BookInfoDisplayProps) => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    bookInfoContainer: {
-        marginBottom: 16,
-        alignItems: 'center',
-    },
-    isbnText: {
-        fontSize: 18,
-        color: colors.primary,
-        marginBottom: 40,
-        marginTop: 40,
-        textAlign: 'center',
-    },
-    bookInfoText: {
-        fontSize: 16,
-        color: colors.black,
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    bookImage: {
-        width: 120,
-        height: 180,
-        marginBottom: 16,
-        borderRadius: 8,
-    },
-});

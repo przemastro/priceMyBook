@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
-import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/context/AppContext';
+import { styles } from './styles'
 
 interface CategoriesCarouselProps {
     collectionName: string;
@@ -46,41 +46,8 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        marginTop: 16,
-        paddingHorizontal: 16,
-        height: 40,
-    },
-    scrollContent: {
-        alignItems: 'center',
-        gap: 8,
-    },
-    categoryItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.gray,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 16,
-        height: 32,
-    },
-    categoryText: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    emptyCategoryItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        height: 32,
-    },
-    emptyCategoryText: {
-        fontSize: 14,
-        color: colors.gray,
-        fontStyle: 'italic',
-    },
+const localStyles = StyleSheet.create({
+
 });
 
 export default CategoriesCarousel;

@@ -10,11 +10,12 @@ import {
     Modal
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { BookInfo } from './types';
+import { BookInfo } from '../types';
 import { colors } from '@/styles/styles';
-import { BookInfoDisplay } from './BookInfoDisplay';
-import { AmazonPriceButtons } from './AmazonPriceButtons';
+import { BookInfoDisplay } from '../BookInfoDisplay';
+import { AmazonPriceButtons } from '../buttons/AmazonPriceButtons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { styles } from './styles'
 
 interface ScanResultModalProps {
     visible: boolean;
@@ -49,16 +50,16 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
 
     return (
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onRequestClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
+            <View style={localStyles.modalOverlay}>
+                <View style={localStyles.modalContainer}>
                     {/* Close button */}
                     <TouchableOpacity
-                        style={styles.closeButton}
+                        style={localStyles.closeButton}
                         onPress={onRequestClose}
                         activeOpacity={0.7}
                     >
-                        <View style={styles.closeButtonCircle}>
-                            <Text style={styles.closeButtonText}>×</Text>
+                        <View style={localStyles.closeButtonCircle}>
+                            <Text style={localStyles.closeButtonText}>×</Text>
                         </View>
                     </TouchableOpacity>
 
@@ -115,7 +116,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                                     >
                                         <LinearGradient
                                             colors={[colors.primary, colors.primary]}
-                                            style={styles.buttonGradient}
+                                            style={localStyles.buttonGradient}
                                         >
                                             <Text style={styles.submitButtonText}>
                                                 {t('buttons.continue')}
@@ -132,7 +133,28 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+    buttonGradient: {
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -156,70 +178,5 @@ const styles = StyleSheet.create({
         top: 16,
         right: 16,
         zIndex: 1,
-    },
-    closeButtonCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.white,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
-    },
-    closeButtonText: {
-        fontSize: 20,
-        color: colors.primary,
-        lineHeight: 24,
-    },
-    modalScrollContent: {
-        paddingBottom: 20,
-    },
-    priceInputContainer: {
-        width: '100%',
-        marginBottom: 16,
-    },
-    suggestedPriceText: {
-        fontSize: 14,
-        marginBottom: 8,
-        color: colors.primary,
-        textAlign: 'center',
-    },
-    input: {
-        height: 50,
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.2)',
-        borderRadius: 10,
-        paddingHorizontal: 16,
-        backgroundColor: 'white',
-        color: colors.black,
-        marginTop: 10,
-        fontSize: 16,
-    },
-    modalButtonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: 20,
-    },
-    modalButton: {
-        borderRadius: 10,
-        overflow: 'hidden',
-        width: '100%',
-        height: 50,
-    },
-    submitButton: {
-        backgroundColor: colors.primary,
-    },
-    buttonGradient: {
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-    },
-    submitButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        textAlign: 'center',
     },
 });
