@@ -1,8 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  ActivityIndicator, Alert,
+  ActivityIndicator,
   Animated,
-  Dimensions,
   Easing,
   Modal,
   Pressable,
@@ -11,11 +10,10 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Image
 } from 'react-native';
 import {CameraType, CameraView, useCameraPermissions} from 'expo-camera';
 import {useAppContext} from '@/context/AppContext';
-import {router, useLocalSearchParams, useRouter} from 'expo-router';
+import {useLocalSearchParams, useRouter} from 'expo-router';
 import {colors} from '@/styles/styles';
 import {useTranslation} from 'react-i18next';
 import {Ionicons, MaterialIcons} from '@expo/vector-icons';
@@ -26,7 +24,6 @@ import AddCollectionModal from '../components/commonScreen/modals/AddCollectionM
 import {EditBookDetailsModal} from '../components/analysisScreen/modals/EditBookDetailsModal';
 import {BasicInfoSection} from '../components/analysisScreen/sections/BasicInfoSection';
 import {RatingSection} from '../components/analysisScreen/sections/RatingSection';
-import ScanButton from '../components/analysisScreen/buttons/ScanButton';
 import CollectionsSection from '../components/analysisScreen/sections/CollectionsSection';
 import {BookDefect, MarketData, ListingStatus, BookAgeInfo, BookUniqueness, MarketFactors, DEFECT_TYPES, MARKET_FACTOR_TOGGLES, IncludedMarketFactors} from '../components/analysisScreen/types';
 import {formatCurrency} from '../utils/currency';
@@ -37,6 +34,7 @@ import {LinearGradient} from "expo-linear-gradient";
 import {CustomAlertModal} from "@/app/components/alerts/CustomAlertModal";
 import {LIMITS} from "@/app/utils/constants";
 import {useFocusEffect} from "@react-navigation/native";
+import { styles } from './styles'
 
 const parseParam = <T,>(param: string | string[] | undefined): T | undefined => {
   if (!param) return undefined;
@@ -1163,325 +1161,6 @@ export default function AnalysisScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 10,
-    paddingTop: 50,
-    backgroundColor: 'transparent',
-  },
-  backgroundGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  priceValue: {
-    fontSize: 16,
-    color: colors.black,
-    fontWeight: '500',
-  },
-  selectedDefect: {
-    shadowColor: colors.blackDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  combinedSection: {
-    backgroundColor: colors.background,
-    borderRadius: 0,
-    marginTop: 10,
-    marginBottom: 0,
-  },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
-  fullScreenCamera: {
-    flex: 1,
-    width: '100%',
-  },
-  cameraOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    padding: 20,
-  },
-  scanFrame: {
-    position: 'absolute',
-    top: '35%',
-    alignSelf: 'center',
-    width: 250,
-    height: 250,
-    borderWidth: 0,
-  },
-  scanFrameTopLeft: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 50,
-    height: 50,
-    borderLeftWidth: 4,
-    borderTopWidth: 4,
-    borderColor: 'white',
-  },
-  scanFrameTopRight: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 50,
-    height: 50,
-    borderRightWidth: 4,
-    borderTopWidth: 4,
-    borderColor: 'white',
-  },
-  scanFrameBottomLeft: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: 50,
-    height: 50,
-    borderLeftWidth: 4,
-    borderBottomWidth: 4,
-    borderColor: 'white',
-  },
-  scanFrameBottomRight: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 50,
-    height: 50,
-    borderRightWidth: 4,
-    borderBottomWidth: 4,
-    borderColor: 'white',
-  },
-  bottomControls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  scanButton: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  scanButtonText: {
-    color: colors.white,
-    marginLeft: 10,
-  },
-  progressContainer: {
-    width: '80%',
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    backgroundColor: colors.gray,
-    height: 5,
-    borderRadius: 2,
-    marginBottom: 5,
-    overflow: 'hidden'
-  },
-  scanningText: {
-    color: 'white',
-    textAlign: 'center',
-  },
-  collectionName: {
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-    color: colors.secondary,
-    marginBottom: 4,
-  },
-  saveButton: {
-    position: 'absolute',
-    bottom: 100,
-    left: 30,
-    right: 30,
-    borderRadius: 10,
-    height: 50,
-    overflow: 'hidden',
-  },
-  saveButtonGradient: {
-    padding: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButtonText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  stepContainer: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: colors.background,
-    borderTopRightRadius: 15,
-    borderTopLeftRadius: 15,
-    shadowColor: colors.lightPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  stepHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.grayLight,
-  },
-  stepTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '500',
-    color: colors.blackDark,
-    marginRight: 10,
-  },
-  navigationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  progressDots: {
-    flexDirection: 'row',
-    marginHorizontal: 10,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 3,
-  },
-  activeDot: {
-    backgroundColor: colors.primary,
-  },
-  inactiveDot: {
-    backgroundColor: colors.gray,
-  },
-  stepContent: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignSelf: 'stretch',
-    minHeight: 500,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContainer: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  modalContent: {
-    padding: 24,
-    paddingTop: 32,
-    alignItems: 'center',
-  },
-  iconPreviewContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  iconPreviewCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 60,
-    backgroundColor: colors.whiteBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(74,108,247,0.1)',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.black,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  modalText: {
-    fontSize: 16,
-    color: colors.grayDark,
-    marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-  },
-  closeButtonScanScreen: {
-    position: 'absolute',
-    top: 46,
-    left: 16,
-  },
-  closeButtonCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(74,108,247,0.1)',
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: colors.primary,
-    lineHeight: 24,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 16,
-  },
-  actionButton: {
-    borderRadius: 10,
-    overflow: 'hidden',
-    width: '100%',
-    height: 50
-  },
-  confirmButton: {
-    backgroundColor: colors.primary,
-    height: 50
-  },
-  buttonGradient: {
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    paddingVertical: 0,
-  },
+const localStyles = StyleSheet.create({
+
 });

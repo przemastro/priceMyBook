@@ -17,6 +17,7 @@ import { LIMITS } from '../utils/constants';
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
 import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
+import { styles } from './styles'
 
 const { width, height } = Dimensions.get('window');
 
@@ -593,7 +594,7 @@ export default function ScanScreen() {
 
   if (hasPermission === null) {
     return (
-        <View style={styles.loadingContainer}>
+        <View style={localStyles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text>{t('status.requestingPermission')}</Text>
         </View>
@@ -619,7 +620,7 @@ export default function ScanScreen() {
   const { collectionProgress, booksProgress, totalBooks } = checkLimits();
 
   return (
-      <View style={styles.fullScreenContainer}>
+      <View style={localStyles.fullScreenContainer}>
         {!isManualMode && !scanned && (
             <BarCodeScanner
                 key={`barcode-scanner-${cameraKey}`}
@@ -675,41 +676,15 @@ export default function ScanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
-  },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f8f9fa',
-  },
-  permissionText: {
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#2c3e50',
-  },
-  permissionButton: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 2,
-  },
-  permissionButtonText: {
-    color: 'white',
-    fontWeight: '500',
-  },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
   },
 });

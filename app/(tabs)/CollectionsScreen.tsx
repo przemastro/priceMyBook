@@ -32,6 +32,7 @@ import ListingModal from '../components/collectionsScreen/modals/ListingModal';
 import StatusChangeModal from '../components/collectionsScreen/modals/StatusChangeModal';
 import CategoriesCarousel from '../components/collectionsScreen/sections/CategoriesCarousel';
 import CustomAlertModal from "@/app/components/alerts/CustomAlertModal";
+import { styles } from './styles'
 
 interface BookDefect {
     selected: boolean;
@@ -742,7 +743,7 @@ const CollectionsScreen = () => {
                         switch (currentStep) {
                             case 0:
                                 return (
-                                    <View style={styles.stepContent}>
+                                    <View style={localStyles.stepContent}>
                                         <View style={styles.searchHeader}>
                                             <View style={styles.searchContainer}>
                                                 <Feather name="search" size={20} color={colors.secondary} style={styles.searchIcon} />
@@ -834,7 +835,7 @@ const CollectionsScreen = () => {
                                 );
                             case 1:
                                 return (
-                                    <View style={styles.stepContent}>
+                                    <View style={localStyles.stepContent}>
                                         {selectedCollection && (
                                             <View style={styles.collectionDetails}>
                                                 {books[selectedCollection]?.length === 0 ? (
@@ -951,7 +952,7 @@ const CollectionsScreen = () => {
                         setAlertVisible(false);
                     }}
                     confirmText={t('buttons.confirm')}
-                    closeButtonStyle={styles.closeButton}
+                    closeButtonStyle={localStyles.closeButton}
                     closeButtonTextStyle={styles.closeButtonText}
                     buttonFullWidth={true}
                 />
@@ -999,255 +1000,16 @@ const CollectionsScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        padding: 10,
-        paddingTop: 50,
-        backgroundColor: 'transparent',
-    },
-    backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    ratingOuterContainer: {
-        paddingTop: 0,
-        marginBottom: 20,
-        marginHorizontal: -2,
-        borderRadius: 0,
-    },
-    ratingContainer: {
-        gap: 10,
-    },
-    priceRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    priceLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    priceLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    priceLabelTotal: {
-        fontSize: 18,
-        color: colors.blackDark,
-        marginLeft: 5
-    },
-    priceLabelSold: {
-        fontSize: 14,
-        color: colors.primary,
-    },
-    priceValue: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.black,
-    },
-    priceValueTotal: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-    },
-    separator: {
-        height: 1,
-        backgroundColor: colors.gray,
-        marginVertical: 12,
-    },
-    withShadow: {
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    priceSummarySection: {
-        borderRadius: 15,
-        overflow: 'hidden',
-        marginHorizontal: 4,
-        shadowColor: colors.lightPrimary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-        marginTop: 20
-    },
-    priceSummaryGradient: {
-        padding: 16,
-        backgroundColor: colors.background,
-        borderRadius: 12,
-    },
+const localStyles = StyleSheet.create({
     closeButton: {
         position: 'absolute',
         top: 16,
         right: 16,
         zIndex: 1,
     },
-    closeButtonText: {
-        fontSize: 20,
-        color: colors.primary,
-        lineHeight: 24,
-    },
-    emptyBookContainer: {
-        padding: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-    collectionDetails: {
-        marginTop: 0,
-    },
-    emptyContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: colors.background,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        marginTop: 20,
-        width: '90%',
-        marginLeft: 20,
-        marginRight: 20
-    },
-    emptyText: {
-        fontSize: 16,
-        textAlign: 'center',
-        color: colors.grayDark,
-    },
-    searchHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        paddingHorizontal: 16,
-        paddingTop: 10,
-    },
-    searchContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.white,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderWidth: 1,
-        borderColor: colors.buttonSelected1,
-        marginRight: 5,
-        marginLeft: 5
-    },
-    searchIcon: {
-        marginRight: 8,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: colors.black,
-    },
-    headerButtons: {
-        flexDirection: 'row',
-    },
-    headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    headerButtonGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyActions: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: 20,
-    },
-    emptyActionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.white,
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: colors.primary,
-    },
-    emptyActionText: {
-        color: colors.primary,
-        fontSize: 14,
-        fontWeight: '500',
-        marginLeft: 5,
-    },
-    stepContainer: {
-        flex: 1,
-        width: '100%',
-        backgroundColor: colors.background,
-        borderTopRightRadius: 15,
-        borderTopLeftRadius: 15,
-        shadowColor: colors.lightPrimary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-        marginLeft:0
-    },
-    stepHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.grayLight,
-    },
-    stepTitle: {
-        flex: 1,
-        fontSize: 18,
-        fontWeight: '500',
-        color: colors.blackDark,
-        marginRight: 10,
-    },
-    navigationContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    progressDots: {
-        flexDirection: 'row',
-        marginHorizontal: 10,
-    },
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        marginHorizontal: 3,
-    },
-    activeDot: {
-        backgroundColor: colors.primary,
-    },
-    inactiveDot: {
-        backgroundColor: colors.gray,
-    },
     stepContent: {
         flex: 1,
         paddingHorizontal: 10,
-    },
-    moreButton: {
-        alignSelf: 'flex-end',
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginTop: 20
-    },
-    moreButtonText: {
-        color: colors.primary,
-        fontSize: 16,
-        fontWeight: '500'
     },
 });
 

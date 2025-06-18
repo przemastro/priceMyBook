@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
+import { styles } from './styles'
 
 type HomeButton = {
     name: React.ComponentProps<typeof Ionicons>['name'];
@@ -83,7 +84,7 @@ const HomeScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={localStyles.container}>
             <LinearGradient
                 colors={[colors.buttonSelected1, colors.buttonSelected2]}
                 style={styles.backgroundGradient}
@@ -96,7 +97,7 @@ const HomeScreen = () => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                 >
-                    <View style={styles.headerContainer}>
+                    <View style={localStyles.headerContainer}>
                         <View style={styles.header}>
                             <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
                             <View style={styles.descriptionContainer}>
@@ -116,8 +117,8 @@ const HomeScreen = () => {
             </View>
 
             <View style={styles.servicesContainer}>
-                <Text style={styles.sectionTitle}>{t('home.services')}</Text>
-                <View style={styles.buttonsContainer}>
+                <Text style={localStyles.sectionTitle}>{t('home.services')}</Text>
+                <View style={localStyles.buttonsContainer}>
                     {buttons.map((button, index) => (
                         <View key={index} style={styles.buttonWrapper}>
                             <TouchableOpacity
@@ -136,7 +137,7 @@ const HomeScreen = () => {
                             >
                                 <LinearGradient
                                     colors={[colors.white, colors.whiteBlue]}
-                                    style={styles.buttonGradient}
+                                    style={localStyles.buttonGradient}
                                 >
                                     <View style={styles.iconContainer}>
                                         <Ionicons
@@ -162,75 +163,16 @@ const HomeScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
         paddingTop: 95,
         position: 'relative'
     },
-    backgroundGradient: {
-        ...StyleSheet.absoluteFillObject
-    },
-    headerOuterContainer: {
-        borderRadius: 15,
-        overflow: 'hidden',
-        marginBottom: 10
-    },
-    headerGradient: {
-        padding: 2,
-        opacity: 0.85
-    },
     headerContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
         borderRadius: 18
-    },
-    header: {
-        padding: 20,
-        borderRadius: 15,
-        marginBottom: 0
-    },
-    welcomeTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: colors.blackDark,
-        marginBottom: 8,
-        textAlign: 'center'
-    },
-    descriptionContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end'
-    },
-    welcomeSubtitle: {
-        fontSize: 16,
-        color: colors.black,
-        flex: 1,
-        marginRight: 10
-    },
-    moreButton: {
-        alignSelf: 'flex-end',
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginTop: 20
-    },
-    moreButtonText: {
-        color: colors.primary,
-        fontSize: 16,
-        fontWeight: '500'
-    },
-    servicesContainer: {
-        flex: 1,
-        marginTop: 10,
-        backgroundColor: colors.background,
-        padding: 20,
-        borderRadius: 15,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3
     },
     sectionTitle: {
         fontSize: 20,
@@ -246,37 +188,12 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         marginHorizontal: -BUTTON_MARGIN
     },
-    buttonWrapper: {
-        alignItems: 'center',
-        marginBottom: 20
-    },
-    button: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3
-    },
     buttonGradient: {
         width: '100%',
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center'
     },
-    iconContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 30,
-        padding: 12
-    },
-    buttonTitle: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: colors.black,
-        marginTop: 8,
-        textAlign: 'center'
-    }
 });
 
 export default HomeScreen;

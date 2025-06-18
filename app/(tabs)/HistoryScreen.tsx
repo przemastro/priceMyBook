@@ -9,6 +9,7 @@ import SearchBar from '@/app/components/historyScreen/SearchBar';
 import ClearHistoryButton from '@/app/components/historyScreen/ClearHistoryButton';
 import {router} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
+import { styles } from './styles'
 
 export default function HistoryScreen() {
     const { scanHistory, clearScanHistory } = useAppContext();
@@ -38,8 +39,8 @@ export default function HistoryScreen() {
                 <View style={styles.spacer} />
             </View>
 
-            <View style={styles.container}>
-                <View style={styles.searchContainer}>
+            <View style={localStyles.container}>
+                <View style={localStyles.searchContainer}>
                     <SearchBar
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -52,7 +53,7 @@ export default function HistoryScreen() {
                     keyExtractor={(item) => item.isbn + (item.createdAt || '')}
                     renderItem={({ item }) => <HistoryItem item={item} />}
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
+                        <View style={localStyles.emptyContainer}>
                             <Text style={styles.emptyText}>{t('labels.noScanHistory')}</Text>
                         </View>
                     }
@@ -67,36 +68,7 @@ export default function HistoryScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    outerContainer: {
-        flex: 1,
-        position: 'relative',
-    },
-    backgroundGradient: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingTop: 48,
-        marginBottom: 10,
-        width: '100%',
-        justifyContent: 'space-between',
-    },
-    backButton: {
-        marginLeft: 20,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '500',
-        color: colors.blackDark,
-        textAlign: 'center',
-        flex: 1,
-    },
-    spacer: {
-        width: 44,
-        marginRight: 20,
-    },
+const localStyles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -117,19 +89,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         paddingHorizontal: 5,
     },
-    listContent: {
-        flexGrow: 1,
-        paddingBottom: 20,
-    },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-    },
-    emptyText: {
-        fontSize: 16,
-        color: colors.black,
-        textAlign: 'center',
     },
 });
