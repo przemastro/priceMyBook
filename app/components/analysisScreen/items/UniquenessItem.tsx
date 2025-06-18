@@ -1,9 +1,8 @@
 import React from 'react';
-import {TouchableOpacity, View, Text, StyleSheet} from 'react-native';
+import {TouchableOpacity, View, StyleSheet} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
-import { useTranslation } from 'react-i18next';
 import { UNIQUENESS_TYPES } from '../types';
 import { styles } from './styles'
 
@@ -15,7 +14,6 @@ type UniquenessItemProps = {
 };
 
 const UniquenessItem = ({ item, selected, onPress, buttonSize }: UniquenessItemProps) => {
-    const { t } = useTranslation();
 
     return (
         <TouchableOpacity

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';

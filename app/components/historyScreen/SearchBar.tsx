@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput } from 'react-native';
 import { colors } from '@/styles/styles';
 import { Feather } from '@expo/vector-icons';
 import { styles } from './styles'

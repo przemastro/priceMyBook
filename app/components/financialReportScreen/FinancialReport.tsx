@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Dimensions, ScrollView, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/styles/styles';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
@@ -275,7 +275,6 @@ const FinancialReport = () => {
     const {
         monthlySalesData,
         monthlyRevenueData,
-        yearlyBreakdown,
         booksValueData,
         stats,
         hasData

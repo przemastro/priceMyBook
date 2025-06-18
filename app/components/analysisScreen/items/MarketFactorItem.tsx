@@ -1,9 +1,8 @@
 import React from 'react';
-import {TouchableOpacity, View, Text, StyleSheet} from 'react-native';
+import {TouchableOpacity, View, StyleSheet} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
-import { useTranslation } from 'react-i18next';
 import { MarketFactorToggle } from '../types';
 import { styles } from './styles'
 
@@ -15,7 +14,6 @@ type MarketFactorItemProps = {
 };
 
 const MarketFactorItem = ({ item, selected, onPress, buttonSize }: MarketFactorItemProps) => {
-    const { t } = useTranslation();
 
     return (
         <TouchableOpacity

@@ -1,4 +1,3 @@
-// app/components/modals/ListingModal.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { colors } from '@/styles/styles';
@@ -6,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from './styles'
-import {color} from "ansi-fragments";
 
 interface ListingModalProps {
     visible: boolean;

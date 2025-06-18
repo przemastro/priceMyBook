@@ -1,7 +1,7 @@
 // screens/Settings.tsx
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Animated, Linking} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n/config';

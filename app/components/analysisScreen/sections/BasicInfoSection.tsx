@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 import { styles } from './styles'
 
-const IMAGE_SIZE = 80; // Zmniejszony rozmiar dla okrągłego obrazka
+const IMAGE_SIZE = 80;
 const CARD_PADDING = 16;
 
 interface BasicBookInfoProps {

@@ -7,16 +7,15 @@ import {
     StyleSheet,
     Linking,
     TouchableOpacity,
-    Dimensions,
     TextInput,
     Animated
 } from 'react-native';
-import {Feather, FontAwesome5, Ionicons, MaterialIcons} from '@expo/vector-icons';
+import {Feather, FontAwesome5, Ionicons} from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import {router, useRouter} from 'expo-router';
+import {useRouter} from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { useAppContext } from '@/context/AppContext';
@@ -91,7 +90,7 @@ interface ImportPreviewData {
     books: BookData[];
     categories: string[];
     showPreview: boolean;
-    collectionCreatedAt?: string; // Add this line
+    collectionCreatedAt?: string;
 }
 
 interface Collection {

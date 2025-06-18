@@ -178,7 +178,7 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {item.title || t('bookInfo.unknownTitle')}
+                            {item.title ?? t('bookInfo.unknownTitle')}
                         </Text>
                         {item.authors && (
                             <Text

@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-import { useColorScheme } from '@/app/components/useColorScheme';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
 import { colors } from "@/styles/styles";
@@ -7,15 +6,14 @@ import { Svg, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-function TabBarIcon(props: {
+function TabBarIcon(props: Readonly<{
     name: React.ComponentProps<typeof FontAwesome>['name'];
     color: string;
-}) {
+}>) {
     return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-    const colorScheme = useColorScheme();
     const { t } = useTranslation();
 
     return (
@@ -156,7 +154,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         height: '100%',
         backgroundColor: 'transparent',
-        shadowColor: '#000',
+        shadowColor: colors.blackDark,
         shadowOffset: {
             width: 0,
             height: -2,
@@ -219,7 +217,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.primary,
-        shadowColor: '#000',
+        shadowColor:colors.blackDark,
         shadowOffset: {
             width: 0,
             height: 2,

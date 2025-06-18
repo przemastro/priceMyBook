@@ -1,6 +1,5 @@
 import {StyleSheet} from "react-native";
 import {colors} from "@/styles/styles";
-import {color} from "ansi-fragments";
 
 export const styles = StyleSheet.create({
     bookCoverImage: {

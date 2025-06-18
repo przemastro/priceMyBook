@@ -12,8 +12,8 @@ export interface BookUniqueness {
 export interface MarketData {
     demand: 'veryHigh' | 'high' | 'medium' | 'low' | 'veryLow';
     supply: 'veryLow' | 'low' | 'medium' | 'high' | 'flooded';
-    priceRange: [number, number]; // Wymagane
-    priceHistory: { date: string; price: number }[]; // Wymagane
+    priceRange: [number, number];
+    priceHistory: { date: string; price: number }[];
     lastUpdated: Date;
     source: 'google' | 'amazon' | 'openLibrary' | 'simulated';
 }

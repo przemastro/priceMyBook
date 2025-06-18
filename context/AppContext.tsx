@@ -333,7 +333,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const newCollection = {
             name,
             icon,
-            createdAt: options?.createdAt || new Date().toISOString()
+            createdAt: options?.createdAt ?? new Date().toISOString()
         };
 
         setCollections(prev => [...prev, newCollection]);

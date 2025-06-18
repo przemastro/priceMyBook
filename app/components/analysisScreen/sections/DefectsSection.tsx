@@ -23,7 +23,7 @@ const DefectsSection = ({ defects, onToggleDefect }: DefectsSectionProps) => {
         const defectType = DEFECT_TYPES.find(dt => dt.id === defect.id);
         return {
             ...defect,
-            color: defectType?.color || '#f39c12' // Domyślny kolor jeśli nie znaleziono
+            color: defectType?.color ?? '#f39c12' // Domyślny kolor jeśli nie znaleziono
         };
     });
 

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator} from 'react-native';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';

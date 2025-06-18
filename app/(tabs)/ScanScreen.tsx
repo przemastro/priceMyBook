@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, View, ActivityIndicator, Text, Dimensions, Platform, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, ActivityIndicator, Text, Dimensions, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import Animated, { useSharedValue, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
-import { ProgressBar, useTheme } from 'react-native-paper';
+import { useSharedValue, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { useAppContext } from '@/context/AppContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -113,9 +112,8 @@ const defaultAgeInfo: BookAgeInfo = {
 
 export default function ScanScreen() {
   const { t, i18n } = useTranslation();
-  const { isbn, setISBN, addToScanHistory, exchangeRate, books, collections, checkGlobalLimits } = useAppContext();
+  const { isbn, setISBN, addToScanHistory, exchangeRate, collections, checkGlobalLimits } = useAppContext();
   const router = useRouter();
-  const theme = useTheme();
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
@@ -329,7 +327,7 @@ export default function ScanScreen() {
                 { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
                 { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
                 { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
-                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() || '0') }
+                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() ?? '0') }
               ],
               lastUpdated: new Date(),
               source: 'amazon' as const
@@ -341,7 +339,7 @@ export default function ScanScreen() {
           title: book.title || t('bookInfo.notFound'),
           authors: book.authors || t('bookInfo.unknown'),
           price: book.price ? book.price.toString() : '0',
-          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency || 'USD'}` : 'N/A',
+          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency ?? 'USD'}` : 'N/A',
           originalPrice: book.price ? book.price.toString() : '0',
           defects: {},
           rating: 10,
@@ -353,7 +351,7 @@ export default function ScanScreen() {
           marketData,
           publisher: book.publisher,
           description: book.description,
-          imageUri: book.image || undefined
+          imageUri: book.image ?? undefined
         });
       } else {
         throw new Error('Book not found in any API');
@@ -470,7 +468,7 @@ export default function ScanScreen() {
                 { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
                 { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
                 { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
-                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() || '0') }
+                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() ?? '0') }
               ],
               lastUpdated: new Date(),
               source: 'amazon' as const
@@ -482,19 +480,19 @@ export default function ScanScreen() {
           title: book.title || t('bookInfo.notFound'),
           authors: book.authors || t('bookInfo.unknown'),
           price: book.price ? book.price.toString() : '0',
-          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency || 'USD'}` : 'N/A',
+          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency ?? 'USD'}` : 'N/A',
           originalPrice: book.price ? book.price.toString() : '0',
           defects: {},
           rating: 10,
           foundInApi: !!book.title,
           source: book.source || 'manual',
           uniqueness: defaultUniqueness,
-          marketFactors: book.amazonData?.data?.marketFactors || defaultMarketFactors,
+          marketFactors: book.amazonData?.data?.marketFactors ?? defaultMarketFactors,
           ageInfo: defaultAgeInfo,
           marketData,
           publisher: book.publisher,
           description: book.description,
-          imageUri: book.image || undefined
+          imageUri: book.image ?? undefined
         });
       } else {
         throw new Error('Book not found in any API');
@@ -524,17 +522,17 @@ export default function ScanScreen() {
   const handlePrice = () => {
     let priceValue = manualPrice;
     let priceSource = 'manual';
-    let currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
+    let currency = bookInfo?.amazonData?.prices?.[0]?.currency ?? (i18n.language === 'pl' ? 'PLN' : 'USD');
 
     if (selectedPrice !== null) {
       priceValue = selectedPrice.toString();
       priceSource = 'amazon';
-      currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
+      currency = bookInfo?.amazonData?.prices?.[0]?.currency ?? (i18n.language === 'pl' ? 'PLN' : 'USD');
     }
     else if (!priceValue && bookInfo?.price) {
       priceValue = bookInfo.price.toString();
       priceSource = bookInfo.source || 'manual';
-      currency = bookInfo?.amazonData?.prices?.[0]?.currency || (i18n.language === 'pl' ? 'PLN' : 'USD');
+      currency = bookInfo?.amazonData?.prices?.[0]?.currency ?? (i18n.language === 'pl' ? 'PLN' : 'USD');
     }
     else if (!priceValue) {
       setAlertConfig({
@@ -562,7 +560,7 @@ export default function ScanScreen() {
     }
 
     // Dodaj tę linię, aby upewnić się, że imageUri jest prawidłowo przekazywany
-    const imageUri = bookInfo?.image || '';
+    const imageUri = bookInfo?.image ?? '';
 
     router.push({
       pathname: '/AnalysisScreen',
@@ -570,13 +568,13 @@ export default function ScanScreen() {
         isbn,
         averagePrice: numericPrice.toFixed(2),
         originalPrice: numericPrice.toFixed(2),
-        title: bookInfo?.title || t('bookInfo.manualEntry'),
-        authors: bookInfo?.authors || t('bookInfo.unknown'),
+        title: bookInfo?.title ?? t('bookInfo.manualEntry'),
+        authors: bookInfo?.authors ?? t('bookInfo.unknown'),
         fromHistory: 'false',
         marketFactors: JSON.stringify({
           demand: 'medium',
           supply: 'medium',
-          publicationYear: bookInfo?.amazonData?.data?.marketFactors?.publicationYear ||
+          publicationYear: bookInfo?.amazonData?.data?.marketFactors?.publicationYear ??
               new Date().getFullYear() - Math.floor(Math.random() * 10)
         }),
         bookInfo: JSON.stringify({
@@ -616,8 +614,6 @@ export default function ScanScreen() {
         </View>
     );
   }
-
-  const { collectionProgress, booksProgress, totalBooks } = checkLimits();
 
   return (
       <View style={localStyles.fullScreenContainer}>

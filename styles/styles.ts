@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet, ViewStyle, TextStyle, ImageStyle } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 export const { width, height } = Dimensions.get('window');
 
@@ -113,7 +113,7 @@ export const modal = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: colors.transparentBlack,
     },
     content: {
         backgroundColor: colors.background,
@@ -129,29 +129,5 @@ export const modal = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
-    },
-});
-
-// Globalne style
-export const globalStyles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-    },
-});
-
-// Dodatkowe style
-export const styles = StyleSheet.create({
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginTop: responsive.mediumMargin,
-    },
-    button: {
-        flex: 1, // Przyciski będą miały równą szerokość
-        marginHorizontal: responsive.smallMargin, // Odstęp między przyciskami
     },
 });

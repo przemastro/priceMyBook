@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -6,7 +6,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -106,7 +105,6 @@ export default function AnalysisScreen() {
   const [scannedDefect, setScannedDefect] = useState<BookDefect | null>(null);
   const [showDefectModal, setShowDefectModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState('');
-  const [editingOriginalPrice, setEditingOriginalPrice] = useState(false);
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const bookInfo = params.bookInfo ? JSON.parse(params.bookInfo as string) : null;
@@ -116,17 +114,13 @@ export default function AnalysisScreen() {
   const editMode = Array.isArray(params.editMode) ? params.editMode[0] === 'true' : params.editMode === 'true';
   const collectionName = Array.isArray(params.collectionName) ? params.collectionName[0] : params.collectionName;
   const bookIndex = params.bookIndex ? parseInt(Array.isArray(params.bookIndex) ? params.bookIndex[0] : params.bookIndex) : null;
-  const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(title);
-  const [editingIsbn, setEditingIsbn] = useState(false);
   const [isbnInput, setIsbnInput] = useState(isbn);
   const [showMarketModal, setShowMarketModal] = useState(false);
-  const [editingYear, setEditingYear] = useState(false);
-  const [yearInput, setYearInput] = useState(marketFactors.publicationYear?.toString() || '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [authors, setAuthors] = useState(Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown'));
-  const [publisher, setPublisher] = useState(bookInfo?.publisher || '');
-  const [description, setDescription] = useState(bookInfo?.description || '');
+  const [publisher, setPublisher] = useState(bookInfo?.publisher ?? '');
+  const [description, setDescription] = useState(bookInfo?.description ?? '');
   const [includedMarketFactors, setIncludedMarketFactors] = useState<IncludedMarketFactors>({
     includePublicationYear: true,
     includeDemand: true,
@@ -146,12 +140,9 @@ export default function AnalysisScreen() {
   const [successModalTitle, setSuccessModalTitle] = useState('');
   const [successModalMessage, setSuccessModalMessage] = useState('');
 
-  // Initialize book image from params
   useEffect(() => {
-    // Najpierw sprawdź bezpośredni parametr imageUri
     const directImageUri = Array.isArray(params.imageUri) ? params.imageUri[0] : params.imageUri;
 
-    // Jeśli nie ma bezpośredniego parametru, sprawdź w bookInfo
     if (!directImageUri && bookInfo?.imageUri) {
       setBookImage(bookInfo.imageUri);
     } else if (directImageUri) {
@@ -300,22 +291,7 @@ export default function AnalysisScreen() {
     }).start();
   };
 
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  const resetToFirstStep = useCallback(() => {
-    setIsTransitioning(true);
-    fadeAnim.setValue(0);
-
-    setTimeout(() => {
-      setCurrentStep(0);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setIsTransitioning(false));
-    }, 100);
-  }, [fadeAnim]);
 
   useFocusEffect(
       React.useCallback(() => {
@@ -504,7 +480,7 @@ export default function AnalysisScreen() {
 
   const averageUsedPrice = bookInfo?.amazonData?.prices?.find((p: { condition: string }) =>
       p.condition?.includes('average') || p.condition?.includes('średnia')
-  )?.price || null;
+  )?.price ?? null;
 
   const stopScanning = () => {
     setIsScanning(false);
@@ -582,28 +558,12 @@ export default function AnalysisScreen() {
     }));
   };
 
-  const saveAuthors = () => {
-    if (!authors.trim()) {
-      showAlert(t('alerts.error'), t('alerts.enterAuthor'));
-      return;
-    }
-  };
-
-  const savePublisher = () => {
-    // Validation logic if needed
-  };
-
-  const saveDescription = () => {
-    // Validation logic if needed
-  };
-
   const saveOriginalPrice = () => {
     if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
       showAlert(t('alerts.error'), t('alerts.enterValidPrice'));
       return;
     }
     setOriginalPrice(originalPriceInput);
-    setEditingOriginalPrice(false);
   };
 
   const saveTitle = () => {
@@ -611,7 +571,6 @@ export default function AnalysisScreen() {
       showAlert(t('alerts.error'), t('alerts.enterTitle'));
       return;
     }
-    setEditingTitle(false);
   };
 
   const saveIsbn = () => {
@@ -619,51 +578,12 @@ export default function AnalysisScreen() {
       showAlert(t('alerts.error'), t('alerts.enterISBN'));
       return;
     }
-    setEditingIsbn(false);
   };
 
   const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
     addCollection(name, icon, categories);
     setSelectedCollection(name);
     setShowAddCollectionModal(false);
-  };
-
-  const handleAddToCollection = (collection: string) => {
-    const priceValue = finalPrice.toFixed(2);
-    const defaultListingStatus: ListingStatus = {
-      status: 'notListed',
-      platforms: []
-    };
-
-    const bookData = {
-      isbn: isbnInput,
-      title: titleInput,
-      authors: authors,
-      publisher: publisher,
-      price: priceValue,
-      displayPrice: formatCurrency({price: priceValue, exchangeRate}),
-      foundInApi: params.fromHistory !== 'true',
-      originalPrice: originalPrice,
-      defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
-        ...acc,
-        [defect.id]: {
-          selected: true,
-          reduction: defect.priceReduction,
-          count: defect.count
-        }
-      }), {}),
-      rating: bookRating,
-      ageInfo,
-      uniqueness,
-      marketFactors,
-      listingStatus: editMode && collectionName && bookIndex !== null
-          ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
-          : defaultListingStatus,
-      imageUri: bookImage || undefined // Konwersja null na undefined
-    };
-
-    addBookToCollection(collection, bookData);
-    showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${collection}`, 'success');
   };
 
   const handleClearPress = () => {
@@ -725,7 +645,7 @@ export default function AnalysisScreen() {
       listingStatus: editMode && collectionName && bookIndex !== null
           ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
           : defaultListingStatus,
-      imageUri: bookImage || undefined
+      imageUri: bookImage ?? undefined
     };
 
     if (editMode && collectionName && bookIndex !== null) {
@@ -1160,7 +1080,3 @@ export default function AnalysisScreen() {
       </LinearGradient>
   );
 }
-
-const localStyles = StyleSheet.create({
-
-});

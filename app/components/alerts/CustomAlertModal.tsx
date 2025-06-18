@@ -1,5 +1,5 @@
 import React from 'react';
-import {Modal, View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {Modal, View, Text, TouchableOpacity} from 'react-native';
 import {LinearGradient} from "expo-linear-gradient";
 import {Ionicons} from '@expo/vector-icons';
 import {colors} from '@/styles/styles';

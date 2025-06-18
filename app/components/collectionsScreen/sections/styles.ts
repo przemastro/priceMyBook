@@ -1,4 +1,4 @@
-import {Dimensions, StyleSheet} from "react-native";
+import {StyleSheet} from "react-native";
 import {colors} from "@/styles/styles";
 
 
@@ -138,7 +138,7 @@ export const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: colors.blackDark,
+        backgroundColor: 'transparent',
     },
     menuContainer: {
         position: 'absolute',

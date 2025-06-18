@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
-import { useTranslation } from 'react-i18next';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import Carousel from "react-native-reanimated-carousel";
 import BookItem from '../items/BookItem';
@@ -25,7 +24,7 @@ const BOOK_CARD_HEIGHT = Dimensions.get('window').height * 0.35;
 const ACTION_BUTTONS_HEIGHT = 80;
 
 const BooksCarousel: React.FC<BooksCarouselProps> = ({
-                                                         books,
+                                                         books = [],
                                                          collectionName,
                                                          onEditBook,
                                                          onDeleteBook,
@@ -35,7 +34,6 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                                                          formatMarketFactorsSummary,
                                                          formatListingStatus
                                                      }) => {
-    const { t } = useTranslation();
     const carouselRef = useRef<any>(null);
 
     const handleGoToStart = () => {

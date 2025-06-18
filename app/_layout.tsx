@@ -1,11 +1,10 @@
-import { Stack, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { View, TouchableOpacity, StyleSheet, Animated, Platform, Linking } from 'react-native';
-import i18n from './i18n/config';
+import { View, TouchableOpacity, StyleSheet} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "@/styles/styles";
 import { AppProvider } from '@/context/AppContext';
@@ -47,36 +46,11 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { t } = useTranslation();
-  const router = useRouter();
-  const spinValue = useRef(new Animated.Value(0)).current;
-  const [activeSettingsTab, setActiveSettingsTab] = useState('about');
-  const [activeFactors, setActiveFactors] = useState({
+  const [activeFactors] = useState({
     defects: true,
     uniqueness: true,
     market: true
   });
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'pl' ? 'en' : 'pl';
-    i18n.changeLanguage(newLang);
-
-    spinValue.setValue(0);
-    Animated.spring(spinValue, {
-      toValue: 1,
-      friction: 5,
-      tension: 30,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
-  });
-
-  const navigateToSettings = () => {
-    router.push('/components/settingsScreen/Settings');
-  };
 
   const handleNotifications = () => {
     // Placeholder for future notifications functionality
