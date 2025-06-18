@@ -1,5 +1,6 @@
 import {StyleSheet} from "react-native";
 import {colors} from "@/styles/styles";
+import {color} from "ansi-fragments";
 
 export const styles = StyleSheet.create({
     container: {
@@ -104,7 +105,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scanButton: {
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.transparentBlack,
         paddingVertical: 15,
         paddingHorizontal: 20,
         borderRadius: 8,
@@ -223,14 +224,14 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.transparentBlack,
     },
     modalContainer: {
         width: '90%',
         backgroundColor: 'white',
         borderRadius: 12,
         overflow: 'hidden',
-        shadowColor: '#000',
+        shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -253,7 +254,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     modalTitle: {
         fontSize: 20,
@@ -287,7 +288,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     closeButtonText: {
         fontSize: 20,
@@ -316,14 +317,12 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     confirmButtonText: {
-        color: 'white',
+        color: colors.white,
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
         paddingVertical: 0,
     },
-
-
     ratingOuterContainer: {
         paddingTop: 0,
         marginBottom: 20,
@@ -397,7 +396,7 @@ export const styles = StyleSheet.create({
         backgroundColor: colors.background,
         borderRadius: 2,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        borderColor: colors.transparentBlackLight,
     },
     collectionDetails: {
         marginTop: 0,
@@ -409,7 +408,7 @@ export const styles = StyleSheet.create({
         backgroundColor: colors.background,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        borderColor: colors.transparentBlackLight,
         marginTop: 20,
         width: '90%',
         marginLeft: 20,
@@ -537,7 +536,7 @@ export const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 15,
         marginBottom: 10,
-        shadowColor: '#000',
+        shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
@@ -553,7 +552,7 @@ export const styles = StyleSheet.create({
         elevation: 3
     },
     iconContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlackLight,
         borderRadius: 30,
         padding: 12
     },
@@ -569,12 +568,12 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: colors.whiteBlue,
     },
     permissionText: {
         marginBottom: 16,
         textAlign: 'center',
-        color: '#2c3e50',
+        color: colors.primary2,
     },
     permissionButton: {
         backgroundColor: colors.primary,

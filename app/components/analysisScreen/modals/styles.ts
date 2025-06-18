@@ -6,11 +6,11 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.transparentBlack,
     },
     modalContainer: {
         width: '90%',
-        backgroundColor: 'white',
+        backgroundColor: colors.transparentBlack,
         borderRadius: 8,
         maxHeight: '80%',
         overflow: 'hidden',
@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: 'white',
+        backgroundColor: colors.white,
     },
     cancelButton: {
         padding: 12,
@@ -57,7 +57,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     saveButtonText: {
-        color: 'white',
+        color: colors.white,
         fontSize: 16,
         fontWeight: '600',
     },
@@ -104,7 +104,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     closeButtonText: {
         fontSize: 20,
@@ -196,7 +196,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     defectInfoContainer: {
         width: '100%',

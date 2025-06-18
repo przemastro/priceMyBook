@@ -29,6 +29,7 @@ export const simulateMarketData = (isbn: string): MarketData => {
     const randomFactor = isbn.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 100;
 
     return {
+        priceHistory: [],
         demand: randomFactor > 80 ? 'veryHigh' :
             randomFactor > 60 ? 'high' :
                 randomFactor > 40 ? 'medium' :

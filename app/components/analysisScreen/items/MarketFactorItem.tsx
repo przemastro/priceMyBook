@@ -65,7 +65,7 @@ const localStyles = StyleSheet.create({
         alignItems: 'center',
     },
     iconContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlackLight,
         borderRadius: 30,
         padding: 12,
     },

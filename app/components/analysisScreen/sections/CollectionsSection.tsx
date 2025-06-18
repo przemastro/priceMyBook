@@ -231,13 +231,13 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlackLight,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     selectedCollectionIcon: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
+        backgroundColor: colors.transparentLightPrimary,
     },
     collectionTextContainer: {
         flex: 1,

@@ -153,7 +153,7 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     closeButtonText: {
         fontSize: 20,
@@ -164,7 +164,7 @@ const localStyles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.transparentBlack,
     },
     modalContainer: {
         width: '90%',

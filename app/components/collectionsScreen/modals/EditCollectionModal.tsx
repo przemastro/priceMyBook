@@ -205,10 +205,10 @@ const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
 const localStyles = StyleSheet.create({
     modalContainer: {
         width: '90%',
-        backgroundColor: 'white',
+        backgroundColor: colors.white,
         borderRadius: 12,
         overflow: 'hidden',
-        shadowColor: '#000',
+        shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -219,7 +219,7 @@ const localStyles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.transparentBlack,
     },
     modalContent: {
         padding: 24,
@@ -237,7 +237,7 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     closeButton: {
         position: 'absolute',
@@ -252,7 +252,7 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     closeButtonText: {
         fontSize: 24,

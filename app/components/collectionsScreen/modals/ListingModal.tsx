@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from './styles'
+import {color} from "ansi-fragments";
 
 interface ListingModalProps {
     visible: boolean;
@@ -152,7 +153,7 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
     },
     confirmButtonText: {
-        color: 'white',
+        color: colors.white,
         fontSize: 16,
         fontWeight: '600',
     },
@@ -160,14 +161,14 @@ const localStyles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.transparentBlack,
     },
     modalContainer: {
         width: '90%',
-        backgroundColor: 'white',
+        backgroundColor: colors.white,
         borderRadius: 12,
         overflow: 'hidden',
-        shadowColor: '#000',
+        shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -197,7 +198,7 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
+        borderColor: colors.transparentLightPrimary,
     },
     closeButtonText: {
         fontSize: 24,

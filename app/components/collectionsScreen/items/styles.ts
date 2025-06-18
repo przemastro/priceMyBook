@@ -72,7 +72,7 @@ export const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.7)',
+        backgroundColor: colors.transparentWhite,
     },
     errorOverlay: {
         position: 'absolute',

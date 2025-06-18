@@ -1,5 +1,6 @@
 import {StyleSheet} from "react-native";
 import {colors} from "@/styles/styles";
+import {color} from "ansi-fragments";
 
 export const styles = StyleSheet.create({
     bookCoverImage: {
@@ -76,7 +77,7 @@ export const styles = StyleSheet.create({
         marginTop: 6,
     },
     tag: {
-        backgroundColor: 'rgba(255,59,48,0.1)',
+        backgroundColor: colors.transparentRed,
         borderRadius: 12,
         paddingHorizontal: 10,
         paddingVertical: 4,
@@ -84,7 +85,7 @@ export const styles = StyleSheet.create({
         marginBottom: 6,
     },
     positiveTag: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
+        backgroundColor: colors.transparentLightPrimary,
     },
     tagText: {
         fontSize: 12,
@@ -249,7 +250,7 @@ export const styles = StyleSheet.create({
     },
     defectIconContainer: {
         marginBottom: 4,
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlack,
         borderRadius: 20,
         padding: 8,
     },
@@ -273,7 +274,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     defectCountBadgeText: {
-        color: 'white',
+        color: colors.white,
         fontSize: 12,
         fontWeight: 'bold',
     },
@@ -395,7 +396,7 @@ export const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.7)',
+        backgroundColor: colors.transparentWhite,
     },
     errorOverlay: {
         position: 'absolute',
@@ -422,7 +423,7 @@ export const styles = StyleSheet.create({
         marginTop: 8,
         paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.2)',
+        borderTopColor: colors.transparentWhite,
     },
     scanButton: {
         width: '100%',

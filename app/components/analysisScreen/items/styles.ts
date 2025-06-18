@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
         height: 120,
-        backgroundColor: 'white', // Dodaj białe tło
+        backgroundColor: colors.white,
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -28,11 +28,11 @@ export const styles = StyleSheet.create({
         padding: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'white',
+        backgroundColor: colors.white,
     },
     defectIconContainer: {
         marginBottom: 4,
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlackLight,
         borderRadius: 20,
         padding: 8,
     },
@@ -60,7 +60,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     defectCountBadgeText: {
-        color: 'white',
+        color: colors.white,
         fontSize: 12,
         fontWeight: 'bold',
     },
@@ -80,7 +80,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     selectedCollectionButton: {
-        shadowColor: 'rgba(0,0,0,0.03)',
+        shadowColor: colors.transparentBlackLight,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -121,7 +121,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlackLight,
         borderRadius: 30,
         padding: 12,
     },
@@ -137,7 +137,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     countBadgeText: {
-        color: 'white',
+        color: colors.white,
         fontSize: 12,
         fontWeight: 'bold',
     },

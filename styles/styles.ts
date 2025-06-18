@@ -21,7 +21,12 @@ export const colors = {
     buttonSelected2: '#cce0ff',
     whiteBlue: '#f9faff',
     blackDark: '#000',
-    accent: '#FFA726'
+    accent: '#FFA726',
+    transparentBlack: 'rgba(0,0,0,0.5)',
+    transparentBlackLight: 'rgba(0,0,0,0.05)',
+    transparentLightPrimary: 'rgba(74,108,247,0.1)',
+    transparentRed: 'rgba(255,59,48,0.1)',
+    transparentWhite: 'rgba(255,255,255,0.7)'
 };
 
 // Typografia

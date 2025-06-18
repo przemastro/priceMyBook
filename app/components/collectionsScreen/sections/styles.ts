@@ -30,8 +30,6 @@ export const styles = StyleSheet.create({
     navSpacer: {
         width: 20,
     },
-
-
     container: {
         marginTop: 16,
         paddingHorizontal: 16,
@@ -101,13 +99,13 @@ export const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: colors.transparentBlackLight,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     selectedCollectionIcon: {
-        backgroundColor: 'rgba(74,108,247,0.1)',
+        backgroundColor: colors.transparentLightPrimary,
     },
     textContainer: {
         flex: 1,
@@ -140,7 +138,7 @@ export const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0)',
+        backgroundColor: colors.blackDark,
     },
     menuContainer: {
         position: 'absolute',

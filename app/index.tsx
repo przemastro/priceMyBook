@@ -64,12 +64,12 @@ const styles = StyleSheet.create({
     },
     appName: {
         ...typography.h1,
-        color: 'white',
+        color: colors.white,
         marginTop: 20,
     },
     appSlogan: {
         ...typography.body,
-        color: 'white',
+        color: colors.white,
         marginTop: 10,
         opacity: 0.8,
         letterSpacing: 1,

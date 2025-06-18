@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         paddingTop: 80,
-        backgroundColor: '#f8f9ff',
+        backgroundColor: colors.whiteBlue,
     },
     listContent: {
         paddingBottom: 20,
@@ -106,7 +106,7 @@ export const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.7)',
+        backgroundColor: colors.transparentWhite,
     },
     errorOverlay: {
         position: 'absolute',
@@ -131,8 +131,8 @@ export const styles = StyleSheet.create({
         padding: 16,
         marginHorizontal: 16,
         marginVertical: 85,
-        alignItems: 'center' as const, // Dodane 'as const' dla typu
-        justifyContent: 'center' as const, // Dodane 'as const' dla typu
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
         shadowColor: colors.blackDark,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -142,7 +142,7 @@ export const styles = StyleSheet.create({
     buttonText: {
         color: colors.white,
         fontSize: 16,
-        fontWeight: '600' as const, // Dodane 'as const' dla typu
+        fontWeight: '600' as const,
     },
     searchContainer: {
         flexDirection: 'row',
