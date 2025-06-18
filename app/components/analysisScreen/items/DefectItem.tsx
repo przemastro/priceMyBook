@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { BookDefect } from '../types';
+import { styles } from './styles'
 
 type DefectItemProps = {
     item: BookDefect;
@@ -15,8 +16,8 @@ const DefectItem = ({ item, onPress, buttonSize }: DefectItemProps) => {
     return (
         <TouchableOpacity
             style={[
-                styles.button,
-                item.selected && styles.selectedDefect,
+                localStyles.button,
+                item.selected && localStyles.selectedDefect,
                 {
                     width: buttonSize,
                     height: buttonSize,
@@ -49,7 +50,7 @@ const DefectItem = ({ item, onPress, buttonSize }: DefectItemProps) => {
 };
 
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     button: {
         borderRadius: 16,
         overflow: 'hidden',
@@ -64,33 +65,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
-    },
-    buttonGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    iconContainer: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 30,
-        padding: 12,
-    },
-    countBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: colors.primary,
-        borderRadius: 10,
-        width: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    countBadgeText: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: 'bold',
     },
 });
 

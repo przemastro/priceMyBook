@@ -5,6 +5,7 @@ import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { styles } from './styles'
 
 interface ListingModalProps {
     visible: boolean;
@@ -25,19 +26,19 @@ const ListingModal: React.FC<ListingModalProps> = ({
 
     return (
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('listingModal.title')}</Text>
+            <View style={localStyles.modalOverlay}>
+                <View style={localStyles.modalContainer}>
+                    <View style={localStyles.modalContent}>
+                        <Text style={localStyles.modalTitle}>{t('listingModal.title')}</Text>
 
                         {/* Close button */}
                         <TouchableOpacity
-                            style={styles.closeButton}
+                            style={localStyles.closeButton}
                             onPress={onClose}
                             activeOpacity={0.7}
                         >
-                            <View style={styles.closeButtonCircle}>
-                                <Text style={styles.closeButtonText}>×</Text>
+                            <View style={localStyles.closeButtonCircle}>
+                                <Text style={localStyles.closeButtonText}>×</Text>
                             </View>
                         </TouchableOpacity>
 
@@ -113,8 +114,8 @@ const ListingModal: React.FC<ListingModalProps> = ({
                         {/* Confirm button */}
                         <TouchableOpacity
                             style={[
-                                styles.confirmButton,
-                                !selectedPlatform && styles.disabledButton
+                                localStyles.confirmButton,
+                                !selectedPlatform && localStyles.disabledButton
                             ]}
                             onPress={onConfirm}
                             disabled={!selectedPlatform}
@@ -124,9 +125,9 @@ const ListingModal: React.FC<ListingModalProps> = ({
                                 colors={!selectedPlatform
                                     ? [colors.gray, colors.gray]
                                     : [colors.primary, colors.primary]}
-                                style={styles.buttonGradient}
+                                style={localStyles.buttonGradient}
                             >
-                                <Text style={styles.confirmButtonText}>{t('buttons.listModal')}</Text>
+                                <Text style={localStyles.confirmButtonText}>{t('buttons.listModal')}</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
@@ -136,7 +137,25 @@ const ListingModal: React.FC<ListingModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+    confirmButton: {
+        borderRadius: 10,
+        overflow: 'hidden',
+        marginTop: 20,
+    },
+    disabledButton: {
+        opacity: 0.7,
+    },
+    buttonGradient: {
+        paddingVertical: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    confirmButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -183,50 +202,6 @@ const styles = StyleSheet.create({
     closeButtonText: {
         fontSize: 24,
         color: colors.primary,
-    },
-    platformButton: {
-        height: 60,
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.2)',
-        borderRadius: 10,
-        paddingHorizontal: 16,
-        marginBottom: 12,
-        justifyContent: 'center',
-        backgroundColor: 'white',
-    },
-    platformButtonSelected: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    platformContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    platformButtonText: {
-        marginLeft: 15,
-        fontSize: 16,
-        color: colors.primary,
-    },
-    platformButtonTextSelected: {
-        color: colors.white,
-    },
-    confirmButton: {
-        borderRadius: 10,
-        overflow: 'hidden',
-        marginTop: 20,
-    },
-    disabledButton: {
-        opacity: 0.7,
-    },
-    buttonGradient: {
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    confirmButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
 

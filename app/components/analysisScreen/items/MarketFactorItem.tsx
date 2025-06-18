@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { MarketFactorToggle } from '../types';
+import { styles } from './styles'
 
 type MarketFactorItemProps = {
     item: MarketFactorToggle;
@@ -19,7 +20,7 @@ const MarketFactorItem = ({ item, selected, onPress, buttonSize }: MarketFactorI
     return (
         <TouchableOpacity
             style={[
-                styles.button,
+                localStyles.button,
                 selected && styles.selectedFactor,
                 {
                     width: buttonSize,
@@ -33,9 +34,9 @@ const MarketFactorItem = ({ item, selected, onPress, buttonSize }: MarketFactorI
                 colors={selected
                     ? [colors.buttonSelected1, colors.buttonSelected2]
                     : [colors.white, colors.whiteBlue]}
-                style={styles.buttonGradient}
+                style={localStyles.buttonGradient}
             >
-                <View style={styles.iconContainer}>
+                <View style={localStyles.iconContainer}>
                     <Ionicons
                         name={item.icon as any}
                         size={24}
@@ -47,7 +48,7 @@ const MarketFactorItem = ({ item, selected, onPress, buttonSize }: MarketFactorI
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     button: {
         borderRadius: 16,
         overflow: 'hidden',
@@ -56,12 +57,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-    },
-    selectedFactor: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
     },
     buttonGradient: {
         width: '100%',

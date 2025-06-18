@@ -28,18 +28,18 @@ const DefectsSection = ({ defects, onToggleDefect }: DefectsSectionProps) => {
     });
 
     return (
-        <View style={styles.container}>
+        <View style={localStyles.container}>
             <FlatList
                 data={enhancedDefects}
                 renderItem={({ item }) => (
-                    <View style={styles.itemContainer}>
+                    <View style={localStyles.itemContainer}>
                         <DefectItem
                             item={item}
                             onPress={() => onToggleDefect(item.id)}
                             buttonSize={buttonSize}
                         />
                         <Text
-                            style={styles.defectName}
+                            style={localStyles.defectName}
                             numberOfLines={2}
                             ellipsizeMode="tail"
                         >
@@ -49,15 +49,15 @@ const DefectsSection = ({ defects, onToggleDefect }: DefectsSectionProps) => {
                 )}
                 keyExtractor={item => item.id}
                 numColumns={COLUMNS}
-                contentContainerStyle={styles.listContent}
-                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={localStyles.listContent}
+                columnWrapperStyle={localStyles.columnWrapper}
                 scrollEnabled={false}
             />
         </View>
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: {
         backgroundColor: colors.background,
         padding: 10,

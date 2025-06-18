@@ -1,24 +1,7 @@
 import {StyleSheet} from "react-native";
 import {colors} from "@/styles/styles";
-import {gray} from "colorette";
 
 export const styles = StyleSheet.create({
-    detailsRowContainer: {
-        flexDirection: 'row',
-        marginBottom: 16,
-        gap: 16,
-    },
-    bookCoverContainer: {
-        width: 110,
-        height: 160,
-        borderRadius: 12,
-        overflow: 'hidden',
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
     bookCoverImage: {
         width: '100%',
         height: '100%',
@@ -29,21 +12,11 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    bookDetailsColumn: {
-        flex: 1,
-        justifyContent: 'space-between',
-    },
     editButton: {
         borderRadius: 8,
         overflow: 'hidden',
         marginTop: 8,
         alignSelf: 'flex-start',
-    },
-    editButtonGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
     },
     editButtonText: {
         color: colors.primary,
@@ -54,33 +27,6 @@ export const styles = StyleSheet.create({
     container: {
         zIndex: 1000,
         elevation: 5,
-    },
-    averagePriceContainer: {
-        backgroundColor: 'transparent',
-        borderRadius: 8,
-        padding: 12,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        marginBottom: 8,
-    },
-    averagePriceLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    averagePriceIcon: {
-        marginRight: 8,
-    },
-    averagePriceLabel: {
-        fontSize: 14,
-        color: colors.grayDark,
-    },
-    averagePriceValue: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: colors.black,
     },
     noDataText: {
         fontSize: 14,
@@ -181,25 +127,6 @@ export const styles = StyleSheet.create({
         padding: 24,
         paddingBottom: 6,
     },
-    ratingHeader: {
-        alignItems: 'center',
-        marginBottom: 0,
-    },
-    ratingTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-        marginBottom: 12,
-    },
-    ratingStars: {
-        flexDirection: 'row',
-        marginBottom: 16,
-    },
-    ratingText: {
-        fontSize: 16,
-        color: colors.primary,
-        fontWeight: '500',
-    },
     priceSummarySection: {
         borderRadius: 16,
         overflow: 'hidden',
@@ -219,12 +146,6 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 0,
     },
-    priceRowCentered: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 0,
-    },
     priceLabelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -234,43 +155,15 @@ export const styles = StyleSheet.create({
         color: colors.grayDark,
         marginLeft: 8,
     },
-    estimatedPriceLabel: {
-        color: colors.success,
-        fontWeight: '500',
-    },
     priceValue: {
         fontSize: 16,
         color: colors.black,
         fontWeight: '500',
     },
-    estimatedPriceValue: {
-        color: colors.success,
-        fontWeight: '600',
-    },
-    estimatedPriceContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    expandIcon: {
-        marginLeft: 8,
-    },
     separator: {
         height: 1,
         backgroundColor: colors.buttonSelected1,
         marginVertical: 12,
-    },
-    tooltip: {
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 16,
-        marginTop: 8,
-        borderWidth: 1,
-        borderColor: colors.buttonSelected1,
-        shadowColor: colors.lightPrimary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
     },
     combinedSection: {
         backgroundColor: colors.background,
@@ -284,12 +177,6 @@ export const styles = StyleSheet.create({
         fontWeight: '700',
         marginBottom: 20,
         textAlign: 'center',
-    },
-    collectionsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        marginTop: 16,
     },
     collectionButton: {
         width: '48%',
@@ -329,32 +216,8 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.black,
     },
-    addCollectionButton: {
-        width: '48%',
-        borderRadius: 12,
-        marginBottom: 16,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: colors.primary,
-        borderStyle: 'dashed',
-    },
-    addCollectionGradient: {
-        padding: 16,
-        alignItems: 'center',
-    },
-    addCollectionText: {
-        fontSize: 14,
-        color: colors.primary,
-        textAlign: 'center',
-        marginTop: 8,
-    },
 
     // Style dla DefectsSection
-    defectsGrid: {
-        marginBottom: 16,
-        borderColor: 'red',
-        borderWidth: 1
-    },
     columnWrapper: {
         justifyContent: 'space-between',
         marginBottom: 12,
@@ -398,10 +261,6 @@ export const styles = StyleSheet.create({
         height: 28,
         marginBottom: 4,
     },
-    selectedDefectName: {
-        color: colors.primary,
-        fontWeight: '500',
-    },
     defectCountBadge: {
         position: 'absolute',
         top: 8,
@@ -417,5 +276,177 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    listContent: {
+        justifyContent: 'center',
+    },
+    uniquenessName: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: colors.black,
+        marginTop: 12,
+        textAlign: 'center',
+        width: '100%',
+        paddingHorizontal: 4,
+    },
+    card: {
+        borderRadius: 20,
+        padding: 16,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.blackDark,
+    },
+    stars: {
+        flexDirection: 'row',
+    },
+    infoBox: {
+        backgroundColor: 'transparent',
+        borderRadius: 12,
+        padding: 12,
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 8,
+    },
+    estimatedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginLeft: 'auto',
+    },
+    label: {
+        fontSize: 13,
+        color: colors.black,
+    },
+    value: {
+        fontSize: 13,
+        color: colors.blackDark,
+        marginLeft: 'auto',
+    },
+    expandedContainer: {
+        marginTop: 12,
+    },
+    factorName: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: colors.black,
+        marginTop: 12,
+        textAlign: 'center',
+        width: '100%',
+        paddingHorizontal: 4,
+    },
+    bookCard: {
+        width: '100%',
+        borderRadius: 12,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
+        marginBottom: 16,
+    },
+    clearButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 10,
+        backgroundColor: colors.buttonSelected1,
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        marginTop: 20
+    },
+    bookImage: {
+        width: '100%',
+        height: '100%',
+    },
+    bookImagePlaceholder: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+    },
+    errorOverlay: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.whiteBlue,
+    },
+    bookDetails: {
+        flex: 1,
+    },
+    bookTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.primary,
+        marginBottom: 8,
+    },
+    detailItem: {
+        flexDirection: 'row',
+        marginBottom: 6,
+    },
+    additionalDetails: {
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.2)',
+    },
+    scanButton: {
+        width: '100%',
+        borderRadius: 8,
+        overflow: 'hidden',
+        height: 50,
+        marginTop: 20
+    },
+    scanButtonDisabled: {
+        opacity: 0.7,
+    },
+    scanButtonGradient: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    scanIcon: {
+        marginRight: 10,
+    },
+    scanButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });

@@ -5,6 +5,7 @@ import MarketFactorItem from '../items/MarketFactorItem';
 import MarketChart from '../charts/MarketChart';
 import { colors } from '@/styles/styles';
 import { MarketData, MarketFactorToggle, IncludedMarketFactors } from '../types';
+import { styles } from './styles'
 
 const COLUMNS = 3;
 const BUTTON_MARGIN = 15;
@@ -27,11 +28,11 @@ const MarketFactorsSection = ({
     const { t } = useTranslation();
 
     return (
-        <View style={styles.container}>
+        <View style={localStyles.container}>
             <FlatList
                 data={marketFactors}
                 renderItem={({ item }) => (
-                    <View style={styles.itemContainer}>
+                    <View style={localStyles.itemContainer}>
                         <MarketFactorItem
                             item={item}
                             selected={includedMarketFactors[item.id]}
@@ -49,8 +50,8 @@ const MarketFactorsSection = ({
                 )}
                 keyExtractor={item => item.id}
                 numColumns={COLUMNS}
-                contentContainerStyle={styles.listContent}
-                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={localStyles.listContent}
+                columnWrapperStyle={localStyles.columnWrapper}
                 scrollEnabled={false}
             />
             <MarketChart marketData={marketData} />
@@ -58,7 +59,7 @@ const MarketFactorsSection = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: {
         backgroundColor: colors.background,
         padding: 10,
@@ -76,15 +77,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: buttonSize,
         marginHorizontal: BUTTON_MARGIN / 2,
-    },
-    factorName: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: colors.black,
-        marginTop: 12,
-        textAlign: 'center',
-        width: '100%',
-        paddingHorizontal: 4,
     },
 });
 

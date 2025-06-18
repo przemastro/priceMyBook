@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import CategoriesManager from '../../collectionsScreen/CategoriesManager';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { styles } from './styles'
 
 interface EditCollectionModalProps {
     visible: boolean;
@@ -103,11 +104,11 @@ const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
 
     return (
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.iconPreviewContainer}>
-                            <View style={styles.iconPreviewCircle}>
+            <View style={localStyles.modalOverlay}>
+                <View style={localStyles.modalContainer}>
+                    <View style={localStyles.modalContent}>
+                        <View style={localStyles.iconPreviewContainer}>
+                            <View style={localStyles.iconPreviewCircle}>
                                 <MaterialIcons
                                     name={selectedIcon as any}
                                     size={62}
@@ -170,17 +171,17 @@ const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
                         />
 
                         <TouchableOpacity
-                            style={styles.closeButton}
+                            style={localStyles.closeButton}
                             onPress={onClose}
                             activeOpacity={0.7}
                         >
-                            <View style={styles.closeButtonCircle}>
-                                <Text style={styles.closeButtonText}>×</Text>
+                            <View style={localStyles.closeButtonCircle}>
+                                <Text style={localStyles.closeButtonText}>×</Text>
                             </View>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.confirmButton, !localCollectionName.trim() && styles.disabledButton]}
+                            style={[localStyles.confirmButton, !localCollectionName.trim() && localStyles.disabledButton]}
                             onPress={handleConfirm}
                             disabled={!localCollectionName.trim()}
                             activeOpacity={0.7}
@@ -189,9 +190,9 @@ const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
                                 colors={!localCollectionName.trim() ?
                                     [colors.primary, colors.primary] :
                                     [colors.primary, colors.primary]}
-                                style={styles.buttonGradient}
+                                style={localStyles.buttonGradient}
                             >
-                                <Text style={styles.confirmButtonText}>{t('buttons.saveChanges')}</Text>
+                                <Text style={localStyles.confirmButtonText}>{t('buttons.saveChanges')}</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
@@ -201,13 +202,7 @@ const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-    },
+const localStyles = StyleSheet.create({
     modalContainer: {
         width: '90%',
         backgroundColor: 'white',
@@ -219,6 +214,12 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
         maxHeight: '80%',
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalContent: {
         padding: 24,
@@ -237,72 +238,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(74,108,247,0.1)',
-    },
-    currentNameText: {
-        fontSize: 16,
-        color: colors.grayDark,
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    modalInput: {
-        height: 50,
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.2)',
-        borderRadius: 10,
-        paddingHorizontal: 16,
-        backgroundColor: 'white',
-        marginBottom: 20,
-        color: colors.black,
-        fontSize: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    iconSelector: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.2)',
-        borderRadius: 10,
-        marginBottom: 20,
-        backgroundColor: 'white',
-    },
-    iconPreview: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    iconSelectorText: {
-        marginLeft: 10,
-        color: colors.secondary,
-    },
-    iconsContainer: {
-        maxHeight: 150,
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
-        borderRadius: 10,
-        padding: 10,
-    },
-    iconsList: {
-        justifyContent: 'center',
-    },
-    iconItem: {
-        width: 50,
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: 5,
-        borderRadius: 8,
-        backgroundColor: colors.whiteBlue,
-    },
-    selectedIconItem: {
-        backgroundColor: colors.primary,
-        borderWidth: 1,
-        borderColor: colors.primary,
     },
     closeButton: {
         position: 'absolute',
@@ -328,9 +263,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginTop: 16,
     },
-    disabledButton: {
-        opacity: 0.7,
-    },
     buttonGradient: {
         paddingVertical: 14,
         alignItems: 'center',
@@ -340,6 +272,9 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    disabledButton: {
+        opacity: 0.7,
     },
 });
 

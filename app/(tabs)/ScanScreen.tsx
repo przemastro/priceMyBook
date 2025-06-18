@@ -707,23 +707,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  limitsContainer: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 8,
-    padding: 12,
-  },
-  limitItem: {
-    marginBottom: 8,
-  },
-  limitText: {
-    color: 'white',
-    fontSize: 14,
-    marginBottom: 4,
-  },
   progressBar: {
     height: 6,
     borderRadius: 3,

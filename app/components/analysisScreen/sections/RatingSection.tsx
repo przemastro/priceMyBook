@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '@/styles/styles';
 import Animated from 'react-native-reanimated';
+import { styles } from './styles'
 
 interface RatingSectionProps {
     bookRating: number;
@@ -36,7 +37,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
     };
 
     return (
-        <View style={styles.container}>
+        <View style={localStyles.container}>
             <LinearGradient
                 colors={[colors.buttonSelected1, colors.buttonSelected2]}
                 style={styles.card}
@@ -68,7 +69,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                         <Text style={styles.value}>{`${bookRating}/10 - ${getRatingLabel(bookRating)}`}</Text>
                     </View>
 
-                    <View style={styles.separator} />
+                    <View style={localStyles.separator} />
 
                     <View style={styles.row}>
                         <Ionicons name="pricetag-outline" size={14} color={colors.secondary} />
@@ -78,7 +79,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                         </Text>
                     </View>
 
-                    <View style={styles.separator} />
+                    <View style={localStyles.separator} />
 
                     <View style={styles.row}>
                         <Ionicons name="cash-outline" size={14} color={colors.primary} />
@@ -110,67 +111,15 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: {
         marginBottom: 20,
         paddingHorizontal: 0,
-    },
-    card: {
-        borderRadius: 20,
-        padding: 16,
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.blackDark,
-    },
-    stars: {
-        flexDirection: 'row',
-    },
-    infoBox: {
-        backgroundColor: 'transparent',
-        borderRadius: 12,
-        padding: 12,
-    },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: 8,
-    },
-    estimatedRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginLeft: 'auto',
-    },
-    label: {
-        fontSize: 13,
-        color: colors.black,
-    },
-    value: {
-        fontSize: 13,
-        color: colors.blackDark,
-        marginLeft: 'auto',
     },
     separator: {
         height: 1,
         backgroundColor: colors.grayLight,
         marginVertical: 6,
         opacity: 0.3,
-    },
-    expandedContainer: {
-        marginTop: 12,
     },
 });

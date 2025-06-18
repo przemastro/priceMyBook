@@ -5,6 +5,7 @@ import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { BookData } from '../types';
 import { LinearGradient } from 'expo-linear-gradient';
+import { styles } from './styles'
 
 interface ImportPreviewModalProps {
     importPreview: {
@@ -42,23 +43,23 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
             visible={importPreview.showPreview}
             onRequestClose={onCancel}
         >
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
+            <View style={localStyles.modalOverlay}>
+                <View style={localStyles.modalContainer}>
                     {/* Close button */}
                     <TouchableOpacity
-                        style={styles.closeButton}
+                        style={localStyles.closeButton}
                         onPress={onCancel}
                         activeOpacity={0.7}
                     >
-                        <View style={styles.closeButtonCircle}>
-                            <Text style={styles.closeButtonText}>×</Text>
+                        <View style={localStyles.closeButtonCircle}>
+                            <Text style={localStyles.closeButtonText}>×</Text>
                         </View>
                     </TouchableOpacity>
 
-                    <View style={styles.modalContent}>
+                    <View style={localStyles.modalContent}>
                         {/* Icon preview */}
-                        <View style={styles.iconPreviewContainer}>
-                            <View style={styles.iconPreviewCircle}>
+                        <View style={localStyles.iconPreviewContainer}>
+                            <View style={localStyles.iconPreviewCircle}>
                                 <Ionicons
                                     name="document-text-outline"
                                     size={42}
@@ -125,15 +126,15 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                         {/* Action buttons */}
                         <View style={styles.buttonRow}>
                             <TouchableOpacity
-                                style={[styles.actionButton, styles.confirmButton]}
+                                style={[styles.actionButton, localStyles.confirmButton]}
                                 onPress={onConfirm}
                                 activeOpacity={0.7}
                             >
                                 <LinearGradient
                                     colors={[colors.primary, colors.primary]}
-                                    style={styles.buttonGradient}
+                                    style={localStyles.buttonGradient}
                                 >
-                                    <Text style={styles.confirmButtonText}>
+                                    <Text style={localStyles.confirmButtonText}>
                                         {t('buttons.confirmImport')}
                                     </Text>
                                 </LinearGradient>
@@ -146,7 +147,21 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+    confirmButton: {
+        backgroundColor: colors.primary,
+    },
+    buttonGradient: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    confirmButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -203,105 +218,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(74,108,247,0.1)',
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: colors.black,
-        marginBottom: 16,
-        textAlign: 'center',
-    },
-    infoContainer: {
-        marginBottom: 16,
-        padding: 12,
-        backgroundColor: colors.whiteBlue,
-        borderRadius: 8,
-    },
-    infoText: {
-        fontSize: 16,
-        color: colors.grayDark,
-        marginBottom: 4,
-    },
-    infoValue: {
-        fontWeight: '600',
-        color: colors.primary,
-    },
-    previewScroll: {
-        maxHeight: 200,
-        marginBottom: 16,
-    },
-    previewScrollContent: {
-        paddingRight: 8,
-    },
-    bookPreview: {
-        padding: 12,
-        marginBottom: 8,
-        backgroundColor: colors.white,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: colors.gray,
-    },
-    bookTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.black,
-        marginBottom: 4,
-    },
-    bookDetails: {
-        fontSize: 14,
-        color: colors.grayDark,
-        marginBottom: 4,
-    },
-    bookMeta: {
-        fontSize: 12,
-        color: colors.grayDark,
-        marginTop: 4,
-        fontStyle: 'italic',
-    },
-    moreItemsText: {
-        fontSize: 14,
-        color: colors.grayDark,
-        textAlign: 'center',
-        marginTop: 8,
-        fontStyle: 'italic',
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginTop: 16,
-    },
-    actionButton: {
-        borderRadius: 10,
-        overflow: 'hidden',
-        width: '100%',
-        height: 50,
-        justifyContent: 'center',
-    },
-    cancelButton: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.primary,
-    },
-    confirmButton: {
-        backgroundColor: colors.primary,
-    },
-    buttonGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cancelButtonText: {
-        color: colors.primary,
-        fontSize: 16,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-    confirmButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
 

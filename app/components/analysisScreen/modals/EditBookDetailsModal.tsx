@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import {t} from "i18next";
+import {styles} from "./styles"
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -106,8 +107,8 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
             animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.modalOverlay}>
-                <View style={[styles.modalContainer, { maxHeight: SCREEN_HEIGHT * 0.85 }]}>
+            <View style={localStyles.modalOverlay}>
+                <View style={[localStyles.modalContainer, { maxHeight: SCREEN_HEIGHT * 0.85 }]}>
                     <TouchableOpacity
                         style={styles.closeButton}
                         onPress={onClose}
@@ -235,7 +236,7 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                     <View style={styles.footer}>
                         <View style={styles.buttonRow}>
                             <TouchableOpacity
-                                style={[styles.actionButton, styles.saveButton]}
+                                style={[styles.actionButton, localStyles.saveButton]}
                                 onPress={handleSave}
                                 activeOpacity={0.7}
                             >
@@ -243,7 +244,7 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                     colors={[colors.primary, colors.primary]}
                                     style={styles.buttonGradient}
                                 >
-                                    <Text style={styles.saveButtonText}>{t('buttons.save')}</Text>
+                                    <Text style={localStyles.saveButtonText}>{t('buttons.save')}</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
@@ -254,7 +255,15 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+    saveButton: {
+        backgroundColor: colors.primary,
+    },
+    saveButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -267,113 +276,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
         maxHeight: '85%',
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingTop: 50,
-        paddingBottom: 90,
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        zIndex: 10,
-    },
-    closeButtonCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.white,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(74,108,247,0.1)',
-    },
-    closeButtonText: {
-        fontSize: 20,
-        color: colors.primary,
-        lineHeight: 24,
-    },
-    bookCoverSection: {
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    bookCoverImage: {
-        width: 150,
-        height: 200,
-        borderRadius: 8,
-    },
-    bookCoverPlaceholder: {
-        width: 150,
-        height: 200,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    bookCoverPlaceholderText: {
-        marginTop: 8,
-        color: colors.primary,
-        fontSize: 14,
-    },
-    formSection: {
-        width: '100%',
-    },
-    inputGroup: {
-        marginBottom: 16,
-    },
-    inputLabel: {
-        fontSize: 14,
-        color: colors.secondary,
-        marginBottom: 8,
-        fontWeight: '500',
-    },
-    footer: {
-        padding: 16,
-        backgroundColor: colors.white,
-        borderTopWidth: 1,
-        borderTopColor: colors.grayLight,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    actionButton: {
-        borderRadius: 10,
-        overflow: 'hidden',
-        width: '100%',
-        height: 50,
-    },
-    saveButton: {
-        backgroundColor: colors.primary,
-    },
-    buttonGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    saveButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    errorText: {
-        color: 'red',
-        fontSize: 12,
-        marginTop: 4,
-        marginLeft: 4,
-    },
-    editableInput: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.buttonSelected1,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        color: colors.black,
-    },
-    errorInput: {
-        borderColor: 'red',
     },
 });
 

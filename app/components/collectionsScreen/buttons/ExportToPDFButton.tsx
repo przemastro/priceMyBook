@@ -7,6 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import * as Print from 'expo-print';
+import { styles } from './styles'
 
 interface ExportToPDFButtonProps {
     book: BookData;
@@ -149,25 +150,4 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
         </TouchableOpacity>
     );
 };
-
-const styles = StyleSheet.create({
-    button: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.white,
-        borderRadius: 8,
-        paddingVertical: 12,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        gap: 8,
-    },
-    buttonText: {
-        color: colors.primary,
-        fontSize: 16,
-        fontWeight: '600',
-    }
-});
-
 export default ExportToPDFButton;

@@ -20,59 +20,13 @@ export const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
     },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.buttonSelected1,
-    },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: colors.primary,
     },
-    closeModalButton: {
-        padding: 4,
-    },
     modalContent: {
         padding: 16,
-    },
-    modalBookCoverContainer: {
-        width: '100%',
-        height: 200,
-        borderRadius: 12,
-        overflow: 'hidden',
-        marginBottom: 16,
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    modalBookCoverImage: {
-        width: '100%',
-        height: '100%',
-    },
-    modalBookCoverPlaceholder: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalBookCoverPlaceholderText: {
-        marginTop: 8,
-        fontSize: 14,
-        color: colors.primary,
-    },
-    modalInputGroup: {
-        marginBottom: 16,
-    },
-    modalInputLabel: {
-        fontSize: 14,
-        color: colors.secondary,
-        marginBottom: 4,
     },
     modalInput: {
         borderWidth: 1,
@@ -81,18 +35,6 @@ export const styles = StyleSheet.create({
         padding: 12,
         fontSize: 16,
         backgroundColor: 'white',
-    },
-    modalDescriptionText: {
-        fontSize: 14,
-        color: colors.black,
-        lineHeight: 20,
-    },
-    modalFooter: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        padding: 16,
-        borderTopWidth: 1,
-        borderTopColor: colors.buttonSelected1,
     },
     cancelButton: {
         padding: 12,
@@ -119,28 +61,11 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    modalDefectInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    modalDefectIcon: {
-        marginRight: 10,
-    },
-    modalDefectName: {
-        fontSize: 18,
-        fontWeight: '500',
-        color: colors.black,
-    },
     modalText: {
         fontSize: 16,
         color: '#555',
         marginBottom: 8,
         textAlign: 'left',
-    },
-    modalBoldText: {
-        fontWeight: '600',
-        color: colors.black,
     },
     modalButtonsContainer: {
         flexDirection: 'row',
@@ -156,15 +81,151 @@ export const styles = StyleSheet.create({
     acceptButton: {
         backgroundColor: 'transparent',
     },
-    rejectButton: {
-        backgroundColor: 'transparent',
-    },
     acceptButtonText: {
         color: colors.primary,
         fontWeight: '500',
     },
-    rejectButtonText: {
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingTop: 50,
+        paddingBottom: 90,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 10,
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    closeButtonText: {
+        fontSize: 20,
         color: colors.primary,
+        lineHeight: 24,
+    },
+    bookCoverSection: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    bookCoverImage: {
+        width: 150,
+        height: 200,
+        borderRadius: 8,
+    },
+    bookCoverPlaceholder: {
+        width: 150,
+        height: 200,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    bookCoverPlaceholderText: {
+        marginTop: 8,
+        color: colors.primary,
+        fontSize: 14,
+    },
+    formSection: {
+        width: '100%',
+    },
+    inputGroup: {
+        marginBottom: 16,
+    },
+    inputLabel: {
+        fontSize: 14,
+        color: colors.secondary,
+        marginBottom: 8,
         fontWeight: '500',
+    },
+    footer: {
+        padding: 16,
+        backgroundColor: colors.white,
+        borderTopWidth: 1,
+        borderTopColor: colors.grayLight,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    actionButton: {
+        borderRadius: 10,
+        overflow: 'hidden',
+        width: '100%',
+        height: 50,
+    },
+    buttonGradient: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 4,
+    },
+    editableInput: {
+        backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: colors.buttonSelected1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        color: colors.black,
+    },
+    errorInput: {
+        borderColor: 'red',
+    },
+    iconPreviewContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    iconPreviewCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: colors.whiteBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(74,108,247,0.1)',
+    },
+    defectInfoContainer: {
+        width: '100%',
+        marginBottom: 24,
+        alignItems: 'center',
+    },
+    defectName: {
+        fontSize: 18,
+        fontWeight: '500',
+        color: colors.black,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    defectDetails: {
+        width: '100%',
+    },
+    defectDetailText: {
+        fontSize: 16,
+        color: colors.grayDark,
+        textAlign: 'center',
+        marginBottom: 4,
+    },
+    defectDetailValue: {
+        fontWeight: '600',
+        color: colors.primary,
+    },
+    rejectButtonText: {
+        color: colors.grayDark,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });

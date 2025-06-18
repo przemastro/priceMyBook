@@ -199,8 +199,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     listContainer: {
-        flexGrow: 0, // Zapobiega rozszerzaniu się kontenera
-        minHeight: 200, // Minimalna wysokość
+        flexGrow: 0,
+        minHeight: 200,
     },
     listContent: {
         paddingHorizontal: 16,

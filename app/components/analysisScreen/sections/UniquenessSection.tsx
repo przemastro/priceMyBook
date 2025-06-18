@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import UniquenessItem from '../items/UniquenessItem';
 import { colors } from '@/styles/styles';
 import { UNIQUENESS_TYPES } from '../types';
+import { styles } from './styles'
 
 const COLUMNS = 3;
 const BUTTON_MARGIN = 15;
@@ -19,11 +20,11 @@ const UniquenessSection = ({ uniqueness, onToggleUniqueness }: UniquenessSection
     const { t } = useTranslation();
 
     return (
-        <View style={styles.container}>
+        <View style={localStyles.container}>
             <FlatList
                 data={UNIQUENESS_TYPES}
                 renderItem={({ item }) => (
-                    <View style={styles.itemContainer}>
+                    <View style={localStyles.itemContainer}>
                         <UniquenessItem
                             item={item}
                             selected={uniqueness[item.id as keyof typeof uniqueness]}
@@ -42,22 +43,19 @@ const UniquenessSection = ({ uniqueness, onToggleUniqueness }: UniquenessSection
                 keyExtractor={item => item.id}
                 numColumns={COLUMNS}
                 contentContainerStyle={styles.listContent}
-                columnWrapperStyle={styles.columnWrapper}
+                columnWrapperStyle={localStyles.columnWrapper}
                 scrollEnabled={false}
             />
         </View>
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: {
         backgroundColor: colors.background,
         padding: 10,
         borderRadius: 15,
         marginBottom: 20,
-    },
-    listContent: {
-        justifyContent: 'center',
     },
     columnWrapper: {
         justifyContent: 'space-between',
@@ -67,15 +65,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: buttonSize,
         marginHorizontal: BUTTON_MARGIN / 2,
-    },
-    uniquenessName: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: colors.black,
-        marginTop: 12,
-        textAlign: 'center',
-        width: '100%',
-        paddingHorizontal: 4,
     },
 });
 

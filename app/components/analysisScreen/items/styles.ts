@@ -114,4 +114,43 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    buttonGradient: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    iconContainer: {
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 30,
+        padding: 12,
+    },
+    countBadge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: colors.primary,
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    countBadgeText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    selectedFactor: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    selectedUniqueness: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
 });

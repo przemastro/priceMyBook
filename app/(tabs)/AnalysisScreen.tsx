@@ -147,7 +147,6 @@ export default function AnalysisScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalTitle, setSuccessModalTitle] = useState('');
   const [successModalMessage, setSuccessModalMessage] = useState('');
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
   // Initialize book image from params
   useEffect(() => {
@@ -1303,16 +1302,6 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     marginBottom: 4,
   },
-  navArrowLeft: {
-    padding: 10,
-    marginRight: 0,
-    marginLeft: -10
-  },
-  navArrowRight: {
-    padding: 10,
-    marginLeft: 0,
-    marginRight: -10,
-  },
   saveButton: {
     position: 'absolute',
     bottom: 100,
@@ -1380,47 +1369,17 @@ const styles = StyleSheet.create({
   inactiveDot: {
     backgroundColor: colors.gray,
   },
-  navArrowContainer: {
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-    minWidth: 40,
-  },
   stepContent: {
     flex: 1,
     justifyContent: 'flex-start',
     alignSelf: 'stretch',
     minHeight: 500,
   },
-  marketFactorsContainer: {
-    width: '100%',
-    paddingHorizontal: 10,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
   modalButton: {
     flex: 1,
     padding: 12,
     borderRadius: 5,
     alignItems: 'center',
-  },
-  modalButtonCancel: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.gray,
-    marginRight: 10,
-  },
-  modalButtonConfirm: {
-    backgroundColor: colors.primary,
-  },
-  modalButtonTextCancel: {
-    color: colors.grayDark,
-    fontWeight: '500',
-  },
-  modalButtonTextConfirm: {
-    color: colors.white,
-    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,

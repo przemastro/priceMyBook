@@ -4,6 +4,7 @@ import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { styles } from './styles'
 
 interface StatusChangeModalProps {
     visible: boolean;
@@ -22,19 +23,19 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
 
     return (
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('statusChangeModal.title')}</Text>
+            <View style={localStyles.modalOverlay}>
+                <View style={localStyles.modalContainer}>
+                    <View style={localStyles.modalContent}>
+                        <Text style={localStyles.modalTitle}>{t('statusChangeModal.title')}</Text>
 
                         {/* Close button */}
                         <TouchableOpacity
-                            style={styles.closeButton}
+                            style={localStyles.closeButton}
                             onPress={onClose}
                             activeOpacity={0.7}
                         >
-                            <View style={styles.closeButtonCircle}>
-                                <Text style={styles.closeButtonText}>×</Text>
+                            <View style={localStyles.closeButtonCircle}>
+                                <Text style={localStyles.closeButtonText}>×</Text>
                             </View>
                         </TouchableOpacity>
 
@@ -50,7 +51,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
                                 >
                                     <LinearGradient
                                         colors={[colors.white, colors.whiteBlue]}
-                                        style={styles.buttonGradient}
+                                        style={localStyles.buttonGradient}
                                     >
                                         <View style={styles.buttonContent}>
                                             <FontAwesome5 name="check-circle" size={24} color={colors.success}/>
@@ -71,7 +72,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
                                 >
                                     <LinearGradient
                                         colors={[colors.white, colors.whiteBlue]}
-                                        style={styles.buttonGradient}
+                                        style={localStyles.buttonGradient}
                                     >
                                         <View style={styles.buttonContent}>
                                             <FontAwesome5 name="times-circle" size={24} color={colors.error}/>
@@ -95,7 +96,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
                             >
                                 <LinearGradient
                                     colors={[colors.white, colors.whiteBlue]}
-                                    style={styles.buttonGradient}
+                                    style={localStyles.buttonGradient}
                                 >
                                     <View style={styles.buttonContent}>
                                         <FontAwesome5 name="undo" size={24} color={colors.primary}/>
@@ -113,7 +114,12 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+    buttonGradient: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -160,34 +166,6 @@ const styles = StyleSheet.create({
     closeButtonText: {
         fontSize: 24,
         color: colors.primary,
-    },
-    statusButton: {
-        height: 60,
-        borderRadius: 10,
-        marginBottom: 12,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    buttonContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    statusButtonText: {
-        marginLeft: 15,
-        fontSize: 16,
-        color: colors.black,
-        fontWeight: '500',
-    },
-    withShadow: {
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
     },
 });
 

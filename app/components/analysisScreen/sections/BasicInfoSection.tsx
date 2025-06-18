@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
+import { styles } from './styles'
 
 const IMAGE_SIZE = 80; // Zmniejszony rozmiar dla okrągłego obrazka
 const CARD_PADDING = 16;
@@ -73,7 +74,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
     };
 
     return (
-        <View style={styles.container}>
+        <View style={localStyles.container}>
             <CustomAlertModal
                 visible={showClearAlert}
                 title={t('confirmation.title')}
@@ -92,7 +93,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
             >
                 <LinearGradient
                     colors={[colors.buttonSelected1, colors.buttonSelected2]}
-                    style={styles.bookCardGradient}
+                    style={localStyles.bookCardGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
@@ -107,7 +108,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     <View style={styles.cardContent}>
                         {/* Book Image - Circular */}
                         <TouchableOpacity
-                            style={styles.bookImageContainer}
+                            style={localStyles.bookImageContainer}
                             onPress={onPickImage}
                             activeOpacity={0.8}
                         >
@@ -150,23 +151,23 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             </Text>
 
                             <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>{t('bookInfo.isbn')}:</Text>
-                                <Text style={styles.detailValue} numberOfLines={1}>
+                                <Text style={localStyles.detailLabel}>{t('bookInfo.isbn')}:</Text>
+                                <Text style={localStyles.detailValue} numberOfLines={1}>
                                     {isbnInput || isbn || t('bookInfo.noIsbn')}
                                 </Text>
                             </View>
 
                             <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>{t('bookInfo.price')}:</Text>
-                                <Text style={[styles.detailValue, styles.priceValue]}>
+                                <Text style={localStyles.detailLabel}>{t('bookInfo.price')}:</Text>
+                                <Text style={[localStyles.detailValue, localStyles.priceValue]}>
                                     {formatPrice(originalPrice)}
                                 </Text>
                             </View>
 
                             {authors && (
                                 <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>{t('bookInfo.authors')}:</Text>
-                                    <Text style={styles.detailValue} numberOfLines={1}>
+                                    <Text style={localStyles.detailLabel}>{t('bookInfo.authors')}:</Text>
+                                    <Text style={localStyles.detailValue} numberOfLines={1}>
                                         {authors}
                                     </Text>
                                 </View>
@@ -179,16 +180,16 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                         <View style={styles.additionalDetails}>
                             {publisher && (
                                 <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>{t('bookInfo.publisher')}:</Text>
-                                    <Text style={styles.detailValue} numberOfLines={1}>
+                                    <Text style={localStyles.detailLabel}>{t('bookInfo.publisher')}:</Text>
+                                    <Text style={localStyles.detailValue} numberOfLines={1}>
                                         {publisher}
                                     </Text>
                                 </View>
                             )}
                             {description && (
                                 <View style={styles.detailItem}>
-                                    <Text style={styles.detailLabel}>{t('bookInfo.description')}:</Text>
-                                    <Text style={styles.detailValue} numberOfLines={2}>
+                                    <Text style={localStyles.detailLabel}>{t('bookInfo.description')}:</Text>
+                                    <Text style={localStyles.detailValue} numberOfLines={2}>
                                         {description}
                                     </Text>
                                 </View>
@@ -227,43 +228,14 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: {
         width: '100%',
         paddingHorizontal: 16,
         marginBottom: 20,
     },
-    bookCard: {
-        width: '100%',
-        borderRadius: 12,
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
-        overflow: 'hidden',
-        marginBottom: 16,
-    },
     bookCardGradient: {
         padding: CARD_PADDING,
-    },
-    clearButton: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        zIndex: 10,
-        backgroundColor: colors.buttonSelected1,
-        borderRadius: 15,
-        width: 30,
-        height: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-        marginTop: 20
     },
     bookImageContainer: {
         width: IMAGE_SIZE,
@@ -274,45 +246,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 16,
         overflow: 'hidden',
-    },
-    bookImage: {
-        width: '100%',
-        height: '100%',
-    },
-    bookImagePlaceholder: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingOverlay: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.7)',
-    },
-    errorOverlay: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.whiteBlue,
-    },
-    bookDetails: {
-        flex: 1,
-    },
-    bookTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.primary,
-        marginBottom: 8,
-    },
-    detailItem: {
-        flexDirection: 'row',
-        marginBottom: 6,
     },
     detailLabel: {
         fontSize: 14,
@@ -327,37 +260,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     priceValue: {
-        fontWeight: '600',
-    },
-    additionalDetails: {
-        marginTop: 8,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.2)',
-    },
-    scanButton: {
-        width: '100%',
-        borderRadius: 8,
-        overflow: 'hidden',
-        height: 50,
-        marginTop: 20
-    },
-    scanButtonDisabled: {
-        opacity: 0.7,
-    },
-    scanButtonGradient: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    scanIcon: {
-        marginRight: 10,
-    },
-    scanButtonText: {
-        color: colors.white,
-        fontSize: 16,
         fontWeight: '600',
     },
 });

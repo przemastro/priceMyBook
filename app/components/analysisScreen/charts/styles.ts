@@ -128,7 +128,6 @@ export const styles = StyleSheet.create<IStyles>({
         borderRadius: 7,
         marginRight: 6,
     },
-
     legendText: {
         fontSize: 12,
         color: colors.grayDark,
