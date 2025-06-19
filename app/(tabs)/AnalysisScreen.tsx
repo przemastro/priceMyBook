@@ -113,7 +113,12 @@ export default function AnalysisScreen() {
   const title = Array.isArray(params.title) ? params.title[0] : params.title || t('bookInfo.unknownTitle');
   const editMode = Array.isArray(params.editMode) ? params.editMode[0] === 'true' : params.editMode === 'true';
   const collectionName = Array.isArray(params.collectionName) ? params.collectionName[0] : params.collectionName;
-  const bookIndex = params.bookIndex ? parseInt(Array.isArray(params.bookIndex) ? params.bookIndex[0] : params.bookIndex) : null;
+  const bookIndexParam = Array.isArray(params.bookIndex)
+      ? params.bookIndex[0]
+      : params.bookIndex;
+  const bookIndex = bookIndexParam
+      ? parseInt(bookIndexParam)
+      : null;
   const [titleInput, setTitleInput] = useState(title);
   const [isbnInput, setIsbnInput] = useState(isbn);
   const [showMarketModal, setShowMarketModal] = useState(false);
@@ -381,20 +386,18 @@ export default function AnalysisScreen() {
   };
 
   const calculateAgeModifier = (ageInfo: BookAgeInfo, isMassMarket: boolean): number => {
-    const {years} = ageInfo;
-    if (isMassMarket) {
-      if (years <= 2) return 0;
-      if (years <= 5) return 5;
-      if (years <= 10) return 10;
-      if (years <= 20) return 15;
-      return 20;
-    } else {
-      if (years <= 2) return 0;
-      if (years <= 5) return 5;
-      if (years <= 10) return 10;
-      if (years <= 20) return 15;
-      return 20;
-    }
+    const { years } = ageInfo;
+    const ageModifiers = [
+      { maxYears: 2, modifier: 0 },
+      { maxYears: 5, modifier: 5 },
+      { maxYears: 10, modifier: 10 },
+      { maxYears: 20, modifier: 15 },
+      { maxYears: Infinity, modifier: 20 }
+    ];
+
+    // The same modifier logic applies regardless of isMassMarket
+    const matchedModifier = ageModifiers.find(mod => years <= mod.maxYears);
+    return matchedModifier?.modifier ?? 20;
   };
 
   const calculateUniquenessBonus = (uniqueness: BookUniqueness): number => {
@@ -664,7 +667,7 @@ export default function AnalysisScreen() {
           showAlert(t('alerts.success'), t('alerts.bookUpdated'), 'success');
         } else {
           const bookToMove = books[collectionName][bookIndex];
-          await addBookToCollection(selectedCollection, {
+          addBookToCollection(selectedCollection, {
             ...bookData,
             listingStatus: bookToMove.listingStatus || defaultListingStatus
           });
@@ -686,27 +689,6 @@ export default function AnalysisScreen() {
       console.error('Error saving book:', error);
       showAlert(t('alerts.error'), t('alerts.saveBookError'));
     }
-  };
-
-  const validateFields = () => {
-    let isValid = true;
-
-    if (!titleInput.trim()) {
-      showAlert(t('alerts.error'), t('alerts.enterTitle'));
-      isValid = false;
-    }
-
-    if (!isbnInput.trim()) {
-      showAlert(t('alerts.error'), t('alerts.enterISBN'));
-      isValid = false;
-    }
-
-    if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
-      showAlert(t('alerts.error'), t('alerts.enterValidPrice'));
-      isValid = false;
-    }
-
-    return isValid;
   };
 
   const renderStep = () => {
@@ -737,7 +719,7 @@ export default function AnalysisScreen() {
               <View style={styles.progressDots}>
                 {Array.from({length: totalSteps}).map((_, i) => (
                     <View
-                        key={i}
+                        key={`dot-${i}-${currentStep}`}
                         style={[
                           styles.dot,
                           i === currentStep ? styles.activeDot : styles.inactiveDot

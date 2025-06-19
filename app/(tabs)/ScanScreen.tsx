@@ -16,81 +16,13 @@ import { LIMITS } from '../utils/constants';
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
 import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
-import { styles } from './styles'
 
 const { width, height } = Dimensions.get('window');
 
 // Image Cache Directory
 const IMAGE_CACHE_DIR = `${FileSystem.cacheDirectory}book_images/`;
 
-// Ensure cache directory exists
-const ensureDirExists = async () => {
-  const dirInfo = await FileSystem.getInfoAsync(IMAGE_CACHE_DIR);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(IMAGE_CACHE_DIR, { intermediates: true });
-  }
-};
-
-// Generate cache key from URL
-const generateCacheKey = async (url: string) => {
-  return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, url);
-};
-
-// Cache image
-const cacheImage = async (url: string, imageData: string) => {
-  await ensureDirExists();
-  const cacheKey = await generateCacheKey(url);
-  const filePath = `${IMAGE_CACHE_DIR}${cacheKey}`;
-  await FileSystem.writeAsStringAsync(filePath, imageData, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  return filePath;
-};
-
-// Get cached image
-const getCachedImage = async (url: string) => {
-  try {
-    const cacheKey = await generateCacheKey(url);
-    const filePath = `${IMAGE_CACHE_DIR}${cacheKey}`;
-    const fileInfo = await FileSystem.getInfoAsync(filePath);
-    if (fileInfo.exists) {
-      return filePath;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting cached image:', error);
-    return null;
-  }
-};
-
-// Download and cache image
-const downloadAndCacheImage = async (url: string) => {
-  try {
-    const cachedImage = await getCachedImage(url);
-    if (cachedImage) {
-      return cachedImage;
-    }
-
-    const downloadResult = await FileSystem.downloadAsync(
-        url,
-        `${IMAGE_CACHE_DIR}temp_${Date.now()}`
-    );
-
-    if (downloadResult.status === 200) {
-      const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      const cachedPath = await cacheImage(url, base64);
-      await FileSystem.deleteAsync(downloadResult.uri); // Clean up temp file
-      return cachedPath;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error downloading image:', error);
-    return null;
-  }
-};
-
+// Default values
 const defaultUniqueness: BookUniqueness = {
   isMassMarket: false,
   isFirstEdition: false,
@@ -108,6 +40,70 @@ const defaultMarketFactors: MarketFactors = {
 
 const defaultAgeInfo: BookAgeInfo = {
   years: 0
+};
+
+// Cache helpers
+const ensureDirExists = async () => {
+  const dirInfo = await FileSystem.getInfoAsync(IMAGE_CACHE_DIR);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(IMAGE_CACHE_DIR, { intermediates: true });
+  }
+};
+
+const generateCacheKey = async (url: string) => {
+  return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, url);
+};
+
+const cacheImage = async (url: string, imageData: string) => {
+  await ensureDirExists();
+  const cacheKey = await generateCacheKey(url);
+  const filePath = `${IMAGE_CACHE_DIR}${cacheKey}`;
+  await FileSystem.writeAsStringAsync(filePath, imageData, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  return filePath;
+};
+
+const getCachedImage = async (url: string) => {
+  try {
+    const cacheKey = await generateCacheKey(url);
+    const filePath = `${IMAGE_CACHE_DIR}${cacheKey}`;
+    const fileInfo = await FileSystem.getInfoAsync(filePath);
+    if (fileInfo.exists) {
+      return filePath;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting cached image:', error);
+    return null;
+  }
+};
+
+const downloadAndCacheImage = async (url: string) => {
+  try {
+    const cachedImage = await getCachedImage(url);
+    if (cachedImage) {
+      return cachedImage;
+    }
+
+    const downloadResult = await FileSystem.downloadAsync(
+        url,
+        `${IMAGE_CACHE_DIR}temp_${Date.now()}`
+    );
+
+    if (downloadResult.status === 200) {
+      const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const cachedPath = await cacheImage(url, base64);
+      await FileSystem.deleteAsync(downloadResult.uri);
+      return cachedPath;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error downloading image:', error);
+    return null;
+  }
 };
 
 export default function ScanScreen() {
@@ -142,7 +138,7 @@ export default function ScanScreen() {
         await ensureDirExists();
         const files = await FileSystem.readDirectoryAsync(IMAGE_CACHE_DIR);
         const now = Date.now();
-        const oneWeek = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+        const oneWeek = 7 * 24 * 60 * 60 * 1000;
 
         for (const file of files) {
           const filePath = `${IMAGE_CACHE_DIR}${file}`;
@@ -189,12 +185,7 @@ export default function ScanScreen() {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
       setHasPermission(status === 'granted');
       if (status !== 'granted') {
-        setAlertConfig({
-          visible: true,
-          title: t('alerts.error'),
-          message: t('status.noCameraAccess'),
-          type: 'error'
-        });
+        showAlert('error', t('alerts.error'), t('status.noCameraAccess'));
       }
     } catch (error) {
       console.error('Error getting camera permission:', error);
@@ -247,27 +238,27 @@ export default function ScanScreen() {
     };
   };
 
-  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
-    if (scanned) return;
+  const showAlert = (type: 'info' | 'success' | 'error' | 'warning', title: string, message: string) => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message,
+      type
+    });
+  };
 
+  const checkBookLimitReached = () => {
     const { booksLimitReached } = checkLimits();
     if (booksLimitReached) {
-      setAlertConfig({
-        visible: true,
-        title: t('alerts.error'),
-        message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }),
-        type: 'error'
-      });
-      return;
+      showAlert('error', t('alerts.error'), t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }));
+      return true;
     }
+    return false;
+  };
 
-    setScanned(true);
-    setISBN(data);
-    setLoading(true);
-    setModalVisible(true);
-
+  const addInitialScanHistory = (isbn: string) => {
     addToScanHistory({
-      isbn: data,
+      isbn,
       title: t('status.searching'),
       authors: '...',
       price: '0',
@@ -281,98 +272,128 @@ export default function ScanScreen() {
       marketFactors: defaultMarketFactors,
       ageInfo: defaultAgeInfo
     });
+  };
+
+  const fetchBookData = async (isbn: string) => {
+    let book = await fetchBookInfoFromGoogleAPI(isbn);
+    book ??= await fetchBookInfoFromAmazon(isbn, i18n.language);
+    return book;
+  };
+
+  const createMarketData = (book: BookInfo): MarketData | undefined => {
+    if (!book.amazonData?.data?.marketFactors || !book.amazonData.data.priceRange) {
+      return undefined;
+    }
+
+    return {
+      demand: book.amazonData.data.marketFactors.demand,
+      supply: book.amazonData.data.marketFactors.supply,
+      priceRange: book.amazonData.data.priceRange,
+      priceHistory: [
+        { date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9 },
+        { date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1 },
+        { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
+        { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
+        { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
+        { date: new Date().toISOString(), price: parseFloat(book.price?.toString() ?? '0') }
+      ],
+      lastUpdated: new Date(),
+      source: 'amazon'
+    };
+  };
+
+  const addFoundScanHistory = (isbn: string, book: BookInfo, marketData?: MarketData) => {
+    addToScanHistory({
+      isbn,
+      title: book.title || t('bookInfo.notFound'),
+      authors: book.authors || t('bookInfo.unknown'),
+      price: book.price ? book.price.toString() : '0',
+      displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency ?? 'USD'}` : 'N/A',
+      originalPrice: book.price ? book.price.toString() : '0',
+      defects: {},
+      rating: 10,
+      foundInApi: !!book.title,
+      source: book.source || 'manual',
+      uniqueness: defaultUniqueness,
+      marketFactors: book.amazonData?.data?.marketFactors || defaultMarketFactors,
+      ageInfo: defaultAgeInfo,
+      marketData,
+      publisher: book.publisher,
+      description: book.description,
+      imageUri: book.image ?? undefined
+    });
+  };
+
+  const addNotFoundScanHistory = (isbn: string) => {
+    addToScanHistory({
+      isbn,
+      title: t('bookInfo.notFound'),
+      authors: t('bookInfo.unknown'),
+      price: '0',
+      displayPrice: 'N/A',
+      originalPrice: '0',
+      defects: {},
+      rating: 10,
+      foundInApi: false,
+      source: 'manual',
+      uniqueness: defaultUniqueness,
+      marketFactors: defaultMarketFactors,
+      ageInfo: defaultAgeInfo
+    });
+  };
+
+  const processAndSetBookData = async (isbn: string, book: BookInfo) => {
+    if (book.image) {
+      try {
+        const cachedImagePath = await downloadAndCacheImage(book.image);
+        if (cachedImagePath) {
+          book.image = cachedImagePath;
+        }
+      } catch (error) {
+        console.error('Error caching image:', error);
+      }
+    }
+
+    setBookInfo(book);
+
+    if (book.source === 'google' && !book.price && book.amazonData) {
+      const amazonData = await fetchBookPriceFromAmazonAPI(isbn, i18n.language);
+      if (amazonData?.prices?.length > 0) {
+        setBookInfo(prev => ({
+          ...prev!,
+          amazonData,
+          price: amazonData.prices[0].price
+        }));
+        book.price = amazonData.prices[0].price;
+        book.amazonData = amazonData;
+      }
+    }
+
+    const marketData = createMarketData(book);
+    addFoundScanHistory(isbn, book, marketData);
+  };
+
+  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
+    if (scanned) return;
+    if (checkBookLimitReached()) return;
+
+    setScanned(true);
+    setISBN(data);
+    setLoading(true);
+    setModalVisible(true);
+
+    addInitialScanHistory(data);
 
     try {
-      let book = await fetchBookInfoFromGoogleAPI(data);
-      if (!book) {
-        book = await fetchBookInfoFromAmazon(data, i18n.language);
-      }
-
+      const book = await fetchBookData(data);
       if (book) {
-        // Cache the image if it exists
-        if (book.image) {
-          try {
-            const cachedImagePath = await downloadAndCacheImage(book.image);
-            if (cachedImagePath) {
-              book.image = cachedImagePath;
-            }
-          } catch (error) {
-            console.error('Error caching image:', error);
-          }
-        }
-
-        setBookInfo(book);
-
-        if (book.source === 'google' && !book.price && book.amazonData) {
-          const amazonData = await fetchBookPriceFromAmazonAPI(data, i18n.language);
-          if (amazonData?.prices?.length > 0) {
-            setBookInfo(prev => ({
-              ...prev!,
-              amazonData,
-              price: amazonData.prices[0].price
-            }));
-            book.price = amazonData.prices[0].price;
-            book.amazonData = amazonData;
-          }
-        }
-
-        const marketData: MarketData | undefined = book.amazonData?.data?.marketFactors && book.amazonData.data.priceRange
-            ? {
-              demand: book.amazonData.data.marketFactors.demand,
-              supply: book.amazonData.data.marketFactors.supply,
-              priceRange: book.amazonData.data.priceRange,
-              priceHistory: [
-                { date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9 },
-                { date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1 },
-                { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
-                { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
-                { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
-                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() ?? '0') }
-              ],
-              lastUpdated: new Date(),
-              source: 'amazon' as const
-            }
-            : undefined;
-
-        addToScanHistory({
-          isbn: data,
-          title: book.title || t('bookInfo.notFound'),
-          authors: book.authors || t('bookInfo.unknown'),
-          price: book.price ? book.price.toString() : '0',
-          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency ?? 'USD'}` : 'N/A',
-          originalPrice: book.price ? book.price.toString() : '0',
-          defects: {},
-          rating: 10,
-          foundInApi: !!book.title,
-          source: book.source || 'manual',
-          uniqueness: defaultUniqueness,
-          marketFactors: book.amazonData?.data?.marketFactors || defaultMarketFactors,
-          ageInfo: defaultAgeInfo,
-          marketData,
-          publisher: book.publisher,
-          description: book.description,
-          imageUri: book.image ?? undefined
-        });
+        await processAndSetBookData(data, book);
       } else {
         throw new Error('Book not found in any API');
       }
     } catch (error) {
       console.error('Error:', error);
-      addToScanHistory({
-        isbn: data,
-        title: t('bookInfo.notFound'),
-        authors: t('bookInfo.unknown'),
-        price: '0',
-        displayPrice: 'N/A',
-        originalPrice: '0',
-        defects: {},
-        rating: 10,
-        foundInApi: false,
-        source: 'manual',
-        uniqueness: defaultUniqueness,
-        marketFactors: defaultMarketFactors,
-        ageInfo: defaultAgeInfo
-      });
+      addNotFoundScanHistory(data);
     } finally {
       setLoading(false);
       setTimeout(() => {
@@ -383,137 +404,28 @@ export default function ScanScreen() {
 
   const handleManualSubmit = async () => {
     if (!manualISBN.trim()) {
-      setAlertConfig({
-        visible: true,
-        title: t('alerts.error'),
-        message: t('alerts.enterISBN'),
-        type: 'error'
-      });
+      showAlert('error', t('alerts.error'), t('alerts.enterISBN'));
       return;
     }
 
-    const { booksLimitReached } = checkLimits();
-    if (booksLimitReached) {
-      setAlertConfig({
-        visible: true,
-        title: t('alerts.error'),
-        message: t('alerts.bookLimitReached', { limit: LIMITS.MAX_TOTAL_BOOKS }),
-        type: 'error'
-      });
-      return;
-    }
+    if (checkBookLimitReached()) return;
 
     setISBN(manualISBN);
     setModalVisible(true);
     setLoading(true);
 
-    addToScanHistory({
-      isbn: manualISBN,
-      title: t('status.searching'),
-      authors: '...',
-      price: '0',
-      displayPrice: 'N/A',
-      originalPrice: '0',
-      defects: {},
-      rating: 10,
-      foundInApi: false,
-      source: 'manual',
-      uniqueness: defaultUniqueness,
-      marketFactors: defaultMarketFactors,
-      ageInfo: defaultAgeInfo
-    });
+    addInitialScanHistory(manualISBN);
 
     try {
-      let book = await fetchBookInfoFromGoogleAPI(manualISBN);
-      if (!book) {
-        book = await fetchBookInfoFromAmazon(manualISBN, i18n.language);
-      }
-
+      const book = await fetchBookData(manualISBN);
       if (book) {
-        // Cache the image if it exists
-        if (book.image) {
-          try {
-            const cachedImagePath = await downloadAndCacheImage(book.image);
-            if (cachedImagePath) {
-              book.image = cachedImagePath;
-            }
-          } catch (error) {
-            console.error('Error caching image:', error);
-          }
-        }
-
-        setBookInfo(book);
-
-        if (book.source === 'google' && !book.price && book.amazonData) {
-          const amazonData = await fetchBookPriceFromAmazonAPI(manualISBN, i18n.language);
-          if (amazonData?.prices?.length > 0) {
-            setBookInfo(prev => ({
-              ...prev!,
-              amazonData,
-              price: amazonData.prices[0].price
-            }));
-            book.price = amazonData.prices[0].price;
-            book.amazonData = amazonData;
-          }
-        }
-
-        const marketData: MarketData | undefined = book.amazonData?.data?.marketFactors && book.amazonData.data.priceRange
-            ? {
-              demand: book.amazonData.data.marketFactors.demand,
-              supply: book.amazonData.data.marketFactors.supply,
-              priceRange: book.amazonData.data.priceRange,
-              priceHistory: [
-                { date: '2023-01-01', price: book.amazonData.data.priceRange[0] * 0.9 },
-                { date: '2023-04-01', price: book.amazonData.data.priceRange[1] * 1.1 },
-                { date: '2023-07-01', price: (book.amazonData.data.priceRange[0] + book.amazonData.data.priceRange[1]) / 2 },
-                { date: '2023-10-01', price: book.amazonData.data.priceRange[0] * 0.95 },
-                { date: '2024-01-01', price: book.amazonData.data.priceRange[1] * 1.05 },
-                { date: new Date().toISOString(), price: parseFloat(book.price?.toString() ?? '0') }
-              ],
-              lastUpdated: new Date(),
-              source: 'amazon' as const
-            }
-            : undefined;
-
-        addToScanHistory({
-          isbn: manualISBN,
-          title: book.title || t('bookInfo.notFound'),
-          authors: book.authors || t('bookInfo.unknown'),
-          price: book.price ? book.price.toString() : '0',
-          displayPrice: book.price ? `${book.price.toFixed(2)} ${book.amazonData?.prices?.[0]?.currency ?? 'USD'}` : 'N/A',
-          originalPrice: book.price ? book.price.toString() : '0',
-          defects: {},
-          rating: 10,
-          foundInApi: !!book.title,
-          source: book.source || 'manual',
-          uniqueness: defaultUniqueness,
-          marketFactors: book.amazonData?.data?.marketFactors ?? defaultMarketFactors,
-          ageInfo: defaultAgeInfo,
-          marketData,
-          publisher: book.publisher,
-          description: book.description,
-          imageUri: book.image ?? undefined
-        });
+        await processAndSetBookData(manualISBN, book);
       } else {
         throw new Error('Book not found in any API');
       }
     } catch (error) {
       console.error('Error:', error);
-      addToScanHistory({
-        isbn: manualISBN,
-        title: t('bookInfo.notFound'),
-        authors: t('bookInfo.unknown'),
-        price: '0',
-        displayPrice: 'N/A',
-        originalPrice: '0',
-        defects: {},
-        rating: 10,
-        foundInApi: false,
-        source: 'manual',
-        uniqueness: defaultUniqueness,
-        marketFactors: defaultMarketFactors,
-        ageInfo: defaultAgeInfo
-      });
+      addNotFoundScanHistory(manualISBN);
     } finally {
       setLoading(false);
     }
@@ -521,45 +433,29 @@ export default function ScanScreen() {
 
   const handlePrice = () => {
     let priceValue = manualPrice;
-    let priceSource = 'manual';
     let currency = bookInfo?.amazonData?.prices?.[0]?.currency ?? (i18n.language === 'pl' ? 'PLN' : 'USD');
 
     if (selectedPrice !== null) {
       priceValue = selectedPrice.toString();
-      priceSource = 'amazon';
       currency = bookInfo?.amazonData?.prices?.[0]?.currency ?? (i18n.language === 'pl' ? 'PLN' : 'USD');
-    }
-    else if (!priceValue && bookInfo?.price) {
+    } else if (!priceValue && bookInfo?.price) {
       priceValue = bookInfo.price.toString();
-      priceSource = bookInfo.source || 'manual';
       currency = bookInfo?.amazonData?.prices?.[0]?.currency ?? (i18n.language === 'pl' ? 'PLN' : 'USD');
-    }
-    else if (!priceValue) {
-      setAlertConfig({
-        visible: true,
-        title: t('alerts.error'),
-        message: t('alerts.enterPrice'),
-        type: 'error'
-      });
+    } else if (!priceValue) {
+      showAlert('error', t('alerts.error'), t('alerts.enterPrice'));
       return;
     }
 
     let numericPrice = parseFloat(priceValue);
-    let displayPrice = '';
 
     if (i18n.language === 'pl') {
       if (currency === 'USD') {
         numericPrice = numericPrice * exchangeRate;
       }
-      displayPrice = `${numericPrice.toFixed(2)} PLN`;
-    } else {
-      if (currency !== 'USD') {
-        numericPrice = numericPrice / exchangeRate;
-      }
-      displayPrice = `$${numericPrice.toFixed(2)}`;
+    } else if (currency !== 'USD') {
+      numericPrice = numericPrice / exchangeRate;
     }
 
-    // Dodaj tę linię, aby upewnić się, że imageUri jest prawidłowo przekazywany
     const imageUri = bookInfo?.image ?? '';
 
     router.push({
@@ -592,7 +488,7 @@ export default function ScanScreen() {
 
   if (hasPermission === null) {
     return (
-        <View style={localStyles.loadingContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text>{t('status.requestingPermission')}</Text>
         </View>
@@ -616,7 +512,7 @@ export default function ScanScreen() {
   }
 
   return (
-      <View style={localStyles.fullScreenContainer}>
+      <View style={styles.fullScreenContainer}>
         {!isManualMode && !scanned && (
             <BarCodeScanner
                 key={`barcode-scanner-${cameraKey}`}
@@ -672,7 +568,7 @@ export default function ScanScreen() {
   );
 }
 
-const localStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -682,5 +578,25 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionText: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  permissionButton: {
+    backgroundColor: colors.primary,
+    padding: 15,
+    borderRadius: 5,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
