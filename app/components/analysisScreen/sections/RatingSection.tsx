@@ -47,7 +47,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                     <View style={styles.stars}>
                         {[...Array(10)].map((_, i) => (
                             <Ionicons
-                                key={i}
+                                key={`star-${i}-${bookRating}`}
                                 name={i < bookRating ? 'star' : 'star-outline'}
                                 size={16}
                                 color={i < bookRating ? colors.primary : colors.grayLight}

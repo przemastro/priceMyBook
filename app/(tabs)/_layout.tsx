@@ -13,6 +13,64 @@ function TabBarIcon(props: Readonly<{
     return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
+function TabBarBackground() {
+    return (
+        <View style={styles.tabBarBackground}>
+            <View style={styles.topBackground} />
+            <View style={styles.arcContainer}>
+                <Svg width="100%" height={125} viewBox="0 0 100 15" preserveAspectRatio="none">
+                    <Defs>
+                        <LinearGradient id="gradient" x1="0" y1="0" x2="0" y2="0">
+                            <Stop offset="0%" stopColor="#f8f9ff" />
+                            <Stop offset="100%" stopColor="#f8f9ff" />
+                        </LinearGradient>
+                    </Defs>
+                    <Path
+                        d="M0 0
+                     H30
+                     C38 0, 40 5, 50 5
+                     C60 5, 62 0, 70 0
+                     H100"
+                        fill="url(#gradient)"
+                    />
+                </Svg>
+            </View>
+            <View style={styles.bottomBackground} />
+        </View>
+    );
+}
+
+function HomeTabIcon({ color, focused }: Readonly<{ color: string, focused: boolean }>) {
+    return <TabBarIcon name="home" color={focused ? colors.primary : color} />;
+}
+
+function HistoryTabIcon({ color, focused }: Readonly<{ color: string, focused: boolean }>) {
+    return <TabBarIcon name="history" color={focused ? colors.primary : color} />;
+}
+
+function ScanTabIcon({ focused }: Readonly<{ focused: boolean }>) {
+    return (
+        <View style={[
+            styles.scanButton,
+            focused && styles.scanButtonActive
+        ]}>
+            <Ionicons
+                name="scan"
+                size={30}
+                color={colors.white}
+            />
+        </View>
+    );
+}
+
+function AnalysisTabIcon({ color, focused }: Readonly<{ color: string, focused: boolean }>) {
+    return <TabBarIcon name="cogs" color={focused ? colors.primary : color} />;
+}
+
+function CollectionsTabIcon({ color, focused }: Readonly<{ color: string, focused: boolean }>) {
+    return <TabBarIcon name="book" color={focused ? colors.primary : color} />;
+}
+
 export default function TabLayout() {
     const { t } = useTranslation();
 
@@ -30,30 +88,7 @@ export default function TabLayout() {
                     borderTopColor: colors.background,
                     elevation: 0,
                 },
-                tabBarBackground: () => (
-                    <View style={styles.tabBarBackground}>
-                        <View style={styles.topBackground} />
-                        <View style={styles.arcContainer}>
-                            <Svg width="100%" height={125} viewBox="0 0 100 15" preserveAspectRatio="none">
-                                <Defs>
-                                    <LinearGradient id="gradient" x1="0" y1="0" x2="0" y2="0">
-                                        <Stop offset="0%" stopColor="#f8f9ff" />
-                                        <Stop offset="100%" stopColor="#f8f9ff" />
-                                    </LinearGradient>
-                                </Defs>
-                                <Path
-                                    d="M0 0
-                     H30
-                     C38 0, 40 5, 50 5
-                     C60 5, 62 0, 70 0
-                     H100"
-                                    fill="url(#gradient)"
-                                />
-                            </Svg>
-                        </View>
-                        <View style={styles.bottomBackground} />
-                    </View>
-                ),
+                tabBarBackground: TabBarBackground,
                 tabBarLabelStyle: styles.tabBarLabel,
             }}
         >
@@ -61,12 +96,7 @@ export default function TabLayout() {
                 name="HomeScreen"
                 options={{
                     title: t('titlesShort.home'),
-                    tabBarIcon: ({ color, focused }) => (
-                        <TabBarIcon
-                            name="home"
-                            color={focused ? colors.primary : color}
-                        />
-                    ),
+                    tabBarIcon: HomeTabIcon,
                     tabBarItemStyle: styles.regularTabItem,
                 }}
             />
@@ -74,12 +104,7 @@ export default function TabLayout() {
                 name="HistoryScreen"
                 options={{
                     title: t('titlesShort.history'),
-                    tabBarIcon: ({ color, focused }) => (
-                        <TabBarIcon
-                            name="history"
-                            color={focused ? colors.primary : color}
-                        />
-                    ),
+                    tabBarIcon: HistoryTabIcon,
                     tabBarItemStyle: styles.regularTabItem,
                 }}
             />
@@ -87,18 +112,7 @@ export default function TabLayout() {
                 name="ScanScreen"
                 options={{
                     title: '',
-                    tabBarIcon: ({ color, focused }) => (
-                        <View style={[
-                            styles.scanButton,
-                            focused && styles.scanButtonActive
-                        ]}>
-                            <Ionicons
-                                name="scan"
-                                size={30}
-                                color={focused ? colors.white : colors.white}
-                            />
-                        </View>
-                    ),
+                    tabBarIcon: ScanTabIcon,
                     tabBarItemStyle: styles.scanTabItem,
                 }}
             />
@@ -106,12 +120,7 @@ export default function TabLayout() {
                 name="AnalysisScreen"
                 options={{
                     title: t('titlesShort.analyzeCondition'),
-                    tabBarIcon: ({ color, focused }) => (
-                        <TabBarIcon
-                            name="cogs"
-                            color={focused ? colors.primary : color}
-                        />
-                    ),
+                    tabBarIcon: AnalysisTabIcon,
                     tabBarItemStyle: styles.regularTabItem,
                 }}
             />
@@ -119,12 +128,7 @@ export default function TabLayout() {
                 name="CollectionsScreen"
                 options={{
                     title: t('titlesShort.manageCollections'),
-                    tabBarIcon: ({ color, focused }) => (
-                        <TabBarIcon
-                            name="book"
-                            color={focused ? colors.primary : color}
-                        />
-                    ),
+                    tabBarIcon: CollectionsTabIcon,
                     tabBarItemStyle: styles.regularTabItem,
                 }}
             />
@@ -217,7 +221,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.primary,
-        shadowColor:colors.blackDark,
+        shadowColor: colors.blackDark,
         shadowOffset: {
             width: 0,
             height: 2,

@@ -154,8 +154,8 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                             <Text style={styles.sectionTitle}>{t('labels.categories')}</Text>
 
                             <View style={styles.categoriesList}>
-                                {categories.map((category, index) => (
-                                    <View key={index} style={styles.categoryItem}>
+                                {categories.map((category) => (
+                                    <View key={`category-${category}`} style={styles.categoryItem}>
                                         <Text style={styles.categoryText}>{category}</Text>
                                         <TouchableOpacity onPress={() => handleRemoveCategory(category)}>
                                             <MaterialIcons name="close" size={16} color={colors.error} />

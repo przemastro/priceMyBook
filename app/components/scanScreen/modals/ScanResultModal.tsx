@@ -77,7 +77,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                                     {bookInfo?.price && (
                                         <Text style={styles.suggestedPriceText}>
                                             {t('bookInfo.suggestedPrice')}: {bookInfo.price.toFixed(2)}{' '}
-                                            {bookInfo?.amazonData?.prices?.[0]?.currency || (currentLang === 'pl' ? 'PLN' : 'USD')}
+                                            {bookInfo?.amazonData?.prices?.[0]?.currency ?? (currentLang === 'pl' ? 'PLN' : 'USD')}
                                         </Text>
                                     )}
                                     {(!bookInfo?.price && !bookInfo?.amazonData) && (

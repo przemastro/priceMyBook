@@ -92,10 +92,13 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                             style={styles.previewScroll}
                             contentContainerStyle={styles.previewScrollContent}
                         >
-                            {importPreview.books.slice(0, 5).map((book, index) => {
+                            {importPreview.books.slice(0, 5).map((book) => {
                                 try {
                                     return (
-                                        <View key={index} style={styles.bookPreview}>
+                                        <View
+                                            key={`${book.isbn || 'no-isbn'}-${book.title || 'no-title'}`}
+                                            style={styles.bookPreview}
+                                        >
                                             <Text style={styles.bookTitle} numberOfLines={1}>
                                                 {book.title || t('labels.noTitle')}
                                             </Text>
@@ -108,7 +111,6 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({
                                             <Text style={styles.bookMeta}>
                                                 {t('labels.defects')}: {formatDefectsSummary(book.defects)}
                                             </Text>
-                                            {/* Reszta szczegółów książki */}
                                         </View>
                                     );
                                 } catch (e) {

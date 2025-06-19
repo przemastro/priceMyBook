@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAppContext } from '@/context/AppContext';
 import { styles } from './styles'
 
 interface CategoriesCarouselProps {
@@ -13,12 +12,11 @@ interface CategoriesCarouselProps {
 
 const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
                                                                    collectionName,
+                                                                   collectionCategories,
                                                                    onAddCategory,
-                                                                   onRemoveCategory
+                                                                   onRemoveCategory,
                                                                }) => {
     const { t } = useTranslation();
-    const { collectionCategories } = useAppContext();
-
     const categories = collectionName ? (collectionCategories[collectionName] || []) : [];
 
     return (
@@ -29,8 +27,8 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
                 contentContainerStyle={styles.scrollContent}
             >
                 {/* Existing categories - read only */}
-                {categories.map((category, index) => (
-                    <View key={index} style={styles.categoryItem}>
+                {categories.map((category) => (
+                    <View key={`category-${category}`} style={styles.categoryItem}>
                         <Text style={styles.categoryText}>{category}</Text>
                     </View>
                 ))}
@@ -45,9 +43,5 @@ const CategoriesCarousel: React.FC<CategoriesCarouselProps> = ({
         </View>
     );
 };
-
-const localStyles = StyleSheet.create({
-
-});
 
 export default CategoriesCarousel;

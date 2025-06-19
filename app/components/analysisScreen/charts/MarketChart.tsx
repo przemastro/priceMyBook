@@ -11,6 +11,26 @@ interface MarketChartProps {
     marketData: MarketData | null;
 }
 
+const getDemandValue = (demand: string) => {
+    switch (demand) {
+        case 'veryHigh': return 100;
+        case 'high': return 80;
+        case 'medium': return 60;
+        case 'low': return 40;
+        default: return 20;
+    }
+};
+
+const getSupplyValue = (supply: string) => {
+    switch (supply) {
+        case 'veryLow': return 20;
+        case 'low': return 40;
+        case 'medium': return 60;
+        case 'high': return 80;
+        default: return 100;
+    }
+};
+
 const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
     const { t } = useTranslation();
     const screenWidth = Dimensions.get('window').width;
@@ -52,14 +72,8 @@ const MarketChart = React.memo(({ marketData }: MarketChartProps) => {
                     labels: [t('labels.demand'), t('labels.supply')],
                     datasets: [{
                         data: [
-                            marketData.demand === 'veryHigh' ? 100 :
-                                marketData.demand === 'high' ? 80 :
-                                    marketData.demand === 'medium' ? 60 :
-                                        marketData.demand === 'low' ? 40 : 20,
-                            marketData.supply === 'veryLow' ? 20 :
-                                marketData.supply === 'low' ? 40 :
-                                    marketData.supply === 'medium' ? 60 :
-                                        marketData.supply === 'high' ? 80 : 100
+                            getDemandValue(marketData.demand),
+                            getSupplyValue(marketData.supply)
                         ],
                         colors: [
                             (opacity = 1) => `rgba(74, 108, 247, ${opacity})`,

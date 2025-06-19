@@ -74,8 +74,8 @@ const PriceCalculationDetails = ({
                     </View>
                     {selectedDefects.length > 0 && (
                         <View style={styles.tagsContainer}>
-                            {selectedDefects.map((defect, index) => (
-                                <View key={index} style={styles.tag}>
+                            {selectedDefects.map((defect) => (
+                                <View key={defect.id} style={styles.tag}>
                                     <Text style={styles.tagText}>
                                         {t(`defects.${defect.id}`)} ({defect.count}x)
                                     </Text>
@@ -100,8 +100,8 @@ const PriceCalculationDetails = ({
                     </View>
                     {uniqueFeatures.length > 0 && (
                         <View style={styles.tagsContainer}>
-                            {uniqueFeatures.map((feature, index) => (
-                                <View key={index} style={[styles.tag, styles.positiveTag]}>
+                            {uniqueFeatures.map((feature) => (
+                                <View key={feature} style={[styles.tag, styles.positiveTag]}>
                                     <Text style={[styles.tagText, styles.positiveTagText]}>
                                         {feature}
                                     </Text>

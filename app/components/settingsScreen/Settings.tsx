@@ -17,7 +17,7 @@ export default function SettingsScreen() {
     const { t } = useTranslation();
     const router = useRouter();
     const { initialTab } = useLocalSearchParams<SettingsScreenParams>();
-    const [activeTab, setActiveTab] = useState(initialTab || 'about');
+    const [activeTab, setActiveTab] = useState(initialTab ?? 'about');
     const spinValue = useRef(new Animated.Value(0)).current;
 
     const toggleLanguage = () => {

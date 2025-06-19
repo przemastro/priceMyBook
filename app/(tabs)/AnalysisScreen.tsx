@@ -67,7 +67,7 @@ export default function AnalysisScreen() {
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
-  const [cameraType, setCameraType] = useState<CameraType>('back');
+  const [cameraType] = useState<CameraType>('back');
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [hasScanned, setHasScanned] = useState(false);
   const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
@@ -94,7 +94,7 @@ export default function AnalysisScreen() {
   const initialMarketFactors = parseParam<MarketFactors>(params.marketFactors) || {
     demand: 'medium',
     supply: 'medium',
-    publicationYear: parseParam<{ publicationYear?: number }>(params.marketFactors)?.publicationYear || new Date().getFullYear() - Math.floor(Math.random() * 10)
+    publicationYear: parseParam<{ publicationYear?: number }>(params.marketFactors)?.publicationYear ?? new Date().getFullYear() - Math.floor(Math.random() * 10)
   };
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
   const [marketData, setMarketData] = useState<MarketData | null>(null);
@@ -197,9 +197,13 @@ export default function AnalysisScreen() {
     setShowConfirmModal(true);
   };
 
-  const handleAddConfirmed = () => {
-    handleSaveBook();
-    setShowConfirmModal(false);
+  const handleAddConfirmed = async () => {
+    try {
+      await handleSaveBook();
+      setShowConfirmModal(false);
+    } catch (error) {
+      console.error('Error in handleAddConfirmed:', error);
+    }
   };
 
   const animateSlide = (direction: 'forward' | 'backward') => {
@@ -558,26 +562,30 @@ export default function AnalysisScreen() {
     }));
   };
 
-  const saveOriginalPrice = () => {
+  const saveOriginalPrice = async () => {
     if (!originalPriceInput || isNaN(parseFloat(originalPriceInput))) {
       showAlert(t('alerts.error'), t('alerts.enterValidPrice'));
-      return;
+      return false;
     }
     setOriginalPrice(originalPriceInput);
+    return true;
   };
 
-  const saveTitle = () => {
+  const saveTitle = async () => {
     if (!titleInput.trim()) {
       showAlert(t('alerts.error'), t('alerts.enterTitle'));
-      return;
+      return false;
     }
+    return true;
   };
 
-  const saveIsbn = () => {
+
+  const saveIsbn = async () => {
     if (!isbnInput.trim()) {
       showAlert(t('alerts.error'), t('alerts.enterISBN'));
-      return;
+      return false;
     }
+    return true;
   };
 
   const handleAddCollection = (name: string, categories: string[] = [], icon: string = 'book') => {
@@ -605,7 +613,7 @@ export default function AnalysisScreen() {
     setDescription('');
   };
 
-  const handleSaveBook = () => {
+  const handleSaveBook = async () => {
     const currentBooksCount = books[selectedCollection]?.length || 0;
     if (currentBooksCount >= LIMITS.MAX_BOOKS_PER_COLLECTION) {
       showAlert(
@@ -615,62 +623,68 @@ export default function AnalysisScreen() {
       );
       return;
     }
-    const priceValue = finalPrice.toFixed(2);
-    const defaultListingStatus: ListingStatus = {
-      status: 'notListed',
-      platforms: []
-    };
-    const bookData = {
-      isbn: isbnInput,
-      title: titleInput,
-      authors: authors,
-      publisher: publisher,
-      price: priceValue,
-      displayPrice: formatCurrency({price: priceValue, exchangeRate}),
-      foundInApi: params.fromHistory !== 'true',
-      originalPrice: originalPriceInput,
-      description: description,
-      defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
-        ...acc,
-        [defect.id]: {
-          selected: true,
-          reduction: defect.priceReduction,
-          count: defect.count
-        }
-      }), {}),
-      rating: bookRating,
-      ageInfo,
-      uniqueness,
-      marketFactors,
-      listingStatus: editMode && collectionName && bookIndex !== null
-          ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
-          : defaultListingStatus,
-      imageUri: bookImage ?? undefined
-    };
 
-    if (editMode && collectionName && bookIndex !== null) {
-      if (selectedCollection === collectionName) {
-        updateBookInCollection(collectionName, bookIndex, bookData);
-        showAlert(t('alerts.success'), t('alerts.bookUpdated'), 'success');
+    try {
+      const priceValue = finalPrice.toFixed(2);
+      const defaultListingStatus: ListingStatus = {
+        status: 'notListed',
+        platforms: []
+      };
+      const bookData = {
+        isbn: isbnInput,
+        title: titleInput,
+        authors: authors,
+        publisher: publisher,
+        price: priceValue,
+        displayPrice: formatCurrency({price: priceValue, exchangeRate}),
+        foundInApi: params.fromHistory !== 'true',
+        originalPrice: originalPriceInput,
+        description: description,
+        defects: defects.filter(d => d.selected).reduce((acc, defect) => ({
+          ...acc,
+          [defect.id]: {
+            selected: true,
+            reduction: defect.priceReduction,
+            count: defect.count
+          }
+        }), {}),
+        rating: bookRating,
+        ageInfo,
+        uniqueness,
+        marketFactors,
+        listingStatus: editMode && collectionName && bookIndex !== null
+            ? books[collectionName][bookIndex].listingStatus || defaultListingStatus
+            : defaultListingStatus,
+        imageUri: bookImage ?? undefined
+      };
+
+      if (editMode && collectionName && bookIndex !== null) {
+        if (selectedCollection === collectionName) {
+          updateBookInCollection(collectionName, bookIndex, bookData);
+          showAlert(t('alerts.success'), t('alerts.bookUpdated'), 'success');
+        } else {
+          const bookToMove = books[collectionName][bookIndex];
+          await addBookToCollection(selectedCollection, {
+            ...bookData,
+            listingStatus: bookToMove.listingStatus || defaultListingStatus
+          });
+          removeBookFromCollection(collectionName, bookIndex);
+          showAlert(t('alerts.success'), t('alerts.bookMoved', {
+            oldCollection: collectionName,
+            newCollection: selectedCollection
+          }), 'success');
+        }
       } else {
-        const bookToMove = books[collectionName][bookIndex];
-        addBookToCollection(selectedCollection, {
-          ...bookData,
-          listingStatus: bookToMove.listingStatus || defaultListingStatus
-        });
-        removeBookFromCollection(collectionName, bookIndex);
-        showAlert(t('alerts.success'), t('alerts.bookMoved', {
-          oldCollection: collectionName,
-          newCollection: selectedCollection
-        }), 'success');
+        if (!selectedCollection) {
+          showAlert(t('alerts.error'), t('alerts.selectCollection'));
+          return;
+        }
+        await addBookToCollection(selectedCollection, bookData);
+        showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`, 'success');
       }
-    } else {
-      if (!selectedCollection) {
-        showAlert(t('alerts.error'), t('alerts.selectCollection'));
-        return;
-      }
-      addBookToCollection(selectedCollection, bookData);
-      showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`, 'success');
+    } catch (error) {
+      console.error('Error saving book:', error);
+      showAlert(t('alerts.error'), t('alerts.saveBookError'));
     }
   };
 
@@ -788,11 +802,14 @@ export default function AnalysisScreen() {
                             description={description}
                             setDescription={setDescription}
                             onPickImage={pickImage}
-                            onSave={() => {
-                              if (validateFields()) {
-                                saveTitle();
-                                saveIsbn();
-                                saveOriginalPrice();
+                            onSave={async () => {
+                              const validations = await Promise.all([
+                                saveTitle(),
+                                saveIsbn(),
+                                saveOriginalPrice()
+                              ]);
+
+                              if (validations.every(Boolean)) {
                                 closeEditModal();
                               }
                             }}

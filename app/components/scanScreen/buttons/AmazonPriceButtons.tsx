@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity} from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AmazonApiResponse, AmazonPriceOffer } from '../types';
 import { colors } from '@/styles/styles';
@@ -30,9 +30,9 @@ export const AmazonPriceButtons = ({
             <Text style={styles.amazonPricesTitle}>
                 {t('bookInfo.amazonPrices')} ({amazonData.marketplace}):
             </Text>
-            {amazonData.prices.map((offer: AmazonPriceOffer, index: number) => (
+            {amazonData.prices.map((offer: AmazonPriceOffer) => (
                 <TouchableOpacity
-                    key={index}
+                    key={`price-${offer.price}-${offer.seller}-${offer.condition}`}
                     style={[
                         styles.amazonPriceButton,
                         selectedPrice === offer.price && styles.amazonPriceButtonSelected

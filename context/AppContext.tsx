@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getExchangeRate, ExchangeRateResult } from '@/services/currencyService';
+import { getExchangeRate } from '@/services/currencyService';
 import i18n from '@/app/i18n/config';
 import { t } from "i18next";
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
@@ -173,7 +173,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [exchangeRateError, setExchangeRateError] = useState<string | null>(null);
     const [lastRateUpdate, setLastRateUpdate] = useState<Date | null>(null);
     const [scanHistory, setScanHistory] = useState<BookData[]>([]);
-    const [updateTrigger, setUpdateTrigger] = useState(0);
+    const [forceUpdateFlag, setForceUpdateFlag] = useState(false);
     const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
     const [alertConfig, setAlertConfig] = useState({
         visible: false,
@@ -183,7 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     const forceUpdateCollections = useCallback(() => {
-        setUpdateTrigger(prev => prev + 1);
+        setForceUpdateFlag(prev => !prev);
     }, []);
 
     const calculateTotalValue = useCallback((): number => {
@@ -195,7 +195,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const calculateActiveValue = useCallback((): number => {
         return collections.reduce((total, collection) => {
             return total + (books[collection.name] || []).reduce((sum, book) => {
-                const status = book.listingStatus?.status || 'notListed';
+                const status = book.listingStatus?.status ?? 'notListed';
                 return status !== 'sold' ? sum + parseFloat(book.price || '0') : sum;
             }, 0);
         }, 0);
@@ -204,7 +204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const calculateSoldValue = useCallback((): number => {
         return collections.reduce((total, collection) => {
             return total + (books[collection.name] || []).reduce((sum, book) => {
-                const status = book.listingStatus?.status || 'notListed';
+                const status = book.listingStatus?.status ?? 'notListed';
                 return status === 'sold' ? sum + parseFloat(book.price || '0') : sum;
             }, 0);
         }, 0);
@@ -310,6 +310,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const usdPrice = priceNumber / exchangeRate;
         return `$${usdPrice.toFixed(2)}`;
     }, [exchangeRate]);
+
+    const createBookWithDefaults = useCallback((book: Omit<BookData, 'createdAt'>): BookData => {
+        return {
+            ...book,
+            createdAt: new Date().toISOString(),
+            defects: book.defects || {},
+            rating: book.rating || 10,
+            originalPrice: book.originalPrice || book.price,
+            displayPrice: book.displayPrice || formatCurrency(book.price),
+            uniqueness: book.uniqueness || defaultUniqueness,
+            marketFactors: book.marketFactors || defaultMarketFactors,
+            ageInfo: book.ageInfo || defaultAgeInfo,
+            listingStatus: book.listingStatus || defaultListingStatus,
+            isExpanded: false,
+        };
+    }, [formatCurrency]);
 
     const addCollection = useCallback((
         name: string,
@@ -446,26 +462,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 newBooks[collectionName] = [];
             }
 
-            const bookWithDefaults: BookData = {
-                ...bookData,
-                createdAt: new Date().toISOString(),
-                defects: bookData.defects || {},
-                displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
-                rating: bookData.rating || 10,
-                originalPrice: bookData.originalPrice || bookData.price,
-                uniqueness: bookData.uniqueness || defaultUniqueness,
-                marketFactors: bookData.marketFactors || defaultMarketFactors,
-                ageInfo: bookData.ageInfo || defaultAgeInfo,
-                isExpanded: false,
-                listingStatus: bookData.listingStatus || defaultListingStatus,
-            };
+            const bookWithDefaults = createBookWithDefaults(bookData);
 
             return {
                 ...newBooks,
                 [collectionName]: [...newBooks[collectionName], bookWithDefaults]
             };
         });
-    }, [checkGlobalLimits, formatCurrency, t]);
+    }, [checkGlobalLimits, createBookWithDefaults, t]);
 
     const addBooksToCollection = useCallback(async (
         collectionName: string,
@@ -489,19 +493,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     newBooks[collectionName] = [];
                 }
 
-                const booksWithDefaults = booksData.map(book => ({
-                    ...book,
-                    createdAt: new Date().toISOString(),
-                    defects: book.defects || {},
-                    rating: book.rating || 10,
-                    originalPrice: book.originalPrice || book.price,
-                    displayPrice: book.displayPrice || formatCurrency(book.price),
-                    uniqueness: book.uniqueness || defaultUniqueness,
-                    marketFactors: book.marketFactors || defaultMarketFactors,
-                    ageInfo: book.ageInfo || defaultAgeInfo,
-                    listingStatus: book.listingStatus || defaultListingStatus,
-                    isExpanded: false,
-                } as BookData));
+                const booksWithDefaults = booksData.map(createBookWithDefaults);
 
                 return {
                     ...newBooks,
@@ -510,7 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
             resolve();
         });
-    }, [checkGlobalLimits, formatCurrency, t]);
+    }, [checkGlobalLimits, createBookWithDefaults, t]);
 
     const updateBookInCollection = useCallback((
         collectionName: string,
@@ -519,21 +511,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ) => {
         setBooks(prev => {
             const newBooks = { ...prev };
-            if (newBooks[collectionName] && newBooks[collectionName][bookIndex]) {
-                const updatedCollection = [...newBooks[collectionName]];
+            const collection = newBooks[collectionName];
+
+            if (collection?.[bookIndex]) {
+                const updatedCollection = [...collection];
                 updatedCollection[bookIndex] = {
                     ...updatedCollection[bookIndex],
                     ...updatedData,
-                    displayPrice: updatedData.price ? formatCurrency(updatedData.price) :
-                        updatedCollection[bookIndex].displayPrice,
-                    defects: updatedData.defects || updatedCollection[bookIndex].defects,
-                    rating: updatedData.rating || updatedCollection[bookIndex].rating,
-                    uniqueness: updatedData.uniqueness || updatedCollection[bookIndex].uniqueness,
-                    marketFactors: updatedData.marketFactors || updatedCollection[bookIndex].marketFactors,
-                    ageInfo: updatedData.ageInfo || updatedCollection[bookIndex].ageInfo,
-                    listingStatus: updatedData.listingStatus || updatedCollection[bookIndex].listingStatus || defaultListingStatus,
-                    isExpanded: updatedData.isExpanded !== undefined ?
-                        updatedData.isExpanded : updatedCollection[bookIndex].isExpanded
+                    displayPrice: updatedData.price
+                        ? formatCurrency(updatedData.price)
+                        : updatedCollection[bookIndex].displayPrice,
+                    defects: updatedData.defects ?? updatedCollection[bookIndex].defects,
+                    rating: updatedData.rating ?? updatedCollection[bookIndex].rating,
+                    uniqueness: updatedData.uniqueness ?? updatedCollection[bookIndex].uniqueness,
+                    marketFactors: updatedData.marketFactors ?? updatedCollection[bookIndex].marketFactors,
+                    ageInfo: updatedData.ageInfo ?? updatedCollection[bookIndex].ageInfo,
+                    listingStatus: updatedData.listingStatus ?? updatedCollection[bookIndex].listingStatus ?? defaultListingStatus,
+                    isExpanded: updatedData.isExpanded ?? updatedCollection[bookIndex].isExpanded
                 };
 
                 return {
@@ -555,72 +549,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const removeBookFromCollection = useCallback((collectionName: string, bookIndex: number) => {
         setBooks(prev => ({
             ...prev,
-            [collectionName]: prev[collectionName].filter((_, i) => i !== bookIndex)
+            [collectionName]: prev[collectionName]?.filter((_, i) => i !== bookIndex) ?? []
         }));
         forceUpdateCollections();
     }, [forceUpdateCollections]);
 
     const addToScanHistory = useCallback((bookData: Omit<BookData, 'createdAt'>) => {
         setScanHistory(prev => {
-            const newItem: BookData = {
-                ...bookData,
-                displayPrice: bookData.displayPrice || formatCurrency(bookData.price),
-                originalPrice: bookData.originalPrice || bookData.price || '0',
-                createdAt: new Date().toISOString(),
-                foundInApi: bookData.foundInApi || false,
-                defects: bookData.defects || {},
-                rating: bookData.rating || 10,
-                uniqueness: bookData.uniqueness || defaultUniqueness,
-                marketFactors: bookData.marketFactors || defaultMarketFactors,
-                ageInfo: bookData.ageInfo || defaultAgeInfo,
-                listingStatus: bookData.listingStatus || defaultListingStatus,
-                isExpanded: false,
-                marketData: bookData.marketData
-            };
-
+            const newItem = createBookWithDefaults(bookData);
             return [newItem, ...prev.filter(item => item.isbn !== bookData.isbn)];
         });
-    }, [formatCurrency]);
+    }, [createBookWithDefaults]);
 
     const clearScanHistory = useCallback(() => {
         setScanHistory([]);
     }, []);
 
+    const contextValue = useMemo(() => ({
+        isbn,
+        setISBN,
+        collections,
+        addCollection,
+        removeCollection,
+        renameCollection,
+        books,
+        collectionCategories,
+        addCategoryToCollection,
+        removeCategoryFromCollection,
+        addBookToCollection,
+        addBooksToCollection,
+        updateBookInCollection,
+        updateBooksInCollection,
+        removeBookFromCollection,
+        exchangeRate,
+        exchangeRateError,
+        lastRateUpdate,
+        refreshExchangeRate,
+        scanHistory,
+        addToScanHistory,
+        clearScanHistory,
+        formatCurrency,
+        forceUpdateCollections,
+        selectedCollection,
+        setSelectedCollection,
+        checkGlobalLimits,
+        calculateTotalValue,
+        calculateActiveValue,
+        calculateSoldValue
+    }), [
+        isbn, collections, books, collectionCategories, exchangeRate, exchangeRateError,
+        lastRateUpdate, scanHistory, selectedCollection, forceUpdateFlag,
+        addCollection, removeCollection, renameCollection, addCategoryToCollection,
+        removeCategoryFromCollection, addBookToCollection, addBooksToCollection,
+        updateBookInCollection, updateBooksInCollection, removeBookFromCollection,
+        refreshExchangeRate, addToScanHistory, clearScanHistory, formatCurrency,
+        forceUpdateCollections, checkGlobalLimits, calculateTotalValue,
+        calculateActiveValue, calculateSoldValue
+    ]);
+
     return (
-        <AppContext.Provider
-            value={{
-                isbn,
-                setISBN,
-                collections,
-                addCollection,
-                removeCollection,
-                renameCollection,
-                books,
-                collectionCategories,
-                addCategoryToCollection,
-                removeCategoryFromCollection,
-                addBookToCollection,
-                addBooksToCollection,
-                updateBookInCollection,
-                updateBooksInCollection,
-                removeBookFromCollection,
-                exchangeRate,
-                exchangeRateError,
-                lastRateUpdate,
-                refreshExchangeRate,
-                scanHistory,
-                addToScanHistory,
-                clearScanHistory,
-                formatCurrency,
-                forceUpdateCollections,
-                selectedCollection,
-                setSelectedCollection,
-                checkGlobalLimits,
-                calculateTotalValue,
-                calculateActiveValue,
-                calculateSoldValue
-            }}
-        >
+        <AppContext.Provider value={contextValue}>
             {children}
             <CustomAlertModal
                 visible={alertConfig.visible}

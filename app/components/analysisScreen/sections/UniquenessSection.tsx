@@ -27,7 +27,7 @@ const UniquenessSection = ({ uniqueness, onToggleUniqueness }: UniquenessSection
                     <View style={localStyles.itemContainer}>
                         <UniquenessItem
                             item={item}
-                            selected={uniqueness[item.id as keyof typeof uniqueness]}
+                            selected={uniqueness[item.id]}
                             onPress={() => onToggleUniqueness(item.id)}
                             buttonSize={buttonSize}
                         />

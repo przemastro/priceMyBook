@@ -187,9 +187,7 @@ const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
                             activeOpacity={0.7}
                         >
                             <LinearGradient
-                                colors={!localCollectionName.trim() ?
-                                    [colors.primary, colors.primary] :
-                                    [colors.primary, colors.primary]}
+                                colors={[colors.primary, colors.primary]}
                                 style={localStyles.buttonGradient}
                             >
                                 <Text style={localStyles.confirmButtonText}>{t('buttons.saveChanges')}</Text>

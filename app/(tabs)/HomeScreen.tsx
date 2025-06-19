@@ -14,6 +14,7 @@ type HomeButton = {
     iconColor: string;
     isTab?: boolean;
     customPath?: string;
+    id: string; // Added unique identifier for each button
 };
 
 const COLUMNS = 3;
@@ -29,6 +30,7 @@ const HomeScreen = () => {
 
     const buttons: HomeButton[] = [
         {
+            id: 'scan-button',
             name: 'scan',
             title: t('titlesShort.scan'),
             screen: 'ScanScreen',
@@ -36,6 +38,7 @@ const HomeScreen = () => {
             isTab: true
         },
         {
+            id: 'history-button',
             name: 'time-outline',
             title: t('titlesShort.history'),
             screen: 'HistoryScreen',
@@ -43,6 +46,7 @@ const HomeScreen = () => {
             isTab: true
         },
         {
+            id: 'analysis-button',
             name: 'settings-outline',
             title: t('titlesShort.analyzeCondition'),
             screen: 'AnalysisScreen',
@@ -50,6 +54,7 @@ const HomeScreen = () => {
             isTab: true
         },
         {
+            id: 'collections-button',
             name: 'book-outline',
             title: t('titlesShort.manageCollections'),
             screen: 'CollectionsScreen',
@@ -57,6 +62,7 @@ const HomeScreen = () => {
             isTab: true
         },
         {
+            id: 'financial-report-button',
             name: 'bar-chart-outline',
             title: t('titlesShort.financialReport'),
             screen: 'FinancialReport',
@@ -64,6 +70,7 @@ const HomeScreen = () => {
             customPath: '/components/financialReportScreen/FinancialReport'
         },
         {
+            id: 'settings-button',
             name: 'settings-sharp',
             title: t('titlesShort.settings'),
             screen: 'Settings',
@@ -78,8 +85,13 @@ const HomeScreen = () => {
             : text;
     };
 
+    const getNavigationPath = (screen: string, isTab?: boolean, customPath?: string) => {
+        if (customPath) return customPath;
+        return isTab ? `/(tabs)/${screen}` : `/${screen}`;
+    };
+
     const navigateToScreen = (screen: string, isTab?: boolean, customPath?: string) => {
-        const path = customPath ? customPath : isTab ? `/(tabs)/${screen}` : `/${screen}`;
+        const path = getNavigationPath(screen, isTab, customPath);
         router.push(path as any);
     };
 
@@ -119,8 +131,8 @@ const HomeScreen = () => {
             <View style={styles.servicesContainer}>
                 <Text style={localStyles.sectionTitle}>{t('home.services')}</Text>
                 <View style={localStyles.buttonsContainer}>
-                    {buttons.map((button, index) => (
-                        <View key={index} style={styles.buttonWrapper}>
+                    {buttons.map((button) => (
+                        <View key={button.id} style={styles.buttonWrapper}>
                             <TouchableOpacity
                                 style={[
                                     styles.button,

@@ -36,22 +36,27 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
             .replace(/'/g, "&#039;");
     };
 
+    const getImageBase64 = async (imageUri: string): Promise<string> => {
+        try {
+            const uri = imageUri.startsWith('file://') ? imageUri : `file://${imageUri}`;
+            const fileInfo = await FileSystem.getInfoAsync(uri);
+            if (!fileInfo.exists) return '';
+
+            const base64 = await FileSystem.readAsStringAsync(uri, {
+                encoding: FileSystem.EncodingType.Base64
+            });
+            return `data:image/jpeg;base64,${base64}`;
+        } catch (error) {
+            console.warn('Failed to convert image to base64:', error);
+            return '';
+        }
+    };
+
     const generatePDF = async () => {
         try {
             let imageBase64 = '';
             if (book.imageUri) {
-                try {
-                    const uri = book.imageUri.startsWith('file://') ? book.imageUri : `file://${book.imageUri}`;
-                    const fileInfo = await FileSystem.getInfoAsync(uri);
-                    if (fileInfo.exists) {
-                        const base64 = await FileSystem.readAsStringAsync(uri, {
-                            encoding: FileSystem.EncodingType.Base64
-                        });
-                        imageBase64 = `data:image/jpeg;base64,${base64}`;
-                    }
-                } catch (error) {
-                    console.warn('Failed to convert image to base64:', error);
-                }
+                imageBase64 = await getImageBase64(book.imageUri);
             }
 
             const htmlContent = `
@@ -148,4 +153,5 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
         </TouchableOpacity>
     );
 };
+
 export default ExportToPDFButton;

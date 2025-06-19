@@ -194,7 +194,7 @@ const BookItem: React.FC<BookItemProps> = ({
                                 {renderDetailItem(t('bookInfo.price'), book.displayPrice)}
                                 {renderDetailItem(t('labels.condition'), `${book.rating}/10`)}
 
-                                {book.authors && renderDetailItem(t('bookInfo.authors'), book.authors)}
+                                {!!book.authors && renderDetailItem(t('bookInfo.authors'), book.authors)}
                                 {book.publisher && renderDetailItem(t('bookInfo.publisher'), book.publisher)}
                                 {book.description && renderDetailItem(t('bookInfo.description'), book.description, true)}
 

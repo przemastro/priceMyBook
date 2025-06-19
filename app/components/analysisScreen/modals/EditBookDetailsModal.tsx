@@ -35,7 +35,7 @@ interface EditBookDetailsModalProps {
     description: string;
     setDescription: (text: string) => void;
     onPickImage: () => Promise<void>;
-    onSave: () => void;
+    onSave: () => Promise<void>; // Changed to return Promise
     onClearFields: () => void;
 }
 
@@ -162,7 +162,7 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                     placeholder={t('placeholders.enterTitle')}
                                     placeholderTextColor={colors.grayDark}
                                 />
-                                {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+                                {!!errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
                             </View>
 
                             <View style={styles.inputGroup}>
@@ -200,7 +200,7 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                     placeholderTextColor={colors.grayDark}
                                     keyboardType="numeric"
                                 />
-                                {errors.isbn && <Text style={styles.errorText}>{errors.isbn}</Text>}
+                                {!!errors.isbn && <Text style={styles.errorText}>{errors.isbn}</Text>}
                             </View>
 
                             <View style={styles.inputGroup}>
@@ -216,7 +216,7 @@ export const EditBookDetailsModal: React.FC<EditBookDetailsModalProps> = ({
                                     placeholderTextColor={colors.grayDark}
                                     keyboardType="numeric"
                                 />
-                                {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
+                                {!!errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
                             </View>
 
                             <View style={styles.inputGroup}>

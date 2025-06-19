@@ -36,6 +36,167 @@ const chartConfig = {
     }
 };
 
+// Helper functions
+const getEmptyDataState = (t: (key: string) => string) => ({
+    monthlySalesData: { labels: [], datasets: [{ data: [] }] },
+    monthlyRevenueData: { labels: [], datasets: [{ data: [] }] },
+    yearlyBreakdown: { labels: [], datasets: [] },
+    booksValueData: [],
+    stats: {
+        totalBooksSold: 0,
+        monthlyRevenue: 0,
+        yearlyRevenue: 0,
+        monthlyGrowth: 0,
+        mostPopularCategory: t('charts.noData'),
+        averageMonthly: 0,
+        projectedYearEnd: 0,
+        totalCollectionValue: 0,
+        averageBookValue: 0,
+        activeValue: 0,
+        soldValue: 0,
+        lastUpdated: moment().format('LL'),
+        bestSellingMonth: '-',
+        averageSalePrice: 0
+    },
+    hasData: false
+});
+
+const initializeMonthsData = () => {
+    return Array.from({ length: 12 }, (_, i) => {
+        const date = moment().subtract(11 - i, 'months');
+        return {
+            key: date.format('MMM YYYY'),
+            month: date.format('MMM'),
+            year: date.year(),
+            count: 0,
+            revenue: 0
+        };
+    });
+};
+
+const findMonthIndex = (months: Array<{key: string}>, monthKey: string) => {
+    return months.findIndex(m => m.key === monthKey);
+};
+
+const processCategoriesValue = (
+    collections: any[],
+    books: Record<string, any[]>,
+    collectionCategories: Record<string, string[]>,
+    t: (key: string) => string
+) => {
+    const categoriesValue: Record<string, number> = {};
+
+    collections.forEach(collection => {
+        const currentBooks = books[collection.name] || [];
+        const categories = collectionCategories[collection.name] || [t('charts.generalCategory')];
+
+        currentBooks.forEach(book => {
+            const price = parseFloat(book.price) || 0;
+            const valuePerCategory = price / categories.length;
+
+            categories.forEach(category => {
+                categoriesValue[category] = (categoriesValue[category] || 0) + valuePerCategory;
+            });
+        });
+    });
+
+    return categoriesValue;
+};
+
+const localeAwareSort = (a: string, b: string) => a.localeCompare(b);
+
+const findBestSellingMonth = (months: any[]) => {
+    return months.reduce((best, month) =>
+            month.revenue > best.revenue ? month : best,
+        { month: '', count: 0, revenue: 0 }
+    );
+};
+
+const createPieData = (categoriesValue: Record<string, number>) => {
+    return Object.entries(categoriesValue)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, value], index) => ({
+            name,
+            value: Math.round(value),
+            color: [
+                '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B',
+                '#F44336', '#00BCD4', '#8BC34A', '#3F51B5', '#FF5722'
+            ][index % 10],
+            legendFontColor: colors.black,
+            legendFontSize: 12
+        }));
+};
+
+const calculateActiveBooksCount = (collections: any[], books: Record<string, any[]>) => {
+    return collections.reduce((sum, collection) =>
+            sum + (books[collection.name] || []).filter(b => b.listingStatus?.status !== 'sold').length,
+        0
+    );
+};
+
+const calculateAverageBookValue = (activeValue: number, activeBooksCount: number) => {
+    return activeBooksCount > 0 ? Math.round(activeValue / activeBooksCount) : 0;
+};
+
+const calculateAverageSalePrice = (totalBooksSold: number, totalRevenue: number) => {
+    return totalBooksSold > 0 ? totalRevenue / totalBooksSold : 0;
+};
+
+const calculateMonthlyGrowth = (monthlySales: number[], monthsWithSales: number) => {
+    return monthsWithSales > 1
+        ? Math.round(((monthlySales[monthlySales.length - 1] - monthlySales[monthlySales.length - 2]) /
+            (monthlySales[monthlySales.length - 2] || 1) * 100))
+        : 0;
+};
+
+const getGrowthStyle = (growth: number) => {
+    if (growth > 0) return styles.positiveValue;
+    if (growth < 0) return styles.negativeValue;
+    return null;
+};
+
+const processSalesData = (
+    collections: any[],
+    books: Record<string, any[]>,
+    months: any[],
+    yearlyData: Record<string, { count: number, revenue: number }>
+) => {
+    let totalBooksSold = 0;
+    let totalRevenue = 0;
+
+    collections.forEach(collection => {
+        const currentBooks = books[collection.name] || [];
+
+        currentBooks.forEach(book => {
+            if (book.listingStatus?.status === 'sold') {
+                const saleDate = book.listingStatus.soldDate
+                    ? moment(book.listingStatus.soldDate)
+                    : moment(book.createdAt);
+                const price = parseFloat(book.price) || 0;
+
+                const monthKey = saleDate.format('MMM YYYY');
+                const monthIndex = findMonthIndex(months, monthKey);
+                if (monthIndex >= 0) {
+                    months[monthIndex].count += 1;
+                    months[monthIndex].revenue += price;
+                }
+
+                const year = saleDate.year().toString();
+                if (!yearlyData[year]) {
+                    yearlyData[year] = { count: 0, revenue: 0 };
+                }
+                yearlyData[year].count += 1;
+                yearlyData[year].revenue += price;
+
+                totalBooksSold += 1;
+                totalRevenue += price;
+            }
+        });
+    });
+
+    return { totalBooksSold, totalRevenue };
+};
+
 const FinancialReport = () => {
     const { t, i18n } = useTranslation();
     const {
@@ -68,129 +229,41 @@ const FinancialReport = () => {
     const processFinancialData = () => {
         try {
             if (!books || !collections || collections.length === 0) {
-                return {
-                    monthlySalesData: { labels: [], datasets: [{ data: [] }] },
-                    monthlyRevenueData: { labels: [], datasets: [{ data: [] }] },
-                    yearlyBreakdown: { labels: [], datasets: [] },
-                    booksValueData: [],
-                    stats: {
-                        totalBooksSold: 0,
-                        monthlyRevenue: 0,
-                        yearlyRevenue: 0,
-                        monthlyGrowth: 0,
-                        mostPopularCategory: t('charts.noData'),
-                        averageMonthly: 0,
-                        projectedYearEnd: 0,
-                        totalCollectionValue: 0,
-                        averageBookValue: 0,
-                        activeValue: 0,
-                        soldValue: 0,
-                        lastUpdated: moment().format('LL'),
-                        bestSellingMonth: '-',
-                        averageSalePrice: 0
-                    },
-                    hasData: false
-                };
+                return getEmptyDataState(t);
             }
 
             const totalValue = calculateTotalValue();
             const activeValue = calculateActiveValue();
             const soldValue = calculateSoldValue();
 
-            const months = Array.from({ length: 12 }, (_, i) => {
-                const date = moment().subtract(11 - i, 'months');
-                return {
-                    key: date.format('MMM YYYY'),
-                    month: date.format('MMM'),
-                    year: date.year(),
-                    count: 0,
-                    revenue: 0
-                };
-            });
-
+            const months = initializeMonthsData();
             const yearlyData: Record<string, { count: number, revenue: number }> = {};
-            let totalBooksSold = 0;
-            let totalRevenue = 0;
 
-            collections.forEach(collection => {
-                const currentBooks = books[collection.name] || [];
-
-                currentBooks.forEach(book => {
-                    if (book.listingStatus?.status === 'sold') {
-                        const saleDate = book.listingStatus.soldDate
-                            ? moment(book.listingStatus.soldDate)
-                            : moment(book.createdAt);
-                        const price = parseFloat(book.price) || 0;
-
-                        const monthKey = saleDate.format('MMM YYYY');
-                        const monthIndex = months.findIndex(m => m.key === monthKey);
-                        if (monthIndex >= 0) {
-                            months[monthIndex].count += 1;
-                            months[monthIndex].revenue += price;
-                        }
-
-                        const year = saleDate.year().toString();
-                        if (!yearlyData[year]) {
-                            yearlyData[year] = { count: 0, revenue: 0 };
-                        }
-                        yearlyData[year].count += 1;
-                        yearlyData[year].revenue += price;
-
-                        totalBooksSold += 1;
-                        totalRevenue += price;
-                    }
-                });
-            });
-
-            const bestSellingMonth = months.reduce((best, month) =>
-                    month.revenue > best.revenue ? month : best,
-                { month: '', count: 0, revenue: 0 }
+            const { totalBooksSold, totalRevenue } = processSalesData(
+                collections,
+                books,
+                months,
+                yearlyData
             );
 
+            const bestSellingMonth = findBestSellingMonth(months);
             const monthlyLabels = months.map(m => m.month);
             const monthlySales = months.map(m => m.count);
             const monthlyRevenues = months.map(m => m.revenue);
 
-            const categoriesValue: Record<string, number> = {};
-            collections.forEach(collection => {
-                const currentBooks = books[collection.name] || [];
-                const categories = collectionCategories[collection.name] || [t('charts.generalCategory')];
-
-                currentBooks.forEach(book => {
-                    const price = parseFloat(book.price) || 0;
-                    const valuePerCategory = price / categories.length;
-                    categories.forEach(category => {
-                        categoriesValue[category] = (categoriesValue[category] || 0) + valuePerCategory;
-                    });
-                });
-            });
-
-            const pieData = Object.entries(categoriesValue)
-                .sort((a, b) => b[1] - a[1])
-                .map(([name, value], index) => ({
-                    name,
-                    value: Math.round(value),
-                    color: [
-                        '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B',
-                        '#F44336', '#00BCD4', '#8BC34A', '#3F51B5', '#FF5722'
-                    ][index % 10],
-                    legendFontColor: colors.black,
-                    legendFontSize: 12
-                }));
-
-            const activeBooksCount = collections.reduce((sum, collection) =>
-                    sum + (books[collection.name] || []).filter(b => b.listingStatus?.status !== 'sold').length,
-                0
+            const categoriesValue = processCategoriesValue(
+                collections,
+                books,
+                collectionCategories,
+                t
             );
+            const pieData = createPieData(categoriesValue);
 
-            const averageBookValue = activeBooksCount > 0 ? Math.round(activeValue / activeBooksCount) : 0;
-            const averageSalePrice = totalBooksSold > 0 ? totalRevenue / totalBooksSold : 0;
-
+            const activeBooksCount = calculateActiveBooksCount(collections, books);
+            const averageBookValue = calculateAverageBookValue(activeValue, activeBooksCount);
+            const averageSalePrice = calculateAverageSalePrice(totalBooksSold, totalRevenue);
             const monthsWithSales = months.filter(m => m.count > 0).length;
-            const monthlyGrowth = months.length > 1
-                ? Math.round(((monthlySales[monthlySales.length - 1] - monthlySales[monthlySales.length - 2]) /
-                    (monthlySales[monthlySales.length - 2] || 1) * 100))
-                : 0;
+            const monthlyGrowth = calculateMonthlyGrowth(monthlySales, monthsWithSales);
 
             setIsLoading(false);
             setHasError(false);
@@ -209,15 +282,15 @@ const FinancialReport = () => {
                     }]
                 },
                 yearlyBreakdown: {
-                    labels: Object.keys(yearlyData).sort(),
+                    labels: Object.keys(yearlyData).sort(localeAwareSort),
                     datasets: [
                         {
-                            data: Object.keys(yearlyData).sort().map(year => yearlyData[year].count),
+                            data: Object.keys(yearlyData).sort(localeAwareSort).map(year => yearlyData[year].count),
                             color: (opacity = 1) => colors.primary,
                             strokeWidth: 2
                         },
                         {
-                            data: Object.keys(yearlyData).sort().map(year => yearlyData[year].revenue),
+                            data: Object.keys(yearlyData).sort(localeAwareSort).map(year => yearlyData[year].revenue),
                             color: (opacity = 1) => colors.secondary,
                             strokeWidth: 2
                         }
@@ -237,7 +310,7 @@ const FinancialReport = () => {
                     activeValue,
                     soldValue,
                     lastUpdated: moment().format('LL'),
-                    bestSellingMonth: bestSellingMonth.month || '-',
+                    bestSellingMonth: bestSellingMonth.month ?? '-',
                     averageSalePrice
                 },
                 hasData: totalBooksSold > 0 || pieData.length > 0
@@ -246,29 +319,7 @@ const FinancialReport = () => {
             console.error('Error processing financial data:', error);
             setIsLoading(false);
             setHasError(true);
-            return {
-                monthlySalesData: { labels: [], datasets: [{ data: [] }] },
-                monthlyRevenueData: { labels: [], datasets: [{ data: [] }] },
-                yearlyBreakdown: { labels: [], datasets: [] },
-                booksValueData: [],
-                stats: {
-                    totalBooksSold: 0,
-                    monthlyRevenue: 0,
-                    yearlyRevenue: 0,
-                    monthlyGrowth: 0,
-                    mostPopularCategory: t('charts.noData'),
-                    averageMonthly: 0,
-                    projectedYearEnd: 0,
-                    totalCollectionValue: 0,
-                    averageBookValue: 0,
-                    activeValue: 0,
-                    soldValue: 0,
-                    lastUpdated: moment().format('LL'),
-                    bestSellingMonth: '-',
-                    averageSalePrice: 0
-                },
-                hasData: false
-            };
+            return getEmptyDataState(t);
         }
     };
 
@@ -365,7 +416,7 @@ const FinancialReport = () => {
                         <View style={styles.progressDots}>
                             {Array.from({length: totalSteps}).map((_, i) => (
                                 <View
-                                    key={i}
+                                    key={`dot-${i}-${currentStep}`}
                                     style={[
                                         styles.dot,
                                         i === currentStep ? styles.activeDot : styles.inactiveDot
@@ -416,11 +467,7 @@ const FinancialReport = () => {
                                             </View>
                                             <View style={styles.statItem}>
                                                 <Text style={styles.statLabel}>{t('charts.monthlyGrowth')}</Text>
-                                                <Text style={[
-                                                    styles.statValue,
-                                                    stats.monthlyGrowth > 0 ? styles.positiveValue :
-                                                        stats.monthlyGrowth < 0 ? styles.negativeValue : null
-                                                ]}>
+                                                <Text style={[styles.statValue, getGrowthStyle(stats.monthlyGrowth)]}>
                                                     {stats.monthlyGrowth > 0 ? '+' : ''}{stats.monthlyGrowth}%
                                                 </Text>
                                             </View>
@@ -442,11 +489,11 @@ const FinancialReport = () => {
                                                 yAxisSuffix=" zł"
                                                 chartConfig={{
                                                     ...chartConfig,
-                                                    color: (opacity = 1) => colors.primary,  // Tutaj zmieniasz kolor linii
+                                                    color: (opacity = 1) => colors.primary,
                                                     propsForDots: {
                                                         r: "4",
                                                         strokeWidth: "2",
-                                                        stroke: colors.primary  // Tutaj możesz też zmienić kolor kropek
+                                                        stroke: colors.primary
                                                     }
                                                 }}
                                                 bezier

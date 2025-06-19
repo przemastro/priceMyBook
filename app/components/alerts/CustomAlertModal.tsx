@@ -80,7 +80,7 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
                             <TouchableOpacity
                                 style={[
                                     styles.alertModalButton,
-                                    buttonFullWidth && {width: onCancel ? '100%' : '100%'}
+                                    buttonFullWidth && {width: '100%'}
                                 ]}
                                 onPress={onConfirm}
                             >
