@@ -93,11 +93,6 @@ interface ImportPreviewData {
     collectionCreatedAt?: string;
 }
 
-interface Collection {
-    name: string;
-    icon: string;
-}
-
 const CollectionsScreen = () => {
     const router = useRouter();
     const { t, i18n } = useTranslation();

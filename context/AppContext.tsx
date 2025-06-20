@@ -4,12 +4,7 @@ import { getExchangeRate } from '@/services/currencyService';
 import i18n from '@/app/i18n/config';
 import { t } from "i18next";
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
-
-export const LIMITS = {
-    MAX_COLLECTIONS: 5,
-    MAX_TOTAL_BOOKS: 5,
-    MAX_BOOKS_PER_COLLECTION: 5,
-};
+import { LIMITS } from '@/app/utils/constants';
 
 interface BookDefect {
     selected: boolean;
@@ -226,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, [books, collections.length]);
 
     useEffect(() => {
-        const loadPersistedData = async () => {
+        (async () => {
             try {
                 const [history, collections, books, rate, categories, selected] = await Promise.all([
                     AsyncStorage.getItem(STORAGE_KEYS.SCAN_HISTORY),
@@ -253,30 +248,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             } catch (error) {
                 console.error('Failed to load persisted data:', error);
             }
-        };
-
-        loadPersistedData();
+        })();
     }, []);
 
     useEffect(() => {
-        AsyncStorage.setItem(STORAGE_KEYS.SCAN_HISTORY, JSON.stringify(scanHistory));
+        AsyncStorage.setItem(STORAGE_KEYS.SCAN_HISTORY, JSON.stringify(scanHistory))
+            .catch(error => console.error('Failed to save scan history:', error));
     }, [scanHistory]);
 
     useEffect(() => {
-        AsyncStorage.setItem(STORAGE_KEYS.COLLECTIONS, JSON.stringify(collections));
+        AsyncStorage.setItem(STORAGE_KEYS.COLLECTIONS, JSON.stringify(collections))
+           .catch(error => console.error('Failed to save collections:', error));
     }, [collections]);
 
     useEffect(() => {
-        AsyncStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
+        AsyncStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books))
+            .catch(error => console.error('Failed to save books:', error));
     }, [books]);
 
     useEffect(() => {
-        AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(collectionCategories));
+        AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(collectionCategories))
+            .catch(error => console.error('Failed to save collection categories:', error));
     }, [collectionCategories]);
 
     useEffect(() => {
         if (selectedCollection) {
-            AsyncStorage.setItem(STORAGE_KEYS.SELECTED_COLLECTION, selectedCollection);
+            AsyncStorage.setItem(STORAGE_KEYS.SELECTED_COLLECTION, selectedCollection)
+                .catch(error => console.error('Failed to save selected collection:', error));
         }
     }, [selectedCollection]);
 
@@ -422,7 +420,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ...prev,
                 [collectionName]: [...currentCategories, category.trim()]
             };
-            AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(updated));
+            AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(updated))
+                .catch(error => console.error('Failed to save collection categories:', error));
             return updated;
         });
     }, []);
@@ -436,7 +435,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ...prev,
                 [collectionName]: currentCategories.filter(c => c !== category)
             };
-            AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(updated));
+            AsyncStorage.setItem(STORAGE_KEYS.COLLECTION_CATEGORIES, JSON.stringify(updated))
+                .catch(error => console.error('Failed to save collection categories:', error));
             return updated;
         });
     }, []);

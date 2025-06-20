@@ -73,7 +73,11 @@ export default {
         amazonPrices: 'Najnowsze ceny na Amazon',
         addCover: "Dodaj okładkę książki (max 200KB)",
         price: "Cena",
-        noIsbn: "Brak ISBN"
+        noIsbn: "Brak ISBN",
+        condition: "Stan książki",
+        usedPrice: "Średnia cena używana",
+        estimatedValue: "Szacowana wartość",
+        noData: "Brak danych"
     },
     labels: {
         selectCollection: 'Wybierz księgozbiór',
@@ -155,7 +159,7 @@ export default {
         non: "brak",
         price: "Cena",
         noMarketData: "Brak danych rynkowych dla tej książki",
-        noPriceHistory: "Brak dostępnej historii cen"
+        noPriceHistory: "Brak dostępnej historii cen",
     },
     titles: {
         scan: 'Skanuj ISBN',
@@ -321,7 +325,8 @@ export default {
         isPublisherDefunct: "Niedziałający wydawca"
     },
     welcome: {
-        slogan: 'Zeskanuj • Wyceń • Zarabiaj'
+        slogan: 'Zeskanuj • Wyceń • Zarabiaj',
+        appTitle: 'Aestilibrum'
     },
     rateLimit: {
         noData: "Brak danych o limitach",
@@ -386,5 +391,11 @@ export default {
         includePublicationYear: "Data wydania",
         includeSupply: "Podaż",
         includeDemand: "Popyt"
+    },
+    ratings: {
+        excellent: "Doskonały (8-10)",
+        good: "Dobry (6-7)",
+        average: "Średni (4-5)",
+        poor: "Słaby (1-3)"
     }
 }

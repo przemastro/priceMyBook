@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '@/styles/styles';
 import Animated from 'react-native-reanimated';
-import { styles } from './styles'
+import { styles } from './styles';
+import { useTranslation } from 'react-i18next';
 
 interface RatingSectionProps {
     bookRating: number;
@@ -12,7 +13,6 @@ interface RatingSectionProps {
     finalPrice: number;
     expanded: boolean;
     toggleExpanded: () => void;
-    onShowMarketAnalysis: () => void;
     formatPrice: (price: number) => string;
     children: React.ReactNode;
 }
@@ -23,15 +23,16 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                                                                 finalPrice,
                                                                 expanded,
                                                                 toggleExpanded,
-                                                                onShowMarketAnalysis,
                                                                 formatPrice,
                                                                 children,
                                                             }) => {
+    const { t } = useTranslation();
+
     const getRatingLabel = (rating: number) => {
-        if (rating >= 8) return 'Doskonały';
-        if (rating >= 6) return 'Dobry';
-        if (rating >= 4) return 'Średni';
-        return 'Słaby';
+        if (rating >= 8) return t('ratings.excellent');
+        if (rating >= 6) return t('ratings.good');
+        if (rating >= 4) return t('ratings.average');
+        return t('ratings.poor');
     };
 
     return (
@@ -43,7 +44,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                 end={{ x: 1, y: 0 }}
             >
                 <View style={styles.headerRow}>
-                    <Text style={styles.sectionTitle}>Stan książki</Text>
+                    <Text style={styles.sectionTitle}>{t('bookInfo.condition')}</Text>
                     <View style={styles.stars}>
                         {[...Array(10)].map((_, i) => (
                             <Ionicons
@@ -63,7 +64,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
                 >
                     <View style={styles.row}>
                         <Ionicons name="book-outline" size={14} color={colors.secondary} />
-                        <Text style={styles.label}>Stan:</Text>
+                        <Text style={styles.label}>{t('labels.condition')}:</Text>
                         <Text style={styles.value}>{`${bookRating}/10 - ${getRatingLabel(bookRating)}`}</Text>
                     </View>
 
@@ -71,9 +72,9 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
 
                     <View style={styles.row}>
                         <Ionicons name="pricetag-outline" size={14} color={colors.secondary} />
-                        <Text style={styles.label}>Średnia cena używana:</Text>
+                        <Text style={styles.label}>{t('bookInfo.usedPrice')}:</Text>
                         <Text style={styles.value}>
-                            {averageUsedPrice ? formatPrice(averageUsedPrice) : 'Brak danych'}
+                            {averageUsedPrice ? formatPrice(averageUsedPrice) : t('bookInfo.noData')}
                         </Text>
                     </View>
 
@@ -81,7 +82,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({
 
                     <View style={styles.row}>
                         <Ionicons name="cash-outline" size={14} color={colors.primary} />
-                        <Text style={[styles.label, { fontWeight: '600' }]}>Szacowana wartość:</Text>
+                        <Text style={[styles.label, { fontWeight: '600' }]}>{t('bookInfo.estimatedValue')}:</Text>
                         <View style={styles.estimatedRow}>
                             <Text style={[styles.value, { fontWeight: '600' }]}>{formatPrice(finalPrice)}</Text>
                             <Ionicons

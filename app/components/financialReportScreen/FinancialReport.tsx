@@ -17,7 +17,6 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 const chartWidth = Dimensions.get('window').width - 40;
 const chartWidthSmaller = Dimensions.get('window').width - 90;
 const chartHeight = 220;
-const chartHeightSmaller = 200;
 
 const chartConfig = {
     backgroundGradientFrom: colors.background,

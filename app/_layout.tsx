@@ -11,12 +11,6 @@ import { AppProvider } from '@/context/AppContext';
 
 export { ErrorBoundary } from 'expo-router';
 
-export const unstable_settings = {
-  initialRouteName: '(tabs)',
-};
-
-SplashScreen.preventAutoHideAsync();
-
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -24,12 +18,18 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    SplashScreen.preventAutoHideAsync()
+        .catch(error => console.error("Failed to prevent splash screen auto-hide:", error));
+  }, []);
+
+  useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync()
+          .catch(error => console.error("Failed to hide splash screen:", error));
     }
   }, [loaded]);
 

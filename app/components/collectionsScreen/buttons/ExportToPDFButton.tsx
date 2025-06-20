@@ -24,7 +24,7 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
                                                                  formatListingStatus,
                                                                  style,
                                                              }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const escapeHtml = (unsafe?: string): string => {
         if (!unsafe) return '';
@@ -61,10 +61,15 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
 
             const htmlContent = `
 <!DOCTYPE html>
-<html>
+<html lang="${i18n.language}">
 <head>
+    <meta charset="UTF-8">
+    <title>${escapeHtml(book.title)} - ${t('labels.bookDetails')}</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+        }
         h1 { color: #4a6cf7; font-size: 20px; margin-bottom: 10px; }
         .section { margin-bottom: 15px; }
         .label { font-weight: bold; color: #333; min-width: 150px; display: inline-block; }
@@ -87,7 +92,7 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
 
     ${imageBase64 ? `
     <div class="image-container">
-        <img src="${imageBase64}" class="book-image" />
+        <img src="${imageBase64}" class="book-image" alt="${t('labels.bookCover')}" />
     </div>
     ` : ''}
 
@@ -131,8 +136,8 @@ const ExportToPDFButton: React.FC<ExportToPDFButtonProps> = ({
 
             const { uri } = await Print.printToFileAsync({
                 html: htmlContent,
-                width: 612,
-                height: 792,
+                width: 612,  // 8.5 inches in points (8.5 * 72)
+                height: 792, // 11 inches in points (11 * 72)
                 base64: false
             });
 

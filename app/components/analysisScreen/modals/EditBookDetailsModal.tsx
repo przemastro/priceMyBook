@@ -35,7 +35,7 @@ interface EditBookDetailsModalProps {
     description: string;
     setDescription: (text: string) => void;
     onPickImage: () => Promise<void>;
-    onSave: () => Promise<void>; // Changed to return Promise
+    onSave: () => Promise<void>;
     onClearFields: () => void;
 }
 

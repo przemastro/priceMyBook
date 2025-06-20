@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next';
 export default function WelcomeScreen() {
     const { t } = useTranslation();
     const [showApp, setShowApp] = useState(false);
-    const fadeAnim = useState(new Animated.Value(0))[0];
-    const scaleAnim = useState(new Animated.Value(0.5))[0];
+    const [fadeAnim] = useState(new Animated.Value(0));
+    const [scaleAnim] = useState(new Animated.Value(0.5));
 
     useEffect(() => {
         Animated.sequence([
@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
                 transform: [{ scale: scaleAnim }]
             }]}>
                 <Ionicons name="book" size={80} color="white" />
-                <Text style={styles.appName}>Aestilibrum</Text>
+                <Text style={styles.appName}>{t('welcome.appTitle')}</Text>
                 <Text style={styles.appSlogan}>{t('welcome.slogan')}</Text>
             </Animated.View>
         </View>

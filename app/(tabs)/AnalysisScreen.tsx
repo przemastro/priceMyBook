@@ -69,7 +69,6 @@ export default function AnalysisScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [cameraType] = useState<CameraType>('back');
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const [hasScanned, setHasScanned] = useState(false);
   const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
   const [bookImage, setBookImage] = useState<string | null>(null);
   const {collections, addBookToCollection, removeBookFromCollection, updateBookInCollection, exchangeRate, books, addCollection} = useAppContext();
@@ -98,7 +97,6 @@ export default function AnalysisScreen() {
   };
   const [marketFactors, setMarketFactors] = useState<MarketFactors>(initialMarketFactors);
   const [marketData, setMarketData] = useState<MarketData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
@@ -121,7 +119,6 @@ export default function AnalysisScreen() {
       : null;
   const [titleInput, setTitleInput] = useState(title);
   const [isbnInput, setIsbnInput] = useState(isbn);
-  const [showMarketModal, setShowMarketModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [authors, setAuthors] = useState(Array.isArray(params.authors) ? params.authors[0] : params.authors || t('bookInfo.unknown'));
   const [publisher, setPublisher] = useState(bookInfo?.publisher ?? '');
@@ -235,7 +232,6 @@ export default function AnalysisScreen() {
     let isMounted = true;
     const loadMarketData = async () => {
       if (!originalPriceParam || !isMounted) return;
-      setIsLoading(true);
       try {
         const amazonFactors = bookInfo?.amazonData?.data?.marketFactors;
         if (amazonFactors && isMounted) {
@@ -280,8 +276,6 @@ export default function AnalysisScreen() {
         }
       } catch (error) {
         console.error('Error loading market data:', error);
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
     };
     loadMarketData();
@@ -339,7 +333,6 @@ export default function AnalysisScreen() {
       setDefects(updatedDefects);
       setUniqueness(bookUniqueness);
       setMarketFactors(bookMarketFactors);
-      setHasScanned(true);
     }
   }, [editMode]);
 
@@ -465,7 +458,6 @@ export default function AnalysisScreen() {
   }, [defects]);
 
   const startScanning = async () => {
-    setIsLoading(true);
     try {
       if (!permission) {
         const {status} = await requestPermission();
@@ -480,8 +472,7 @@ export default function AnalysisScreen() {
       } else {
         showAlert(t('alerts.error'), t('status.noCameraAccess'));
       }
-    } finally {
-      setIsLoading(false);
+    } finally { /* empty */
     }
   };
 
@@ -513,7 +504,6 @@ export default function AnalysisScreen() {
               color: defect.color
             });
             setShowDefectModal(true);
-            setHasScanned(true);
           }
         }
         return newProgress;
@@ -682,7 +672,7 @@ export default function AnalysisScreen() {
           showAlert(t('alerts.error'), t('alerts.selectCollection'));
           return;
         }
-        await addBookToCollection(selectedCollection, bookData);
+        addBookToCollection(selectedCollection, bookData);
         showAlert(t('alerts.success'), `${t('alerts.bookAdded')}: ${selectedCollection}`, 'success');
       }
     } catch (error) {
@@ -942,7 +932,6 @@ export default function AnalysisScreen() {
                 finalPrice={priceCalculation.finalPrice}
                 expanded={expanded}
                 toggleExpanded={toggleExpanded}
-                onShowMarketAnalysis={() => setShowMarketModal(true)}
                 formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
             >
               <PriceCalculationDetails
@@ -950,7 +939,6 @@ export default function AnalysisScreen() {
                   defects={defects}
                   uniqueness={uniqueness}
                   marketFactors={marketFactors}
-                  onShowMarketAnalysis={() => setShowMarketModal(true)}
                   averageUsedPrice={averageUsedPrice}
                   formatPrice={(price) => formatCurrency({price: price.toString(), exchangeRate})}
               />

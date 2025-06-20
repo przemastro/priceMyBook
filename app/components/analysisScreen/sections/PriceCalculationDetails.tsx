@@ -26,7 +26,6 @@ interface PriceCalculationDetailsProps {
         supply: string;
         publicationYear: number;
     };
-    onShowMarketAnalysis: () => void;
     averageUsedPrice?: number | null;
     formatPrice: (price: number) => string;
 }
@@ -36,7 +35,6 @@ const PriceCalculationDetails = ({
                                      defects,
                                      uniqueness,
                                      marketFactors,
-                                     onShowMarketAnalysis,
                                      averageUsedPrice,
                                      formatPrice
                                  }: PriceCalculationDetailsProps) => {

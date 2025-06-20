@@ -48,16 +48,13 @@ export const checkRateLimit = async (apiName: 'AMAZON' | 'GOOGLE'): Promise<bool
     }
 };
 
-// Funkcja pomocnicza do sprawdzania numeru tygodnia
 const getWeekNumber = (date: Date): number => {
     const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
     const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
     return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
 };
 
-// Sprawdza czy należy zresetować licznik
 const shouldResetCounter = (rateLimitData: RateLimitData, currentWeek: number): boolean => {
-    // Reset w określonym dniu tygodnia jeśli minął tydzień
     const resetDay = Config.API_RATE_LIMITS.AMAZON.RESET_DAY;
     const lastResetDate = new Date(rateLimitData.lastReset);
     const now = new Date();
@@ -66,37 +63,4 @@ const shouldResetCounter = (rateLimitData: RateLimitData, currentWeek: number): 
         rateLimitData.amazon.weekNumber !== currentWeek ||
         (now.getDay() === resetDay && lastResetDate.getDay() !== resetDay)
     );
-};
-
-// Funkcja do wyświetlania statusu limitu (np. w ustawieniach)
-export const getRateLimitStatus = async (): Promise<{
-    used: number;
-    limit: number;
-    remaining: number;
-    resetDate: string;
-} | null> => {
-    try {
-        const savedData = await AsyncStorage.getItem(RATE_LIMIT_KEY);
-        const rateLimitData: RateLimitData | null = savedData ? JSON.parse(savedData) : null;
-
-        if (!rateLimitData) {
-            return null;
-        }
-
-        const limit = Config.API_RATE_LIMITS.AMAZON.WEEKLY_LIMIT;
-        const used = rateLimitData.amazon.count;
-        const remaining = Math.max(0, limit - used);
-        const resetDay = new Date(rateLimitData.lastReset);
-        resetDay.setDate(resetDay.getDate() + 7);
-
-        return {
-            used,
-            limit,
-            remaining,
-            resetDate: resetDay.toLocaleDateString()
-        };
-    } catch (error) {
-        console.error('Error getting rate limit status:', error);
-        return null;
-    }
 };
