@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } from '../types';
 import Carousel from "react-native-reanimated-carousel";
@@ -62,17 +62,19 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
                 height={BOOK_CARD_HEIGHT + ACTION_BUTTONS_HEIGHT}
                 data={books}
                 renderItem={({ item, index }) => (
-                    <BookItem
-                        book={item}
-                        index={index}
-                        onEdit={() => onEditBook(index)}
-                        onDelete={() => onDeleteBook(index)}
-                        onList={() => onListBook(index)}
-                        formatDefectsSummary={formatDefectsSummary}
-                        formatUniquenessSummary={formatUniquenessSummary}
-                        formatMarketFactorsSummary={formatMarketFactorsSummary}
-                        formatListingStatus={formatListingStatus}
-                    />
+                    <View style={localStyles.bookItemContainer}>
+                        <BookItem
+                            book={item}
+                            index={index}
+                            onEdit={() => onEditBook(index)}
+                            onDelete={() => onDeleteBook(index)}
+                            onList={() => onListBook(index)}
+                            formatDefectsSummary={formatDefectsSummary}
+                            formatUniquenessSummary={formatUniquenessSummary}
+                            formatMarketFactorsSummary={formatMarketFactorsSummary}
+                            formatListingStatus={formatListingStatus}
+                        />
+                    </View>
                 )}
                 scrollAnimationDuration={800}
             />
@@ -127,6 +129,7 @@ const BooksCarousel: React.FC<BooksCarouselProps> = ({
         </View>
     );
 };
+
 const localStyles = StyleSheet.create({
     booksCarouselContainer: {
         marginTop: 10,
@@ -134,6 +137,15 @@ const localStyles = StyleSheet.create({
         backgroundColor: colors.grayLight,
         height: BOOK_CARD_HEIGHT + 180,
         position: 'relative',
+    },
+    bookItemContainer: {
+        position: 'relative',
+    },
+    expandIconContainer: {
+        position: 'absolute',
+        bottom: 16,
+        right: 16,
+        zIndex: 10,
     },
 });
 

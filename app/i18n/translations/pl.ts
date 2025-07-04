@@ -389,5 +389,11 @@ export default {
         good: "Dobry",
         average: "Średni",
         poor: "Słaby"
+    },
+    errors: {
+        titleRequired: "Tytuł jest wymagany",
+        isbnRequired: "ISBN jest wymagany",
+        invalidPrice: "Błędna cena",
+        priceRequired: "Cena jest wymagana"
     }
 }

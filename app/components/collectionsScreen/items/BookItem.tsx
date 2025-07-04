@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import {View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,7 @@ import { BookData, BookDefect, BookUniqueness, MarketFactors, ListingStatus } fr
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomAlertModal } from '../../alerts/CustomAlertModal';
 import BookDetailsModal from '../modals/BookDetailsModal';
-import { styles } from './styles'
+import { styles } from './styles';
 
 interface BookItemProps {
     book: BookData;
@@ -69,7 +69,7 @@ const BookItem: React.FC<BookItemProps> = ({
             listed: { icon: 'check', color: colors.success, text: t('listingStatus.listed') },
             sold: { icon: 'check-double', color: colors.grayDark, text: t('buttons.sold') }
         };
-        const {icon, color, text} = buttonConfig[listingStatus.status] || buttonConfig.notListed;
+        const { icon, color, text } = buttonConfig[listingStatus.status] || buttonConfig.notListed;
 
         return (
             <TouchableOpacity
@@ -208,6 +208,11 @@ const BookItem: React.FC<BookItemProps> = ({
                             </View>
                         </ScrollView>
                     </TouchableOpacity>
+
+                    {/* Expand icon - properly positioned in bottom right corner */}
+                    <View style={localStyles.expandIconContainer}>
+                        <Ionicons name="chevron-down" size={20} color={colors.primary} />
+                    </View>
                 </LinearGradient>
             </View>
 
@@ -217,5 +222,15 @@ const BookItem: React.FC<BookItemProps> = ({
         </View>
     );
 };
+
+const localStyles = StyleSheet.create({
+    expandIconContainer: {
+        position: 'absolute',
+        bottom: 6,
+        right: 6,
+        borderRadius: 12,
+        padding: 4,
+    },
+});
 
 export default BookItem;

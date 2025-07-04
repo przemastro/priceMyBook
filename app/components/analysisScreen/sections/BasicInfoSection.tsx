@@ -196,6 +196,11 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             )}
                         </View>
                     )}
+
+                    {/* Expand icon in bottom right corner */}
+                    <View style={localStyles.expandIconContainer}>
+                        <Ionicons name="chevron-down" size={20} color={colors.primary} />
+                    </View>
                 </LinearGradient>
             </TouchableOpacity>
 
@@ -261,6 +266,11 @@ const localStyles = StyleSheet.create({
     },
     priceValue: {
         fontWeight: '600',
+    },
+    expandIconContainer: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
     },
 });
 
