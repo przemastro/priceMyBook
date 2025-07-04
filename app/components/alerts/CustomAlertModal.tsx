@@ -61,7 +61,6 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
         >
             <View style={styles.alertModalOverlay}>
                 <View style={styles.alertModalContainer}>
-                    {/* Przycisk X w prawym górnym rogu */}
                     <TouchableOpacity
                         style={[styles.closeButton, closeButtonStyle]}
                         onPress={onCancel || onConfirm}

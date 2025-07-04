@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BookDefect } from '../types';
-import { styles } from './styles'
+import { styles } from './styles';
 
 interface ScanDefectModalProps {
     visible: boolean;
@@ -34,7 +34,6 @@ const ScanDefectModal = ({ visible, defect, onAccept, onReject }: ScanDefectModa
         >
             <View style={localStyles.modalOverlay}>
                 <View style={localStyles.modalContainer}>
-                    {/* Close button */}
                     <TouchableOpacity
                         style={localStyles.closeButton}
                         onPress={onReject}
@@ -46,7 +45,6 @@ const ScanDefectModal = ({ visible, defect, onAccept, onReject }: ScanDefectModa
                     </TouchableOpacity>
 
                     <View style={localStyles.modalContent}>
-                        {/* Icon preview */}
                         <View style={styles.iconPreviewContainer}>
                             <View style={styles.iconPreviewCircle}>
                                 <Ionicons
@@ -78,7 +76,6 @@ const ScanDefectModal = ({ visible, defect, onAccept, onReject }: ScanDefectModa
                             </View>
                         </View>
 
-                        {/* Action buttons */}
                         <View style={localStyles.buttonRow}>
                             <TouchableOpacity
                                 style={[localStyles.actionButton, localStyles.acceptButton]}
@@ -103,15 +100,54 @@ const ScanDefectModal = ({ visible, defect, onAccept, onReject }: ScanDefectModa
 };
 
 const localStyles = StyleSheet.create({
-    acceptButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '600',
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContainer: {
+        width: '90%',
+        backgroundColor: 'white',
+        borderRadius: 12,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    modalContent: {
+        padding: 24,
+        paddingTop: 32,
+        alignItems: 'center',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1,
+    },
+    closeButtonCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.grayLight,
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: colors.primary,
+        lineHeight: 24,
     },
     buttonRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         width: '100%',
+        marginTop: 20,
     },
     actionButton: {
         borderRadius: 10,
@@ -128,54 +164,17 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    acceptButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
+    },
     modalTitle: {
         fontSize: 20,
         fontWeight: '600',
         color: colors.black,
         marginBottom: 16,
         textAlign: 'center',
-    },
-    modalContent: {
-        padding: 24,
-        paddingTop: 32,
-        alignItems: 'center',
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 16,
-        right: 16,
-    },
-    closeButtonCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.white,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.transparentLightPrimary,
-    },
-    closeButtonText: {
-        fontSize: 20,
-        color: colors.primary,
-        lineHeight: 24,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.transparentBlack,
-    },
-    modalContainer: {
-        width: '90%',
-        backgroundColor: 'white',
-        borderRadius: 12,
-        overflow: 'hidden',
-        shadowColor: colors.blackDark,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
     },
 });
 

@@ -26,6 +26,7 @@
     "@shopify/flash-list": "1.6.4 ",
     "@svgr/core": "^8.1.0",
     "@svgr/plugin-jsx": "^8.1.0",
+    "@techstark/opencv-js": "^4.11.0-release.1",
     "@tensorflow/tfjs": "^4.22.0",
     "@types/axios": "^0.9.36",
     "@types/papaparse": "^5.3.15",
