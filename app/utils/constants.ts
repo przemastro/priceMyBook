@@ -1,5 +1,5 @@
 export const LIMITS = {
-    MAX_COLLECTIONS: 1,
+    MAX_COLLECTIONS: 5,
     MAX_TOTAL_BOOKS: 5,
     MAX_BOOKS_PER_COLLECTION: 5,
 };

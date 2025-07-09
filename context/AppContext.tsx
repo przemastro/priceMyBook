@@ -123,6 +123,7 @@ interface AppContextType {
     calculateTotalValue: () => number;
     calculateActiveValue: () => number;
     calculateSoldValue: () => number;
+    checkDuplicateCollection: (name: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -176,6 +177,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         message: '',
         type: 'error' as 'info' | 'success' | 'error' | 'warning'
     });
+
+    const checkDuplicateCollection = useCallback((name: string) => {
+        return collections.some(collection =>
+            collection.name.toLowerCase() === name.toLowerCase()
+        );
+    }, [collections]);
 
     const forceUpdateCollections = useCallback(() => {
         setForceUpdateFlag(prev => !prev);
@@ -595,7 +602,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         checkGlobalLimits,
         calculateTotalValue,
         calculateActiveValue,
-        calculateSoldValue
+        calculateSoldValue,
+        checkDuplicateCollection
     }), [
         isbn, collections, books, collectionCategories, exchangeRate, exchangeRateError,
         lastRateUpdate, scanHistory, selectedCollection, forceUpdateFlag,
@@ -604,7 +612,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateBookInCollection, updateBooksInCollection, removeBookFromCollection,
         refreshExchangeRate, addToScanHistory, clearScanHistory, formatCurrency,
         forceUpdateCollections, checkGlobalLimits, calculateTotalValue,
-        calculateActiveValue, calculateSoldValue
+        calculateActiveValue, calculateSoldValue, checkDuplicateCollection
     ]);
 
     return (

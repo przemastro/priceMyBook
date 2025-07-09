@@ -47,7 +47,9 @@ export default {
         emptyCsv: "Wybrany plik CSV jest pusty",
         noValidBooks: "Nie znaleziono prawidłowych książek w pliku CSV",
         deleteBookTitle: 'Usuń książkę',
-        deleteBookMessage: "Czy na pewno chcesz usunąć książkę '{{bookName}}'?"
+        deleteBookMessage: "Czy na pewno chcesz usunąć książkę '{{bookName}}'?",
+        collectionExists: "Kolekcja o tej nazwie już istnieje!",
+        collectionNameRequired: "Nazwa kolekcji jest wymagana"
     },
     bookInfo: {
         isbn: 'ISBN',

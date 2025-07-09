@@ -49,7 +49,9 @@ export default {
         bookLimitReached: 'You have reached the maximum number of books ({{limit}}) in this collection. To scan new books, please delete some books or add to another collection.',
         collectionDeleted: "Collection '{{collectionName}}' has been deleted",
         emptyCsv: "Selected CSV file is empty",
-        noValidBooks: "No valid books found in CSV file"
+        noValidBooks: "No valid books found in CSV file",
+        collectionExists: "A collection with this name already exists!",
+        collectionNameRequired: "Collection name is required"
     },
     bookInfo: {
         isbn: 'ISBN',
