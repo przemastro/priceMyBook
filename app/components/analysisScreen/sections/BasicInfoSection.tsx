@@ -17,6 +17,7 @@ interface BasicBookInfoProps {
     isbn: string;
     isbnInput: string;
     originalPrice: string;
+    originalPriceInput: string; // Dodane nowe pole
     onPickImage: () => Promise<void>;
     onEditPress: () => void;
     onScanPress: () => void;
@@ -35,6 +36,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                                                                    isbn,
                                                                    isbnInput,
                                                                    originalPrice,
+                                                                   originalPriceInput, // Dodane nowe pole
                                                                    onPickImage,
                                                                    onEditPress,
                                                                    onScanPress,
@@ -56,7 +58,11 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
 
     const handleConfirmClear = () => {
         setShowClearAlert(false);
-        onClearPress();
+        onClearPress(); // To wywoła funkcję czyszczącą z komponentu nadrzędnego
+    };
+
+    const handleCancelClear = () => {
+        setShowClearAlert(false);
     };
 
     const handleImageLoadStart = () => {
@@ -80,12 +86,13 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                 title={t('confirmation.title')}
                 message={t('confirmation.clearAllFields')}
                 confirmText={t('buttons.clear')}
+                cancelText={t('buttons.cancel')}
                 onConfirm={handleConfirmClear}
+                onCancel={handleCancelClear}
                 type="warning"
                 buttonFullWidth={true}
             />
 
-            {/* Book card - clickable for edit */}
             <TouchableOpacity
                 style={styles.bookCard}
                 onPress={onEditPress}
@@ -97,28 +104,32 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    {/* Clear button in top right corner */}
                     <TouchableOpacity
                         style={styles.clearButton}
-                        onPress={handleClearPress}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            handleClearPress();
+                        }}
                     >
                         <Ionicons name="close" size={20} color={colors.primary} />
                     </TouchableOpacity>
 
                     <View style={styles.cardContent}>
-                        {/* Book Image - Circular */}
                         <TouchableOpacity
                             style={localStyles.bookImageContainer}
-                            onPress={onPickImage}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                onPickImage();
+                            }}
                             activeOpacity={0.8}
                         >
                             {bookImage ? (
                                 <>
                                     <Image
                                         source={{
-                                            uri: bookImage.startsWith('file://') ?
-                                                bookImage :
-                                                `file://${bookImage}`
+                                            uri: bookImage.startsWith('file://')
+                                                ? bookImage
+                                                : `file://${bookImage}`
                                         }}
                                         style={styles.bookImage}
                                         resizeMode="cover"
@@ -144,7 +155,6 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             )}
                         </TouchableOpacity>
 
-                        {/* Book Details */}
                         <View style={styles.bookDetails}>
                             <Text style={styles.bookTitle} numberOfLines={1}>
                                 {titleInput || title || t('bookInfo.noTitle')}
@@ -160,7 +170,7 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                             <View style={styles.detailItem}>
                                 <Text style={localStyles.detailLabel}>{t('bookInfo.price')}:</Text>
                                 <Text style={[localStyles.detailValue, localStyles.priceValue]}>
-                                    {formatPrice(originalPrice)}
+                                    {formatPrice(originalPriceInput || originalPrice)}
                                 </Text>
                             </View>
 
@@ -175,7 +185,6 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                         </View>
                     </View>
 
-                    {/* Additional details that don't fit in the main row */}
                     {(publisher || description) && (
                         <View style={styles.additionalDetails}>
                             {publisher && (
@@ -197,14 +206,12 @@ export const BasicInfoSection: React.FC<BasicBookInfoProps> = ({
                         </View>
                     )}
 
-                    {/* Expand icon in bottom right corner */}
                     <View style={localStyles.expandIconContainer}>
                         <Ionicons name="chevron-down" size={20} color={colors.primary} />
                     </View>
                 </LinearGradient>
             </TouchableOpacity>
 
-            {/* Single Scan Button */}
             <TouchableOpacity
                 style={[styles.scanButton, isScanning && styles.scanButtonDisabled]}
                 onPress={onScanPress}

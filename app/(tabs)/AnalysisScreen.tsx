@@ -591,7 +591,8 @@ export default function AnalysisScreen() {
     setBookImage(null);
     setTitleInput('');
     setIsbnInput('');
-    setOriginalPrice('');
+    setOriginalPriceInput(''); // Dodane czyszczenie inputa ceny
+    setOriginalPrice(''); // Dodane czyszczenie stanu ceny
     setAuthors('');
     setPublisher('');
     setDescription('');
@@ -602,7 +603,7 @@ export default function AnalysisScreen() {
     setAuthors('');
     setPublisher('');
     setIsbnInput('');
-    setOriginalPriceInput('');
+    setOriginalPriceInput(''); // Dodane czyszczenie inputa ceny
     setDescription('');
   };
 
@@ -747,6 +748,7 @@ export default function AnalysisScreen() {
                             isbn={isbn}
                             isbnInput={isbnInput}
                             originalPrice={originalPrice}
+                            originalPriceInput={originalPriceInput} // Dodane przekazanie inputa ceny
                             authors={authors}
                             publisher={publisher}
                             description={description}
