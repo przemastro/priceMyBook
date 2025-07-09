@@ -210,7 +210,8 @@ export default {
         startScanning: 'Skanuj',
         more: "Więcej",
         exportPDF: "Eksportuj do PDF",
-        scanDefects: "Skanuj w poszukiwaniu wad"
+        scanDefects: "Skanuj w poszukiwaniu wad",
+        addCover: "Dodaj okładkę książki"
     },
     placeholders: {
         enterCollectionName: 'Wprowadź nazwę księgozbioru',
