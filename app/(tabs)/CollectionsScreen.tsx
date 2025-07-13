@@ -899,7 +899,7 @@ const CollectionsScreen = () => {
                                     <View style={styles.priceRow}>
                                         <View style={styles.priceLabelContainer}>
                                             <FontAwesome5 name="coins" size={22} color={colors.primary} />
-                                            <Text style={styles.priceLabelTotal}>Wartość kolekcji:</Text>
+                                            <Text style={styles.priceLabelTotal}>{t('labels.collectionValue')}</Text>
                                         </View>
                                         <Text style={styles.priceValueTotal}>
                                             {formatCurrency(calculateTotalValue().toString())}
@@ -911,7 +911,7 @@ const CollectionsScreen = () => {
                                     <View style={styles.priceRow}>
                                         <View style={styles.priceLabelContainer}>
                                             <Ionicons name="book-outline" size={14} color={colors.secondary} />
-                                            <Text style={styles.priceLabel}>Wartość aktywna:</Text>
+                                            <Text style={styles.priceLabel}>{t('labels.activeValue')}</Text>
                                         </View>
                                         <Text style={[styles.priceValue, {color: colors.grayDark}]}>
                                             {formatCurrency(calculateActiveValue().toString())}
@@ -921,7 +921,7 @@ const CollectionsScreen = () => {
                                     <View style={styles.priceRow}>
                                         <View style={styles.priceLabelContainer}>
                                             <Ionicons name="cash-outline" size={14} color={colors.primary} />
-                                            <Text style={styles.priceLabelSold}>Wartość sprzedana:</Text>
+                                            <Text style={styles.priceLabelSold}>{t('labels.soldValue')}</Text>
                                         </View>
                                         <Text style={[styles.priceValue, {color: colors.primary}]}>
                                             {formatCurrency(calculateSoldValue().toString())}
@@ -931,7 +931,7 @@ const CollectionsScreen = () => {
                                         onPress={() => navigateToScreen('Settings', false, '/components/financialReportScreen/FinancialReport')}
                                         style={styles.moreButton}
                                     >
-                                        <Text style={styles.moreButtonText}>{t('home.more')}</Text>
+                                        <Text style={styles.moreButtonText}>{t('buttons.more')}</Text>
                                     </TouchableOpacity>
                                 </LinearGradient>
                             </View>

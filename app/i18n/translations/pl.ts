@@ -49,7 +49,8 @@ export default {
         deleteBookTitle: 'Usuń książkę',
         deleteBookMessage: "Czy na pewno chcesz usunąć książkę '{{bookName}}'?",
         collectionExists: "Kolekcja o tej nazwie już istnieje!",
-        collectionNameRequired: "Nazwa kolekcji jest wymagana"
+        collectionNameRequired: "Nazwa kolekcji jest wymagana",
+        importError: "Błąd importu"
     },
     bookInfo: {
         isbn: 'ISBN',
@@ -147,7 +148,9 @@ export default {
         price: "Cena",
         noCategories: 'Brak kategorii',
         years: 'lat',
-        listingStatus: 'Status książki'
+        listingStatus: 'Status książki',
+        collectionValue: "Wartość kolekcji:",
+        booksToImport: 'Liczba książek'
     },
     titles: {
         scan: 'Skanuj ISBN',
