@@ -3,20 +3,17 @@ import {colors} from "@/styles/styles";
 
 export const styles = StyleSheet.create({
     container: {
-        marginTop: 16,
-        paddingHorizontal: 16,
+        marginBottom: 20,
     },
     title: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.primary,
+        color: colors.secondary,
         marginBottom: 8,
     },
     categoriesList: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        marginBottom: 20
     },
     categoryItem: {
         flexDirection: 'row',
@@ -49,20 +46,23 @@ export const styles = StyleSheet.create({
     addCategoryContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
+        width: '100%',
     },
     input: {
-        height: 32,
+        flex: 1,
+        height: 40,
         borderWidth: 1,
-        borderColor: colors.primary,
-        borderRadius: 16,
+        borderColor: colors.gray,
+        borderRadius: 8,
         paddingHorizontal: 12,
         backgroundColor: colors.white,
-        marginRight: 8,
+        color: colors.black,
     },
     confirmButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',

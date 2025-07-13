@@ -1,3 +1,4 @@
+// AddCollectionModal.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { colors } from '@/styles/styles';
@@ -8,6 +9,7 @@ import { styles } from './styles';
 import { BOOK_ICONS } from "@/app/utils/constants";
 import { useAppContext } from '@/context/AppContext';
 import { CustomAlertModal } from '@/app/components/alerts/CustomAlertModal';
+import CategoriesManager from '../../collectionsScreen/CategoriesManager';
 
 interface AddCollectionModalProps {
     visible: boolean;
@@ -22,7 +24,6 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
     const [categories, setCategories] = useState<string[]>([]);
     const [selectedIcon, setSelectedIcon] = useState('book');
     const [showIcons, setShowIcons] = useState(false);
-    const [newCategory, setNewCategory] = useState('');
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({
         title: '',
@@ -30,14 +31,11 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
         type: 'error' as 'info' | 'success' | 'error' | 'warning'
     });
 
-    const handleAddCategory = () => {
-        if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-            setCategories([...categories, newCategory.trim()]);
-            setNewCategory('');
-        }
+    const handleAddCategory = (collectionName: string, category: string) => {
+        setCategories([...categories, category]);
     };
 
-    const handleRemoveCategory = (category: string) => {
+    const handleRemoveCategory = (collectionName: string, category: string) => {
         setCategories(categories.filter(c => c !== category));
     };
 
@@ -146,41 +144,12 @@ const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ visible, onClos
                                 </View>
                             )}
 
-                            <View style={styles.categoriesSection}>
-                                <Text style={styles.sectionTitle}>{t('labels.categories')}</Text>
-
-                                <View style={styles.categoriesList}>
-                                    {categories.map((category) => (
-                                        <View key={`category-${category}`} style={styles.categoryItem}>
-                                            <Text style={styles.categoryText}>{category}</Text>
-                                            <TouchableOpacity onPress={() => handleRemoveCategory(category)}>
-                                                <MaterialIcons name="close" size={16} color={colors.error} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    ))}
-                                </View>
-
-                                <View style={styles.addCategoryContainer}>
-                                    <TextInput
-                                        style={styles.categoryInput}
-                                        placeholder={t('placeholders.addCategory')}
-                                        value={newCategory}
-                                        onChangeText={setNewCategory}
-                                        onSubmitEditing={handleAddCategory}
-                                    />
-                                    <TouchableOpacity
-                                        style={styles.addCategoryButton}
-                                        onPress={handleAddCategory}
-                                        disabled={!newCategory.trim()}
-                                    >
-                                        <MaterialIcons
-                                            name="add"
-                                            size={24}
-                                            color={newCategory.trim() ? colors.primary : colors.gray}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+                            <CategoriesManager
+                                collectionName={localCollectionName || 'new'}
+                                collectionCategories={{ 'new': categories }}
+                                onAddCategory={handleAddCategory}
+                                onRemoveCategory={handleRemoveCategory}
+                            />
 
                             <TouchableOpacity
                                 style={styles.closeButton}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/styles/styles';
 import { useTranslation } from 'react-i18next';
 import { styles } from './styles'
@@ -31,6 +31,7 @@ const CategoriesManager: React.FC<CategoriesManagerProps> = ({
 
     return (
         <View style={styles.container}>
+            <Text style={styles.title}>{t('labels.categories')}</Text>
 
             <View style={styles.categoriesList}>
                 {collectionCategories[collectionName]?.map((category) => (
@@ -39,7 +40,7 @@ const CategoriesManager: React.FC<CategoriesManagerProps> = ({
                         <TouchableOpacity
                             onPress={() => onRemoveCategory(collectionName, category)}
                         >
-                            <Ionicons name="close" size={16} color={colors.error} />
+                            <MaterialIcons name="close" size={16} color={colors.error} />
                         </TouchableOpacity>
                     </View>
                 ))}
@@ -49,7 +50,7 @@ const CategoriesManager: React.FC<CategoriesManagerProps> = ({
                         style={styles.addButton}
                         onPress={() => setAddingCategory(true)}
                     >
-                        <Ionicons name="add" size={16} color={colors.primary} />
+                        <MaterialIcons name="add" size={16} color={colors.primary} />
                         <Text style={styles.addButtonText}>{t('buttons.addCategory')}</Text>
                     </TouchableOpacity>
                 ) : (
@@ -57,6 +58,7 @@ const CategoriesManager: React.FC<CategoriesManagerProps> = ({
                         <TextInput
                             style={styles.input}
                             placeholder={t('placeholders.categoryName')}
+                            placeholderTextColor={colors.gray}
                             value={newCategoryName}
                             onChangeText={setNewCategoryName}
                             autoFocus
@@ -67,7 +69,7 @@ const CategoriesManager: React.FC<CategoriesManagerProps> = ({
                             onPress={handleAddCategory}
                             disabled={!newCategoryName.trim()}
                         >
-                            <Ionicons name="checkmark" size={16} color="white" />
+                            <MaterialIcons name="check" size={16} color="white" />
                         </TouchableOpacity>
                     </View>
                 )}
