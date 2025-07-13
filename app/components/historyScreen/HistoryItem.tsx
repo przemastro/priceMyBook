@@ -109,6 +109,7 @@ const HistoryItem = ({ item }: HistoryItemProps) => {
                         authors: item.authors,
                         fromHistory: 'true',
                         editMode: 'true',
+                        originalPrice: item.price || '0', // Zmienione z price na originalPrice
                         marketFactors: JSON.stringify(item.marketFactors || defaultMarketFactors),
                         uniqueness: JSON.stringify(item.uniqueness || defaultUniqueness),
                         marketData: item.marketData ? JSON.stringify(item.marketData) : undefined,
