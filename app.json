@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
@@ -22,7 +23,57 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Aplikacja potrzebuje dostępu do kamery do skanowania książek",
         "NSPhotoLibraryUsageDescription": "Aplikacja potrzebuje dostępu do galerii do analizy zdjęć książek",
-        "NSMicrophoneUsageDescription": "Aplikacja może potrzebować dostępu do mikrofonu dla niektórych funkcji"
+        "NSMicrophoneUsageDescription": "Aplikacja może potrzebować dostępu do mikrofonu dla niektórych funkcji",
+        "NSPhotoLibraryAddUsageDescription": "Aplikacja potrzebuje dostępu do galerii do zapisywania zdjęć"
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypeCamera",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "DDA9.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypePhotoLibrary",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "PHL3.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypeUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypeFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypeSystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypeDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPITypeActiveKeyboards",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "3B52.1"
+            ]
+          }
+        ],
+        "NSPrivacyCollectedDataTypes": [],
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": []
       }
     },
     "android": {
@@ -101,6 +152,12 @@
         "projectId": "475267f1-a846-4802-a6e9-a58d2db082af"
       }
     },
-    "owner": "jagodzip"
+    "owner": "jagodzip",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/475267f1-a846-4802-a6e9-a58d2db082af"
+    }
   }
 }
